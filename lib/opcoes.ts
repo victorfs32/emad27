@@ -6,6 +6,10 @@ export const STATUS = [
   { valor: "obito", rotulo: "Óbito", cor: "bg-zinc-300 text-zinc-800" },
 ] as const;
 
+/** Pacientes na lista principal x arquivados. */
+export const STATUS_PRINCIPAIS = ["ativo", "internado", "suspenso"] as const;
+export const STATUS_ARQUIVADOS = ["alta", "obito"] as const;
+
 export const MODALIDADES = ["AD1", "AD2", "AD3"] as const;
 
 export const SEXOS = [
@@ -33,12 +37,18 @@ export function formatarData(iso: string | null | undefined) {
   return a && m && d ? `${d}/${m}/${a}` : "—";
 }
 
+/** Data de hoje (yyyy-mm-dd) no fuso de Brasília; o servidor da Vercel roda em UTC. */
+export function hojeISO(deslocamentoDias = 0) {
+  const agora = new Date(Date.now() + deslocamentoDias * 86400000);
+  return agora.toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
+}
+
 export function calcularIdade(nascimento: string | null | undefined) {
   if (!nascimento) return null;
   const [a, m, d] = nascimento.split("-").map(Number);
   if (!a || !m || !d) return null;
-  const hoje = new Date();
-  let idade = hoje.getFullYear() - a;
-  if (hoje.getMonth() + 1 < m || (hoje.getMonth() + 1 === m && hoje.getDate() < d)) idade--;
+  const [ha, hm, hd] = hojeISO().split("-").map(Number);
+  let idade = ha - a;
+  if (hm < m || (hm === m && hd < d)) idade--;
   return idade >= 0 ? idade : null;
 }

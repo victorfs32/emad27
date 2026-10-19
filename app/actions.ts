@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { exigirUsuario } from "@/lib/auth";
 import { supabaseServidor } from "@/lib/supabase/servidor";
 import {
-  adicionarEvolucao, atualizarPaciente, criarPaciente, lerFormulario, obterPaciente,
+  adicionarEvolucao, atualizarPaciente, criarPaciente, definirProximaVisita, lerFormulario, obterPaciente,
   type DadosPaciente,
 } from "@/lib/pacientes";
 import { TIPOS_EVOLUCAO } from "@/lib/opcoes";
@@ -41,6 +41,16 @@ export async function salvarPaciente(id: number | null, _: EstadoPaciente, fd: F
   await atualizarPaciente(id, dados);
   revalidatePath("/");
   redirect(`/pacientes/${id}`);
+}
+
+export async function agendarVisita(pacienteId: number, fd: FormData) {
+  await exigirUsuario();
+  const data = String(fd.get("proxima_visita") ?? "");
+  if (data && !/^\d{4}-\d{2}-\d{2}$/.test(data)) return;
+  if (!(await obterPaciente(pacienteId))) return;
+  await definirProximaVisita(pacienteId, data || null);
+  revalidatePath(`/pacientes/${pacienteId}`);
+  revalidatePath("/proximas-visitas");
 }
 
 export async function registrarEvolucao(pacienteId: number, fd: FormData) {

@@ -1,38 +1,119 @@
 @import "tailwindcss";
 
+/* Design tokens — mesma linguagem visual do Dashboard Entregas (Baixa Fácil). */
 :root {
-  --background: #f4f7f6;
-  --foreground: #14201d;
+  --dash-bg: #f3f6fb;
+  --dash-surface: #ffffff;
+  --dash-text: #46526b;
+  --dash-heading: #0f1b33;
+  --dash-muted: #6f7d96;
+  --dash-border: #e3e9f3;
+  --dash-accent: #1673d1;
+  --dash-accent-2: #12397a;
+  --dash-accent-hover: #0f5fb0;
+  --dash-accent-dark: #0b4a94;
+  --dash-accent-soft: #e6f0fc;
+  --dash-accent-soft-strong: #bbd5f5;
+  --dash-secondary-bg: #edf1f8;
+  --dash-detail-bg: #f7f9fd;
+  --dash-sidebar-start: #0b1f44;
+  --dash-sidebar-end: #050e21;
+  --dash-sidebar-muted: #9fb3d6;
+  --dash-success: #2ead5b;
+  --dash-success-soft: #d3f3de;
+  --dash-success-strong: #0f6b37;
+  --dash-warning: #ef6c00;
+  --dash-warning-soft: #ffe4c2;
+  --dash-warning-strong: #8a4a00;
+  --dash-danger: #c62828;
+  --dash-danger-soft: #ffdcea;
+  --dash-danger-strong: #8c1d49;
+  --dash-info: #0a55a8;
+  --dash-info-soft: #d9e7ff;
+  --dash-info-strong: #0c3c78;
+  --dash-gradient: linear-gradient(135deg, #0b1f44 0%, #12397a 55%, #1673d1 100%);
+  --dash-gradient-bright: linear-gradient(135deg, #1673d1 0%, #3b8fe8 100%);
+  --dash-shadow-sm: 0 1px 2px rgba(15, 27, 51, 0.04);
+  --dash-shadow-md: 0 8px 24px -8px rgba(15, 40, 90, 0.14);
+  --dash-shadow-lg: 0 20px 45px -15px rgba(15, 40, 90, 0.28);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+
+  --color-bg: var(--dash-bg);
+  --color-surface: var(--dash-surface);
+  --color-text: var(--dash-text);
+  --color-heading: var(--dash-heading);
+  --color-muted: var(--dash-muted);
+  --color-border: var(--dash-border);
+
+  --color-accent: var(--dash-accent);
+  --color-accent-2: var(--dash-accent-2);
+  --color-accent-hover: var(--dash-accent-hover);
+  --color-accent-dark: var(--dash-accent-dark);
+  --color-accent-soft: var(--dash-accent-soft);
+  --color-accent-soft-strong: var(--dash-accent-soft-strong);
+
+  --color-secondary: var(--dash-secondary-bg);
+  --color-detail: var(--dash-detail-bg);
+
+  --color-sidebar-start: var(--dash-sidebar-start);
+  --color-sidebar-end: var(--dash-sidebar-end);
+  --color-sidebar-muted: var(--dash-sidebar-muted);
+
+  --color-success: var(--dash-success);
+  --color-success-soft: var(--dash-success-soft);
+  --color-success-strong: var(--dash-success-strong);
+  --color-warning: var(--dash-warning);
+  --color-warning-soft: var(--dash-warning-soft);
+  --color-warning-strong: var(--dash-warning-strong);
+  --color-danger: var(--dash-danger);
+  --color-danger-soft: var(--dash-danger-soft);
+  --color-danger-strong: var(--dash-danger-strong);
+  --color-info: var(--dash-info);
+  --color-info-soft: var(--dash-info-soft);
+  --color-info-strong: var(--dash-info-strong);
+
+  --shadow-card: var(--dash-shadow-sm);
+  --shadow-card-md: var(--dash-shadow-md);
+  --shadow-card-lg: var(--dash-shadow-lg);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  background: var(--dash-bg);
+  color: var(--dash-text);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, "Segoe UI", sans-serif;
 }
 
+::selection {
+  background: var(--dash-accent);
+  color: white;
+}
+
+@utility bg-brand-gradient {
+  background: var(--dash-gradient);
+}
+@utility bg-brand-gradient-bright {
+  background: var(--dash-gradient-bright);
+}
+
+/* Componentes reutilizados nas telas */
 .campo {
-  @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 shadow-sm outline-none;
-  @apply focus:border-teal-600 focus:ring-2 focus:ring-teal-600/25;
+  @apply w-full rounded-2xl border border-border bg-surface px-3.5 py-3 text-[15px] text-heading outline-none transition;
+  @apply placeholder:text-muted/70 focus:border-accent focus:shadow-[0_0_0_3px_rgba(22,115,209,0.2)];
 }
 .rotulo {
-  @apply mb-1 block text-sm font-medium text-slate-700;
+  @apply mb-1.5 block text-sm font-semibold text-heading;
 }
 .btn-primario {
-  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2 text-base font-semibold transition;
-  @apply bg-teal-700 text-white hover:bg-teal-800 disabled:opacity-60;
+  @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-5 py-2.5 text-[15px] font-bold text-white transition;
+  @apply bg-brand-gradient shadow-[0_10px_26px_-8px_rgba(22,115,209,0.6)] hover:-translate-y-px hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70;
 }
 .btn-secundario {
-  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2 text-base font-semibold transition;
-  @apply border border-slate-300 bg-white text-slate-800 hover:bg-slate-50;
+  @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-border bg-surface px-5 py-2.5 text-[15px] font-semibold text-heading transition;
+  @apply hover:bg-secondary;
 }
 .cartao {
-  @apply rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5;
+  @apply rounded-[22px] border border-border bg-surface p-4 shadow-card sm:p-5;
 }

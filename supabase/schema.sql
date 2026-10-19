@@ -25,6 +25,8 @@ create table if not exists public.pacientes (
   motivo_saida text,
   dispositivos text,
   observacoes text,
+  possui_lpp boolean not null default false,
+  proxima_visita date,
   criado_em timestamptz not null default now(),
   atualizado_em timestamptz not null default now(),
   criado_por uuid default auth.uid() references auth.users(id) on delete set null
@@ -47,7 +49,7 @@ create index if not exists idx_evolucoes_paciente on public.evolucoes (paciente_
 -- Lista com a data da última evolução (respeita o RLS de quem consulta).
 create or replace view public.pacientes_resumo with (security_invoker = true) as
 select p.id, p.nome, p.data_nascimento, p.bairro, p.diagnostico, p.modalidade, p.status, p.telefone,
-       p.cpf, p.cns,
+       p.cpf, p.cns, p.possui_lpp, p.proxima_visita,
        (select max(e.data) from public.evolucoes e where e.paciente_id = p.id) as ultima_evolucao
 from public.pacientes p;
 

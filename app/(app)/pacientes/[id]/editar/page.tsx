@@ -8,11 +8,11 @@ export default async function EditarPaciente({ params }: PageProps<"/pacientes/[
   if (!paciente) notFound();
 
   const inicial = Object.fromEntries(
-    Object.entries(paciente).map(([k, v]) => [k, v == null ? "" : String(v)]),
+    Object.entries(paciente).map(([k, v]) => [k, k === "possui_lpp" ? (v ? "sim" : "") : v == null ? "" : String(v)]),
   );
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Editar paciente</h1>
+      <h1 className="text-[28px] font-extrabold tracking-[-0.02em] text-heading">Editar paciente</h1>
       <FormularioPaciente id={paciente.id} inicial={inicial} />
     </div>
   );

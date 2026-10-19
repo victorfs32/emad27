@@ -1,123 +1,111 @@
 import Link from "next/link";
-import { contarPorStatus, listarPacientes } from "@/lib/pacientes";
-import { STATUS, calcularIdade, formatarData } from "@/lib/opcoes";
-import { SeloStatus } from "./selo-status";
+import { listarPacientes, resumoPainel } from "@/lib/pacientes";
+import { FiltrosLista } from "./filtros-lista";
+import { IconeBaixar, IconeCalendario, IconeCoracao, IconeMais, IconePessoas, IconePrancheta } from "./icones";
+import { TabelaPacientes } from "./tabela-pacientes";
+
+function Indicador({
+  rotulo, valor, apoio, icone: Icone, destaque,
+}: {
+  rotulo: string; valor: number; apoio: string; icone: typeof IconePessoas; destaque?: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-[22px] p-5 ${
+        destaque
+          ? "bg-brand-gradient text-white shadow-[0_18px_40px_-16px_rgba(22,115,209,0.55)]"
+          : "border border-border bg-surface shadow-card"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <p className={`m-0 text-[13px] font-semibold ${destaque ? "text-white/80" : "text-muted"}`}>{rotulo}</p>
+        <span
+          className={`flex h-9 w-9 items-center justify-center rounded-xl ${
+            destaque ? "bg-white/15 text-white" : "bg-accent-soft text-accent"
+          }`}
+        >
+          <Icone className="h-[18px] w-[18px]" />
+        </span>
+      </div>
+      <p className={`mb-0 mt-3 text-[40px] font-extrabold leading-none tracking-[-0.03em] ${destaque ? "" : "text-heading"}`}>
+        {valor}
+      </p>
+      <p className={`mb-0 mt-2 text-xs ${destaque ? "text-white/75" : "text-muted"}`}>{apoio}</p>
+    </div>
+  );
+}
 
 export default async function Listagem({ searchParams }: PageProps<"/">) {
   const sp = await searchParams;
-  const q = (typeof sp.q === "string" ? sp.q : "").trim();
-  const statusParam = typeof sp.status === "string" ? sp.status : "";
-  const status = STATUS.some((s) => s.valor === statusParam) ? statusParam : "";
-
-  const [pacientes, contagem] = await Promise.all([listarPacientes(q, status), contarPorStatus()]);
-  const total = Object.values(contagem).reduce((a, b) => a + b, 0);
-
-  const href = (st: string) => {
-    const p = new URLSearchParams();
-    if (q) p.set("q", q);
-    if (st) p.set("status", st);
-    const s = p.toString();
-    return s ? `/?${s}` : "/";
+  const um = (k: string) => (typeof sp[k] === "string" ? (sp[k] as string).trim() : "");
+  const filtros = {
+    busca: um("q"),
+    status: um("status"),
+    modalidade: um("modalidade"),
+    lpp: um("lpp") === "1",
+    grupo: "principais" as const,
   };
 
+  const [pacientes, resumo] = await Promise.all([listarPacientes(filtros), resumoPainel()]);
+  const filtrando = filtros.busca || filtros.status || filtros.modalidade || filtros.lpp;
+
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">Pacientes</h1>
-        <Link href="/pacientes/novo" className="btn-primario">+ Novo paciente</Link>
-      </div>
+    <div className="grid gap-6">
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="m-0 text-[12.5px] font-semibold uppercase tracking-[0.14em] text-muted">
+            Gestão do cuidado · EMAD 27
+          </p>
+          <h1 className="m-0 mt-1 text-[32px] font-extrabold tracking-[-0.02em] text-heading">
+            Pacientes<span className="text-accent">.</span>
+          </h1>
+          <p className="m-0 mt-1 text-sm text-muted">Cada pessoa, um cuidado. Todas as informações em um só lugar.</p>
+        </div>
+        <Link href="/pacientes/novo" className="btn-primario">
+          <IconeMais className="h-5 w-5" /> Novo paciente
+        </Link>
+      </header>
 
-      <form className="flex gap-2" role="search">
-        <input
-          name="q"
-          defaultValue={q}
-          placeholder="Buscar por nome, CPF, CNS, bairro ou diagnóstico"
-          className="campo"
-          aria-label="Buscar pacientes"
-        />
-        {status && <input type="hidden" name="status" value={status} />}
-        <button className="btn-secundario">Buscar</button>
-      </form>
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4" aria-label="Resumo">
+        <Indicador destaque rotulo="Pacientes cadastrados" valor={resumo.cadastrados} apoio="Na lista principal" icone={IconePessoas} />
+        <Indicador rotulo="Em acompanhamento" valor={resumo.acompanhamento} apoio="Cuidado em continuidade" icone={IconeCoracao} />
+        <Indicador rotulo="Visitas programadas" valor={resumo.visitas7dias} apoio="De hoje aos próximos 7 dias" icone={IconeCalendario} />
+        <Indicador rotulo="Pacientes com LPP" valor={resumo.lpp} apoio="Conforme o cadastro" icone={IconePrancheta} />
+      </section>
 
-      <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1" aria-label="Filtrar por situação">
-        {[{ valor: "", rotulo: "Todos" }, ...STATUS].map((s) => {
-          const ativo = s.valor === status;
-          const n = s.valor ? (contagem[s.valor] ?? 0) : total;
-          return (
-            <Link
-              key={s.valor}
-              href={href(s.valor)}
-              aria-current={ativo ? "page" : undefined}
-              className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-medium ${
-                ativo ? "border-teal-700 bg-teal-700 text-white" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-              }`}
-            >
-              {s.rotulo} <span className="opacity-75">({n})</span>
-            </Link>
-          );
-        })}
-      </nav>
+      <section className="rounded-[22px] border border-border bg-surface shadow-card">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-5 pb-4">
+          <h2 className="m-0 flex items-center gap-2 text-base font-bold text-heading">
+            Lista de pacientes
+            <span className="rounded-md bg-secondary px-2 py-0.5 text-xs font-semibold text-muted">{pacientes.length}</span>
+          </h2>
+          <a href="/exportar" className="btn-secundario !min-h-10 !px-4 !text-sm" download>
+            <IconeBaixar className="h-4 w-4" /> Exportar CSV
+          </a>
+        </div>
 
-      {pacientes.length === 0 ? (
-        <p className="cartao text-center text-slate-600">
-          {total === 0 ? "Nenhum paciente cadastrado ainda." : "Nenhum paciente encontrado com esses filtros."}
-        </p>
-      ) : (
-        <>
-          {/* Celular: cartões */}
-          <ul className="space-y-2 md:hidden">
-            {pacientes.map((p) => (
-              <li key={p.id}>
-                <Link href={`/pacientes/${p.id}`} className="cartao block active:bg-slate-50">
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="font-semibold">{p.nome}</span>
-                    <SeloStatus status={p.status} />
-                  </div>
-                  <p className="mt-1 text-sm text-slate-600">
-                    {[calcularIdade(p.data_nascimento) !== null && `${calcularIdade(p.data_nascimento)} anos`, p.bairro, p.modalidade]
-                      .filter(Boolean)
-                      .join(" · ") || "—"}
-                  </p>
-                  {p.diagnostico && <p className="mt-1 text-sm text-slate-700">{p.diagnostico}</p>}
-                  <p className="mt-1 text-xs text-slate-500">Última evolução: {formatarData(p.ultima_evolucao)}</p>
-                </Link>
-              </li>
-            ))}
-          </ul>
+        <div className="px-4 pb-4 sm:px-5">
+          <FiltrosLista {...filtros} />
+        </div>
 
-          {/* Computador: tabela */}
-          <div className="hidden overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm md:block">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                <tr>
-                  <th className="px-4 py-3">Paciente</th>
-                  <th className="px-4 py-3">Idade</th>
-                  <th className="px-4 py-3">Bairro</th>
-                  <th className="px-4 py-3">Diagnóstico</th>
-                  <th className="px-4 py-3">Mod.</th>
-                  <th className="px-4 py-3">Situação</th>
-                  <th className="px-4 py-3">Últ. evolução</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {pacientes.map((p) => (
-                  <tr key={p.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 font-medium">
-                      <Link href={`/pacientes/${p.id}`} className="text-teal-800 hover:underline">{p.nome}</Link>
-                    </td>
-                    <td className="px-4 py-3">{calcularIdade(p.data_nascimento) ?? "—"}</td>
-                    <td className="px-4 py-3">{p.bairro || "—"}</td>
-                    <td className="px-4 py-3">{p.diagnostico || "—"}</td>
-                    <td className="px-4 py-3">{p.modalidade || "—"}</td>
-                    <td className="px-4 py-3"><SeloStatus status={p.status} /></td>
-                    <td className="px-4 py-3">{formatarData(p.ultima_evolucao)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {pacientes.length === 0 ? (
+          <div className="border-t border-border px-5 py-12 text-center">
+            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-accent-soft text-accent">
+              <IconePessoas className="h-7 w-7" />
+            </span>
+            <p className="mb-0 mt-3 font-bold text-heading">
+              {filtrando ? "Nenhum paciente encontrado" : "Nenhum paciente cadastrado ainda"}
+            </p>
+            <p className="mb-0 mt-1 text-sm text-muted">
+              {filtrando ? "Ajuste a busca ou os filtros." : "Use “Novo paciente” para fazer o primeiro cadastro."}
+            </p>
           </div>
-        </>
-      )}
+        ) : (
+          <div className="border-t border-border p-3 md:p-0">
+            <TabelaPacientes pacientes={pacientes} />
+          </div>
+        )}
+      </section>
     </div>
   );
 }
