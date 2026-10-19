@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { exigirPermissao } from "@/lib/auth";
 import { formularioVazio } from "@/lib/formulario";
 import { listarBairros, listarUapss } from "@/lib/pacientes";
@@ -5,6 +6,7 @@ import { hojeISO } from "@/lib/opcoes";
 import { FormularioPaciente } from "../formulario";
 
 export default async function NovoPaciente() {
+  await connection();
   await exigirPermissao("cadastrar");
   const [uapss, bairros] = await Promise.all([listarUapss(), listarBairros()]);
   return (

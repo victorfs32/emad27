@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import Link from "next/link";
 import type { ItemLista } from "@/lib/pacientes";
 import { calcularIdade, formatarData } from "@/lib/opcoes";
@@ -14,7 +15,8 @@ function Etiquetas({ p }: { p: ItemLista }) {
   );
 }
 
-export function TabelaPacientes({ pacientes }: { pacientes: ItemLista[] }) {
+export async function TabelaPacientes({ pacientes }: { pacientes: ItemLista[] }) {
+  await connection(); // idade usa a data atual
   return (
     <>
       {/* Celular: cartões */}

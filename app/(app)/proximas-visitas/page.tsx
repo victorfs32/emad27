@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import Link from "next/link";
 import { listarProximasVisitas } from "@/lib/pacientes";
 import { formatarData, hojeISO } from "@/lib/opcoes";
@@ -5,6 +6,7 @@ import { IconeCalendario } from "../icones";
 import { SeloStatus } from "../selo-status";
 
 export default async function ProximasVisitas() {
+  await connection();
   const visitas = await listarProximasVisitas();
   const hoje = hojeISO();
   const limite = hojeISO(7);

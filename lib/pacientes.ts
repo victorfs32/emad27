@@ -1,5 +1,6 @@
 import "server-only";
 import { cache } from "react";
+import { connection } from "next/server";
 import { supabaseServidor } from "./supabase/servidor";
 import { exigirUsuario } from "./auth";
 import {
@@ -124,6 +125,7 @@ export const resumoPainel = cache(async (): Promise<Resumo> => {
     await sb.from("pacientes_resumo").select("situacao, proxima_visita, lpp, tqt, o2, dieta_vias, uaps, modalidade"),
   ) as { situacao: string; proxima_visita: string | null; lpp: Bool; tqt: Bool; o2: Bool; dieta_vias: string[]; uaps: string | null; modalidade: string | null }[];
 
+  await connection(); // usa a data atual: não pode entrar na pré-renderização
   const hoje = hojeISO();
   const limite = hojeISO(7);
   const r: Resumo = {

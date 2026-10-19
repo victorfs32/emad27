@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { exigirUsuario } from "@/lib/auth";
@@ -39,6 +40,7 @@ const Grade = ({ children }: { children: React.ReactNode }) => (
 const Vazio = ({ children }: { children: React.ReactNode }) => <p className="m-0 text-sm text-muted">{children}</p>;
 
 export default async function Ficha({ params, searchParams }: PageProps<"/pacientes/[id]">) {
+  await connection();
   const [{ id }, sp] = await Promise.all([params, searchParams]);
   const [usuario, ficha] = await Promise.all([exigirUsuario(), obterFicha(Number(id))]);
   if (!ficha) notFound();
@@ -185,6 +187,7 @@ function Cuidadores({ f }: { f: Ficha }) {
 }
 
 async function Acompanhamento({ f, editar, arquivado }: { f: Ficha; editar: boolean; arquivado: boolean }) {
+  await connection();
   const evolucoes = await listarEvolucoes(f.id);
   const hoje = hojeISO();
   const atrasada = f.proxima_visita && f.proxima_visita < hoje;

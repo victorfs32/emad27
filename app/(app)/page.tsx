@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import Link from "next/link";
 import { exigirUsuario } from "@/lib/auth";
 import { lerFiltros, listarBairros, listarPacientes, listarUapss, resumoPainel } from "@/lib/pacientes";
@@ -49,6 +50,7 @@ function Distribuicao({ titulo, itens }: { titulo: string; itens: { nome: string
 }
 
 export default async function Listagem({ searchParams }: PageProps<"/">) {
+  await connection();
   const sp = await searchParams;
   const filtros = lerFiltros(sp, "principais");
   const [usuario, pacientes, resumo, uapss, bairros] = await Promise.all([

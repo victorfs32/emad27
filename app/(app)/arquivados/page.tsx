@@ -1,9 +1,11 @@
+import { connection } from "next/server";
 import { lerFiltros, listarBairros, listarPacientes, listarUapss } from "@/lib/pacientes";
 import { FiltrosLista } from "../filtros-lista";
 import { IconeArquivo } from "../icones";
 import { TabelaPacientes } from "../tabela-pacientes";
 
 export default async function Arquivados({ searchParams }: PageProps<"/arquivados">) {
+  await connection();
   const filtros = lerFiltros(await searchParams, "arquivados");
   const [pacientes, uapss, bairros] = await Promise.all([listarPacientes(filtros), listarUapss(), listarBairros()]);
 
