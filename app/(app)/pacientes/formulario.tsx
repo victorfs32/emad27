@@ -74,7 +74,7 @@ export function FormularioPaciente({ id, inicial }: Props) {
           })}
         </div>
         <label className="flex min-h-12 items-center gap-2.5 text-[15px] font-medium text-heading">
-          <input type="checkbox" name="possui_lpp" value="sim" defaultChecked={v("possui_lpp") === "sim"} className="h-5 w-5 accent-[#1673d1]" />
+          <input type="checkbox" name="possui_lpp" value="sim" defaultChecked={v("possui_lpp") === "sim"} className="h-5 w-5 accent-[#1d6f57]" />
           Paciente com lesão por pressão (LPP)
         </label>
         {texto("proxima_visita", "Próxima visita", { type: "date" })}

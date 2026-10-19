@@ -2,23 +2,23 @@
 
 /* Design tokens — mesma linguagem visual do Dashboard Entregas (Baixa Fácil). */
 :root {
-  --dash-bg: #f3f6fb;
+  --dash-bg: #f1f5f1;
   --dash-surface: #ffffff;
-  --dash-text: #46526b;
-  --dash-heading: #0f1b33;
-  --dash-muted: #6f7d96;
-  --dash-border: #e3e9f3;
-  --dash-accent: #1673d1;
-  --dash-accent-2: #12397a;
-  --dash-accent-hover: #0f5fb0;
-  --dash-accent-dark: #0b4a94;
-  --dash-accent-soft: #e6f0fc;
-  --dash-accent-soft-strong: #bbd5f5;
-  --dash-secondary-bg: #edf1f8;
-  --dash-detail-bg: #f7f9fd;
-  --dash-sidebar-start: #0b1f44;
-  --dash-sidebar-end: #050e21;
-  --dash-sidebar-muted: #9fb3d6;
+  --dash-text: #4a5a52;
+  --dash-heading: #14231d;
+  --dash-muted: #73847b;
+  --dash-border: #e0e8e0;
+  --dash-accent: #1d6f57;
+  --dash-accent-2: #14503f;
+  --dash-accent-hover: #175b47;
+  --dash-accent-dark: #0f4535;
+  --dash-accent-soft: #e2ece5;
+  --dash-accent-soft-strong: #b9d3c3;
+  --dash-secondary-bg: #e9efe9;
+  --dash-detail-bg: #f6f9f6;
+  --dash-sidebar-start: #f4f7f3;
+  --dash-sidebar-end: #edf2ec;
+  --dash-sidebar-muted: #5d6e65;
   --dash-success: #2ead5b;
   --dash-success-soft: #d3f3de;
   --dash-success-strong: #0f6b37;
@@ -28,14 +28,14 @@
   --dash-danger: #c62828;
   --dash-danger-soft: #ffdcea;
   --dash-danger-strong: #8c1d49;
-  --dash-info: #0a55a8;
-  --dash-info-soft: #d9e7ff;
-  --dash-info-strong: #0c3c78;
-  --dash-gradient: linear-gradient(135deg, #0b1f44 0%, #12397a 55%, #1673d1 100%);
-  --dash-gradient-bright: linear-gradient(135deg, #1673d1 0%, #3b8fe8 100%);
+  --dash-info: #1d6f57;
+  --dash-info-soft: #e2ece5;
+  --dash-info-strong: #14503f;
+  --dash-gradient: linear-gradient(135deg, #14503f 0%, #1d6f57 100%);
+  --dash-gradient-bright: linear-gradient(135deg, #1d6f57 0%, #2a8a6d 100%);
   --dash-shadow-sm: 0 1px 2px rgba(15, 27, 51, 0.04);
-  --dash-shadow-md: 0 8px 24px -8px rgba(15, 40, 90, 0.14);
-  --dash-shadow-lg: 0 20px 45px -15px rgba(15, 40, 90, 0.28);
+  --dash-shadow-md: 0 8px 24px -8px rgba(20, 60, 45, 0.14);
+  --dash-shadow-lg: 0 20px 45px -15px rgba(20, 60, 45, 0.28);
 }
 
 @theme inline {
@@ -101,14 +101,14 @@ body {
 /* Componentes reutilizados nas telas */
 .campo {
   @apply w-full rounded-2xl border border-border bg-surface px-3.5 py-3 text-[15px] text-heading outline-none transition;
-  @apply placeholder:text-muted/70 focus:border-accent focus:shadow-[0_0_0_3px_rgba(22,115,209,0.2)];
+  @apply placeholder:text-muted/70 focus:border-accent focus:shadow-[0_0_0_3px_rgba(29,111,87,0.2)];
 }
 .rotulo {
   @apply mb-1.5 block text-sm font-semibold text-heading;
 }
 .btn-primario {
   @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl px-5 py-2.5 text-[15px] font-bold text-white transition;
-  @apply bg-brand-gradient shadow-[0_10px_26px_-8px_rgba(22,115,209,0.6)] hover:-translate-y-px hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70;
+  @apply bg-accent shadow-card-md hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-70;
 }
 .btn-secundario {
   @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-border bg-surface px-5 py-2.5 text-[15px] font-semibold text-heading transition;

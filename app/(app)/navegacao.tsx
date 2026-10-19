@@ -13,8 +13,8 @@ type Props = { nome: string; cadastrados: number; visitas: number; arquivados: n
 
 function Marca() {
   return (
-    <span className="flex items-center gap-3 text-white">
-      <span className="bg-brand-gradient-bright flex h-10 w-10 items-center justify-center rounded-xl shadow-[0_6px_18px_-4px_rgba(22,115,209,0.6)]">
+    <span className="flex items-center gap-3 text-heading">
+      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent text-white">
         <IconeMais className="h-5 w-5" />
       </span>
       <span className="leading-tight">
@@ -40,11 +40,11 @@ export function Navegacao({ nome, cadastrados, visitas, arquivados }: Props) {
   return (
     <>
       {/* Barra superior (celular) */}
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-white/10 bg-sidebar-start px-4 py-2.5 lg:hidden">
+      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-surface px-4 py-2.5 lg:hidden">
         <Link href="/"><Marca /></Link>
         <button
           onClick={() => setAberto(true)}
-          className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/15 text-white"
+          className="flex h-11 w-11 items-center justify-center rounded-xl border border-border text-heading"
           aria-label="Abrir menu"
         >
           <IconeMenu />
@@ -52,12 +52,12 @@ export function Navegacao({ nome, cadastrados, visitas, arquivados }: Props) {
       </header>
 
       {aberto && (
-        <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setAberto(false)} aria-hidden="true" />
+        <div className="fixed inset-0 z-40 bg-black/40 lg:hidden" onClick={() => setAberto(false)} aria-hidden="true" />
       )}
 
       {/* Menu lateral */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col gap-6 overflow-y-auto border-r border-white/6 bg-gradient-to-b from-sidebar-start to-sidebar-end p-6 text-white transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col gap-6 overflow-y-auto border-r border-border bg-gradient-to-b from-sidebar-start to-sidebar-end p-6 text-heading transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
           aberto ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -68,8 +68,8 @@ export function Navegacao({ nome, cadastrados, visitas, arquivados }: Props) {
           </button>
         </div>
 
-        <div className="flex items-center gap-3 rounded-2xl border border-white/8 bg-white/5 p-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 text-white">
+        <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent-soft text-accent">
             <IconeCasa />
           </span>
           <span className="leading-tight">
@@ -79,7 +79,7 @@ export function Navegacao({ nome, cadastrados, visitas, arquivados }: Props) {
         </div>
 
         <nav aria-label="Principal">
-          <p className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-muted/80">
+          <p className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-sidebar-muted">
             Área de trabalho
           </p>
           <ul className="flex flex-col gap-1.5">
@@ -91,13 +91,13 @@ export function Navegacao({ nome, cadastrados, visitas, arquivados }: Props) {
                   aria-current={ativo ? "page" : undefined}
                   className={`relative flex min-h-12 items-center gap-3 rounded-[13px] px-3.5 font-medium transition-colors ${
                     ativo
-                      ? "bg-brand-gradient-bright font-semibold text-white shadow-[0_8px_20px_-6px_rgba(22,115,209,0.55)]"
-                      : "text-sidebar-muted hover:bg-white/6 hover:text-white"
+                      ? "bg-secondary font-semibold text-heading"
+                      : "text-sidebar-muted hover:bg-secondary hover:text-heading"
                   }`}
                 >
                   <Icone className="h-5 w-5" />
                   <span className="flex-1">{rotulo}</span>
-                  <span className={`rounded-md px-1.5 py-0.5 text-xs font-semibold ${ativo ? "bg-white/20" : "bg-white/8"}`}>
+                  <span className={`rounded-md px-1.5 py-0.5 text-xs font-semibold ${ativo ? "bg-surface text-accent" : "bg-secondary"}`}>
                     {n}
                   </span>
                 </Link>
@@ -106,25 +106,25 @@ export function Navegacao({ nome, cadastrados, visitas, arquivados }: Props) {
           </ul>
         </nav>
 
-        <div className="rounded-2xl border border-white/8 bg-white/5 p-4 text-sm">
-          <IconeEscudo className="h-5 w-5 text-[#7fb6f2]" />
+        <div className="rounded-2xl bg-accent-soft p-4 text-sm">
+          <IconeEscudo className="h-5 w-5 text-accent" />
           <p className="mt-2 font-semibold">Seu espaço de cuidado</p>
           <p className="mt-1 text-sidebar-muted">Acesso privado, vinculado à sua conta.</p>
-          <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-[#7fb6f2]">
+          <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-accent">
             <span className="h-1.5 w-1.5 rounded-full bg-success" /> Ambiente privado
           </p>
         </div>
 
-        <div className="mt-auto flex items-center gap-3 border-t border-white/8 pt-[18px]">
-          <span className="bg-brand-gradient flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-base font-bold">
+        <div className="mt-auto flex items-center gap-3 border-t border-border pt-[18px]">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-accent-soft text-base font-bold text-accent">
             {nome.trim().charAt(0).toUpperCase()}
           </span>
           <span className="flex min-w-0 flex-1 flex-col leading-tight">
             <strong className="truncate text-sm">{nome}</strong>
-            <span className="text-xs text-slate-400">Equipe</span>
+            <span className="text-xs text-muted">Equipe</span>
           </span>
           <form action={sair}>
-            <button className="flex h-10 w-10 items-center justify-center rounded-xl text-sidebar-muted hover:bg-white/8 hover:text-white" aria-label="Sair">
+            <button className="flex h-10 w-10 items-center justify-center rounded-xl text-sidebar-muted hover:bg-secondary hover:text-heading" aria-label="Sair">
               <IconeSair />
             </button>
           </form>

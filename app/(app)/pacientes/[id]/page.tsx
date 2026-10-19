@@ -42,7 +42,7 @@ export default async function Ficha({ params }: PageProps<"/pacientes/[id]">) {
     <div className="grid gap-5">
       <Link href="/" className="text-sm font-semibold text-accent hover:underline">← Voltar à lista</Link>
 
-      <div className="bg-brand-gradient flex flex-wrap items-start justify-between gap-4 rounded-[28px] p-6 text-white shadow-[0_18px_40px_-16px_rgba(22,115,209,0.55)]">
+      <div className="bg-brand-gradient flex flex-wrap items-start justify-between gap-4 rounded-[28px] p-6 text-white shadow-card-lg">
         <div>
           <p className="m-0 text-[11.5px] font-bold uppercase tracking-[0.14em] text-white/70">Ficha do paciente</p>
           <h1 className="m-0 mt-1.5 text-[30px] font-extrabold leading-tight tracking-[-0.02em]">{paciente.nome}</h1>

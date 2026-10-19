@@ -14,7 +14,7 @@ export function FiltrosLista({ busca, status, modalidade, lpp, grupo }: Props) {
   return (
     <form role="search" className="grid gap-3">
       <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
-        <label className="flex items-center gap-2.5 rounded-2xl border border-border bg-surface px-3.5 focus-within:border-accent focus-within:shadow-[0_0_0_3px_rgba(22,115,209,0.2)]">
+        <label className="flex items-center gap-2.5 rounded-2xl border border-border bg-surface px-3.5 focus-within:border-accent focus-within:shadow-[0_0_0_3px_rgba(29,111,87,0.2)]">
           <IconeBusca className="h-[18px] w-[18px] text-muted" />
           <input
             name="q"
@@ -47,7 +47,7 @@ export function FiltrosLista({ busca, status, modalidade, lpp, grupo }: Props) {
             </select>
           </div>
           <label className="flex min-h-12 items-center gap-2.5 self-end text-[15px] font-medium text-heading">
-            <input type="checkbox" name="lpp" value="1" defaultChecked={lpp} className="h-5 w-5 accent-[#1673d1]" />
+            <input type="checkbox" name="lpp" value="1" defaultChecked={lpp} className="h-5 w-5 accent-[#1d6f57]" />
             Somente pacientes com LPP
           </label>
         </div>

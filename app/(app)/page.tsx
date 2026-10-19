@@ -13,24 +13,24 @@ function Indicador({
     <div
       className={`rounded-[22px] p-5 ${
         destaque
-          ? "bg-brand-gradient text-white shadow-[0_18px_40px_-16px_rgba(22,115,209,0.55)]"
+          ? "border border-accent-soft-strong bg-accent-soft"
           : "border border-border bg-surface shadow-card"
       }`}
     >
       <div className="flex items-center justify-between gap-2">
-        <p className={`m-0 text-[13px] font-semibold ${destaque ? "text-white/80" : "text-muted"}`}>{rotulo}</p>
+        <p className={`m-0 text-[13px] font-semibold ${"text-muted"}`}>{rotulo}</p>
         <span
           className={`flex h-9 w-9 items-center justify-center rounded-xl ${
-            destaque ? "bg-white/15 text-white" : "bg-accent-soft text-accent"
+            destaque ? "bg-white text-accent" : "bg-accent-soft text-accent"
           }`}
         >
           <Icone className="h-[18px] w-[18px]" />
         </span>
       </div>
-      <p className={`mb-0 mt-3 text-[40px] font-extrabold leading-none tracking-[-0.03em] ${destaque ? "" : "text-heading"}`}>
+      <p className={`mb-0 mt-3 text-[40px] font-extrabold leading-none tracking-[-0.03em] text-heading`}>
         {valor}
       </p>
-      <p className={`mb-0 mt-2 text-xs ${destaque ? "text-white/75" : "text-muted"}`}>{apoio}</p>
+      <p className={`mb-0 mt-2 text-xs text-muted`}>{apoio}</p>
     </div>
   );
 }
