@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { exigirPermissao, exigirUsuario } from "@/lib/auth";
 import { supabaseServidor } from "@/lib/supabase/servidor";
 import {
-  adicionarEvolucao, buscarCid, definirProximaVisita, gravarPaciente, obterFicha, reAdmitir, salvarPerfil,
+  adicionarEvolucao, buscarCid, gravarDispositivo, removerDispositivo, trocarDispositivo, definirProximaVisita, gravarPaciente, obterFicha, reAdmitir, salvarPerfil,
   type Perfil,
 } from "@/lib/pacientes";
 import type { DadosForm, ResultadoSalvar } from "@/lib/formulario";
@@ -91,4 +91,32 @@ export async function atualizarPerfil(userId: string, fd: FormData) {
   }
   await salvarPerfil(userId, p);
   revalidatePath("/equipe");
+}
+
+export type ResultadoDispositivo = { erro?: string; ok?: boolean };
+
+export async function salvarDispositivo(
+  id: number | null, pacienteId: number,
+  dados: { tipo: string; numero: string; confeccao: string; troca: string; proxima_troca: string; obs: string },
+): Promise<ResultadoDispositivo> {
+  await exigirPermissao("editar");
+  if (!Number.isSafeInteger(pacienteId)) return { erro: "Selecione o paciente." };
+  const r = await gravarDispositivo(id, pacienteId, dados);
+  if (r.erro) return r;
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+export async function registrarTroca(id: number, fd: FormData) {
+  await exigirPermissao("editar");
+  const data = String(fd.get("data") ?? "");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return;
+  await trocarDispositivo(id, data);
+  revalidatePath("/", "layout");
+}
+
+export async function excluirDispositivo(id: number) {
+  await exigirPermissao("editar");
+  await removerDispositivo(id);
+  revalidatePath("/", "layout");
 }

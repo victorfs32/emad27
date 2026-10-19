@@ -5,7 +5,7 @@ import { exigirUsuario } from "@/lib/auth";
 import { listarEvolucoes, listarHistorico, listarUapss, obterFicha, type Ficha } from "@/lib/pacientes";
 import {
   CONTINENCIA, DE_QUEM, DIURESE, FISIO, SITUACOES, SITUACOES_ARQUIVADAS, TIPOS_EVOLUCAO, VIAS_DIETA,
-  calcularIdade, formatarData, formatarDataHora, hojeISO, rotulo, simNao, valorOuNI,
+  TIPOS_DISPOSITIVO, calcularIdade, formatarData, formatarDataHora, hojeISO, rotulo, simNao, situacaoTroca, valorOuNI,
 } from "@/lib/opcoes";
 import { formatarCep, formatarCns, formatarCpf, formatarTelefone } from "@/lib/validacao";
 import { nomeDoCampo, valorLegivel } from "@/lib/rotulos";
@@ -312,6 +312,32 @@ function Clinico({ f }: { f: Ficha }) {
         </Grade>
       </Secao>
 
+      <Secao titulo="Dispositivos e trocas">
+        {f.dispositivos.length === 0 ? (
+          <Vazio>
+            Nenhum dispositivo (GTT, SNG, SNE, SVD, cistostomia) registrado.{" "}
+            <Link href="/dispositivos" className="font-semibold text-accent hover:underline">Registrar em Dispositivos</Link>
+          </Vazio>
+        ) : (
+          <ul className="m-0 grid list-none gap-2 p-0">
+            {f.dispositivos.map((d) => {
+              const s = situacaoTroca(d.proxima_troca, hojeISO());
+              return (
+                <li key={d.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl bg-detail px-4 py-3 text-sm">
+                  <strong className="text-heading">{TIPOS_DISPOSITIVO.find((t) => t.valor === d.tipo)?.sigla ?? d.tipo}</strong>
+                  <span className="text-muted">
+                    nº {d.numero || "não informado"} · confecção {d.confeccao || "não informada"} · troca {d.troca ? formatarData(d.troca) : "não informada"}
+                  </span>
+                  <span className={`rounded-lg px-2 py-0.5 text-xs font-bold ${s === "vencida" ? "bg-danger-soft text-danger-strong" : s === "proxima" ? "bg-warning-soft text-warning-strong" : "bg-[#fff7cc] text-[#6b5b00]"}`}>
+                    próxima: {d.proxima_troca ? formatarData(d.proxima_troca) : "sem data"}{s === "vencida" ? " · vencida" : ""}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Secao>
+
       <Secao titulo="Traqueostomia (TQT)">
         <Grade>
           <Dado rotulo="Possui TQT" valor={simNao(f.tqt)} />
@@ -362,7 +388,7 @@ function Clinico({ f }: { f: Ficha }) {
 }
 
 const TIPOS_HISTORICO: Record<string, string> = {
-  cadastro: "Cadastro", alteracao: "Alteração", situacao: "Situação", lista: "Lista", admissao: "Admissão",
+  cadastro: "Cadastro", alteracao: "Alteração", situacao: "Situação", lista: "Lista", admissao: "Admissão", dispositivo: "Dispositivo",
 };
 
 async function Historico({ id }: { id: number }) {
@@ -398,6 +424,15 @@ async function Historico({ id }: { id: number }) {
                     {(det.de as unknown[] | undefined)?.length ?? 0} → {(det.para as unknown[] | undefined)?.length ?? 0} itens
                   </p>
                 )}
+                {h.tipo === "dispositivo" && (() => {
+                  const alvo = (det.para ?? det) as Record<string, unknown>;
+                  const partes = [
+                    alvo.numero ? `nº ${alvo.numero}` : "",
+                    alvo.troca ? `troca ${formatarData(String(alvo.troca))}` : "",
+                    alvo.proxima_troca ? `próxima ${formatarData(String(alvo.proxima_troca))}` : "",
+                  ].filter(Boolean);
+                  return partes.length ? <p className="mb-0 mt-1 text-sm text-muted">{partes.join(" · ")}</p> : null;
+                })()}
                 {h.tipo === "admissao" && (
                   <p className="mb-0 mt-1 text-sm text-muted">
                     Anterior: {formatarData(String(det.admissao_anterior ?? ""))} · Nova: {formatarData(String(det.nova_admissao ?? ""))}

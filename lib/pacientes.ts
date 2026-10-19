@@ -5,7 +5,7 @@ import { supabaseServidor } from "./supabase/servidor";
 import { exigirUsuario } from "./auth";
 import {
   CONTINENCIA, DE_QUEM, DIURESE, FISIO, MODALIDADES, SITUACOES, SITUACOES_ARQUIVADAS, SITUACOES_PRINCIPAIS,
-  VIAS_DIETA, VIAS_SONDA, hojeISO,
+  TIPOS_DISPOSITIVO, VIAS_DIETA, VIAS_SONDA, hojeISO, somarMeses,
 } from "./opcoes";
 import { soDigitos, validarCns, validarCpf } from "./validacao";
 import { formularioVazio, type DadosForm, type Duplicado, type TriEstado } from "./formulario";
@@ -49,6 +49,7 @@ export type Ficha = {
   diagnosticos: { id: number; cid: string; descricao: string | null; principal: boolean }[];
   lesoes_pressao: { id: number; localizacao: string; classificacao: string | null; cobertura: string | null; data_avaliacao: string | null }[];
   admissoes: { id: number; admissao: string | null; saida: string | null; situacao_saida: string | null; motivo: string | null; obs: string | null }[];
+  dispositivos: { id: number; tipo: string; numero: string | null; confeccao: string | null; troca: string | null; proxima_troca: string | null; obs: string | null }[];
 };
 
 export type Evolucao = { id: number; data: string; tipo: string; texto: string; autor: string };
@@ -145,7 +146,6 @@ export const resumoPainel = cache(async (): Promise<Resumo> => {
     if (l.o2) r.o2++;
     const sonda = !!l.dieta_vias?.some((v) => (VIAS_SONDA as readonly string[]).includes(v));
     if (sonda) r.sonda++;
-    if (l.tqt || l.o2 || sonda || l.diurese === "svd" || l.diurese === "cistostomia") r.dispositivos++;
     if (l.proxima_visita && l.proxima_visita >= hoje && l.proxima_visita <= limite) r.visitas7dias++;
     uaps.set(l.uaps ?? "Não informada", (uaps.get(l.uaps ?? "Não informada") ?? 0) + 1);
     mod.set(l.modalidade ?? "Não informada", (mod.get(l.modalidade ?? "Não informada") ?? 0) + 1);
@@ -155,6 +155,11 @@ export const resumoPainel = cache(async (): Promise<Resumo> => {
     .select("id, pacientes!inner(situacao)", { count: "exact", head: true })
     .in("pacientes.situacao", [...SITUACOES_PRINCIPAIS]);
   r.lesoes = contagemLesoes.count ?? 0;
+  const contagemDisp = await sb
+    .from("dispositivos")
+    .select("id, pacientes!inner(situacao)", { count: "exact", head: true })
+    .in("pacientes.situacao", [...SITUACOES_PRINCIPAIS]);
+  r.dispositivos = contagemDisp.count ?? 0;
   const ordenar = (m: Map<string, number>) => [...m].map(([nome, n]) => ({ nome, n })).sort((a, b) => b.n - a.n);
   r.porUaps = ordenar(uaps);
   r.porModalidade = ordenar(mod);
@@ -180,13 +185,14 @@ export async function obterFicha(id: number): Promise<Ficha | null> {
   const sb = await supabaseServidor();
   const r = await sb
     .from("pacientes")
-    .select("*, uaps:uapss(nome), telefones(*), cuidadores(*), diagnosticos(*), lesoes_pressao(*), admissoes(*)")
+    .select("*, uaps:uapss(nome), telefones(*), cuidadores(*), diagnosticos(*), lesoes_pressao(*), admissoes(*), dispositivos(*)")
     .eq("id", id)
     .order("id", { referencedTable: "telefones" })
     .order("id", { referencedTable: "cuidadores" })
     .order("id", { referencedTable: "diagnosticos" })
     .order("id", { referencedTable: "lesoes_pressao" })
     .order("id", { referencedTable: "admissoes", ascending: false })
+    .order("id", { referencedTable: "dispositivos" })
     .maybeSingle();
   return ok(r) as unknown as Ficha | null;
 }
@@ -419,7 +425,7 @@ export async function listarParaExportar(f: Filtros): Promise<Ficha[]> {
   const ids = ok(await aplicarFiltros(sb.from("pacientes_resumo").select("id").order("nome"), f)) as { id: number }[];
   if (!ids.length) return [];
   return ok(
-    await sb.from("pacientes").select("*, uaps:uapss(nome), telefones(*), cuidadores(*), diagnosticos(*), lesoes_pressao(*), admissoes(*)")
+    await sb.from("pacientes").select("*, uaps:uapss(nome), telefones(*), cuidadores(*), diagnosticos(*), lesoes_pressao(*), admissoes(*), dispositivos(*)")
       .in("id", ids.map((i) => i.id)).order("nome"),
   ) as unknown as Ficha[];
 }
@@ -455,42 +461,70 @@ export function lerFiltros(sp: Record<string, string | string[] | undefined>, gr
 }
 
 // ------------------------------------------------------------------ dispositivos e lesões
-export type TipoDispositivo = "tqt" | "o2" | "sonda" | "urinario";
-export const TIPOS_DISPOSITIVO: { valor: TipoDispositivo; rotulo: string }[] = [
-  { valor: "tqt", rotulo: "Traqueostomia" },
-  { valor: "o2", rotulo: "Oxigênio" },
-  { valor: "sonda", rotulo: "Sonda / gastrostomia" },
-  { valor: "urinario", rotulo: "Sonda vesical / cistostomia" },
-];
-
-export type PacienteDispositivos = {
-  id: number; nome: string; prontuario: string; bairro: string | null; uaps: { nome: string } | null;
-  tqt: boolean | null; tqt_canula_tipo: string | null; tqt_calibre: string | null; tqt_ultima_troca: string | null;
-  o2: boolean | null; o2_dispositivo: string | null; o2_fluxo: number | null; o2_regime: string | null;
-  dieta_vias: string[]; diurese: string | null;
+export type DispositivoLinha = {
+  id: number; paciente_id: number; tipo: string; numero: string | null; confeccao: string | null;
+  troca: string | null; proxima_troca: string | null; obs: string | null;
+  pacientes: { id: number; nome: string; prontuario: string; situacao: string; uaps: { nome: string } | null };
 };
 
-const CONDICAO_DISPOSITIVO: Record<TipoDispositivo, string> = {
-  tqt: "tqt.eq.true",
-  o2: "o2.eq.true",
-  sonda: `dieta_vias.ov.{${VIAS_SONDA.join(",")}}`,
-  urinario: "diurese.in.(svd,cistostomia)",
-};
-
-/** Pacientes (lista padrão) que usam algum dispositivo; opcionalmente de um só tipo. */
-export async function listarDispositivos(tipo: string): Promise<PacienteDispositivos[]> {
+/** Dispositivos dos pacientes da lista padrão (filtragem por tipo/prazo é feita na página). */
+export async function listarDispositivos(): Promise<DispositivoLinha[]> {
   await exigirUsuario();
   const sb = await supabaseServidor();
-  const alvo = TIPOS_DISPOSITIVO.find((t) => t.valor === tipo)?.valor;
-  const condicao = alvo ? CONDICAO_DISPOSITIVO[alvo] : Object.values(CONDICAO_DISPOSITIVO).join(",");
   return ok(
     await sb
-      .from("pacientes")
-      .select("id, nome, prontuario, bairro, uaps:uapss(nome), tqt, tqt_canula_tipo, tqt_calibre, tqt_ultima_troca, o2, o2_dispositivo, o2_fluxo, o2_regime, dieta_vias, diurese")
-      .in("situacao", [...SITUACOES_PRINCIPAIS])
-      .or(condicao)
-      .order("nome"),
-  ) as unknown as PacienteDispositivos[];
+      .from("dispositivos")
+      .select("id, paciente_id, tipo, numero, confeccao, troca, proxima_troca, obs, pacientes!inner(id, nome, prontuario, situacao, uaps:uapss(nome))")
+      .in("pacientes.situacao", [...SITUACOES_PRINCIPAIS]),
+  ) as unknown as DispositivoLinha[];
+}
+
+export async function listarPacientesBasico(): Promise<{ id: number; nome: string; prontuario: string }[]> {
+  await exigirUsuario();
+  const sb = await supabaseServidor();
+  return ok(
+    await sb.from("pacientes").select("id, nome, prontuario").in("situacao", [...SITUACOES_PRINCIPAIS]).order("nome"),
+  ) as { id: number; nome: string; prontuario: string }[];
+}
+
+export type DadosDispositivo = {
+  tipo: string; numero: string; confeccao: string; troca: string; proxima_troca: string; obs: string;
+};
+
+export async function gravarDispositivo(id: number | null, pacienteId: number, d: DadosDispositivo): Promise<{ erro?: string }> {
+  const u = await exigirUsuario();
+  if (!u.perms.editar) return { erro: "Você não tem permissão para esta ação." };
+  if (!TIPOS_DISPOSITIVO.some((t) => t.valor === d.tipo)) return { erro: "Selecione o tipo de dispositivo." };
+  for (const [r, v] of [["troca", d.troca], ["próxima troca", d.proxima_troca]] as const)
+    if (v && !dataOk(v)) return { erro: `A data da ${r} é inválida.` };
+  if (d.troca && d.proxima_troca && d.proxima_troca < d.troca) return { erro: "A próxima troca não pode ser anterior à troca." };
+  const sb = await supabaseServidor();
+  const r = await sb.rpc("salvar_dispositivo", {
+    p_id: id, p_paciente: pacienteId,
+    p: {
+      tipo: d.tipo, numero: nul(d.numero.slice(0, 30)), confeccao: nul(d.confeccao.slice(0, 20)),
+      troca: nul(d.troca), proxima_troca: nul(d.proxima_troca), obs: nul(d.obs.slice(0, 500)),
+    },
+  });
+  if (r.error) return { erro: r.error.code === "42501" ? "Você não tem permissão para esta ação." : "Não foi possível salvar: " + r.error.message };
+  return {};
+}
+
+export async function trocarDispositivo(id: number, data: string) {
+  await exigirUsuario();
+  const sb = await supabaseServidor();
+  const d = ok(await sb.from("dispositivos").select("tipo").eq("id", id).maybeSingle()) as { tipo: string } | null;
+  if (!d) throw new Error("Dispositivo não encontrado.");
+  const meses = TIPOS_DISPOSITIVO.find((t) => t.valor === d.tipo)?.meses ?? 3;
+  const r = await sb.rpc("registrar_troca", { p_id: id, p_troca: data, p_proxima: somarMeses(data, meses) });
+  if (r.error) throw new Error(r.error.message);
+}
+
+export async function removerDispositivo(id: number) {
+  await exigirUsuario();
+  const sb = await supabaseServidor();
+  const r = await sb.rpc("remover_dispositivo", { p_id: id });
+  if (r.error) throw new Error(r.error.message);
 }
 
 export type LesaoComPaciente = {

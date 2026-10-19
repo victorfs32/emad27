@@ -96,3 +96,30 @@ export function calcularIdade(nascimento: string | null | undefined) {
   if (hm < m || (hm === m && hd < d)) idade--;
   return idade >= 0 ? idade : null;
 }
+
+// ---- Dispositivos trocáveis (planilha DEVICES)
+export const TIPOS_DISPOSITIVO = [
+  { valor: "gtt", rotulo: "Gastrostomia (GTT)", sigla: "GTT", meses: 6 },
+  { valor: "sng", rotulo: "Sonda nasogástrica (SNG)", sigla: "SNG", meses: 3 },
+  { valor: "sne", rotulo: "Sonda nasoenteral (SNE)", sigla: "SNE", meses: 3 },
+  { valor: "svd", rotulo: "Sonda vesical de demora (SVD)", sigla: "SVD", meses: 1 },
+  { valor: "cistostomia", rotulo: "Cistostomia", sigla: "Cistostomia", meses: 1 },
+] as const;
+
+/** Soma meses a uma data yyyy-mm-dd, mantendo o dia (ou o último dia do mês quando não existir). */
+export function somarMeses(iso: string, meses: number) {
+  const [a, m, d] = iso.split("-").map(Number);
+  if (!a || !m || !d) return "";
+  const alvo = new Date(Date.UTC(a, m - 1 + meses, 1));
+  const ultimo = new Date(Date.UTC(alvo.getUTCFullYear(), alvo.getUTCMonth() + 1, 0)).getUTCDate();
+  alvo.setUTCDate(Math.min(d, ultimo));
+  return alvo.toISOString().slice(0, 10);
+}
+
+export type SituacaoTroca = "vencida" | "proxima" | "ok" | "sem";
+/** Classifica a próxima troca: vencida, nos próximos 30 dias, em dia ou sem data. */
+export function situacaoTroca(proxima: string | null | undefined, hoje: string): SituacaoTroca {
+  if (!proxima) return "sem";
+  if (proxima < hoje) return "vencida";
+  return proxima <= somarMeses(hoje, 1) ? "proxima" : "ok";
+}

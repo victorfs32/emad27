@@ -1,7 +1,7 @@
 import { lerFiltros, listarParaExportar, type Ficha } from "@/lib/pacientes";
 import { exigirPermissao } from "@/lib/auth";
 import {
-  CONTINENCIA, DIURESE, FISIO, SITUACOES, VIAS_DIETA, calcularIdade, formatarData, rotulo, simNao,
+  CONTINENCIA, DIURESE, FISIO, SITUACOES, TIPOS_DISPOSITIVO, VIAS_DIETA, calcularIdade, formatarData, rotulo, simNao,
 } from "@/lib/opcoes";
 import { formatarCns, formatarCpf, formatarTelefone } from "@/lib/validacao";
 
@@ -48,6 +48,10 @@ export async function GET(request: Request) {
     ["LPP", (f) => simNao(f.lpp)],
     ["Oxigênio", (f) => simNao(f.o2)],
     ["Fluxo O₂ (L/min)", (f) => (f.o2_fluxo === null ? "" : String(f.o2_fluxo))],
+    ["Dispositivos (número / troca / próxima troca)", (f) =>
+      f.dispositivos
+        .map((d) => `${TIPOS_DISPOSITIVO.find((t) => t.valor === d.tipo)?.sigla ?? d.tipo} ${d.numero ?? "s/n"} / ${d.troca ? formatarData(d.troca) : "-"} / ${d.proxima_troca ? formatarData(d.proxima_troca) : "-"}`)
+        .join(" | ")],
     ["Próxima visita", (f) => (f.proxima_visita ? formatarData(f.proxima_visita) : "")],
   ];
 
