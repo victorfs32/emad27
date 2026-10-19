@@ -3,7 +3,8 @@ import { connection } from "next/server";
 import { exigirUsuario } from "@/lib/auth";
 import { listarBairros, listarControleVisitas } from "@/lib/pacientes";
 import { deslocarMes, hojeISO, limitesDoMes, mesValido, nomeDoMes } from "@/lib/opcoes";
-import { IconeBusca, IconeVisita } from "../icones";
+import { IconeBusca, IconeMais, IconeVisita } from "../icones";
+import { FormVisita } from "./form-visita";
 import { GradeVisitas, type DiaGrade, type GrupoGrade } from "./grade-visitas";
 
 export default async function ControleVisitas({ searchParams }: PageProps<"/visitas">) {
@@ -66,9 +67,20 @@ export default async function ControleVisitas({ searchParams }: PageProps<"/visi
         <p className="m-0 text-[12.5px] font-semibold uppercase tracking-[0.14em] text-muted">Visitas domiciliares</p>
         <h1 className="m-0 mt-1 text-[32px] font-extrabold tracking-[-0.02em] text-heading">Controle de visitas<span className="text-accent">.</span></h1>
         <p className="m-0 mt-1 text-sm text-muted">
-          Clique no dia para marcar a visita (X); clique no X para desfazer. Cada visita entra também no acompanhamento da ficha.
+          Registre a visita pelo formulário, por “+ hoje” na linha do paciente ou clicando no dia; clique no X para desfazer. Cada visita entra também no acompanhamento da ficha.
         </p>
       </header>
+
+      {editar && (
+        <details className="cartao" open>
+          <summary className="flex cursor-pointer list-none items-center gap-2 text-base font-bold text-heading">
+            <IconeMais className="h-5 w-5 text-accent" /> Registrar visita
+          </summary>
+          <div className="mt-4">
+            <FormVisita pacientes={todas.map((l) => ({ id: l.id, nome: l.nome, prontuario: l.prontuario }))} hoje={hoje} />
+          </div>
+        </details>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">

@@ -19,6 +19,8 @@ export function GradeVisitas({ grupos, dias, hoje, editar }: Props) {
   const [pendente, iniciar] = useTransition();
   const [aviso, setAviso] = useState("");
 
+  const diaHoje = dias.find((d) => d.iso === hoje);
+
   function clicar(p: LinhaGrade, d: DiaGrade) {
     const visitas = p.porDia[d.iso] ?? [];
     setAviso("");
@@ -63,6 +65,16 @@ export function GradeVisitas({ grupos, dias, hoje, editar }: Props) {
                   <td className="sticky left-0 z-10 bg-surface px-4 py-1.5 text-left text-[13px] font-semibold">
                     <Link href={`/pacientes/${p.id}?aba=acompanhamento`} className="text-heading hover:text-accent">{p.nome}</Link>
                     <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-md bg-secondary px-1 text-[11px] font-bold text-heading sm:hidden">{p.total}</span>
+                    {editar && diaHoje && !(p.porDia[hoje]?.length) && (
+                      <button
+                        type="button"
+                        disabled={pendente}
+                        onClick={() => clicar(p, diaHoje)}
+                        className="ml-2 rounded-lg border border-accent-soft-strong bg-accent-soft px-2 py-0.5 text-[11px] font-bold text-accent hover:bg-accent hover:text-white"
+                      >
+                        + hoje
+                      </button>
+                    )}
                   </td>
                   <td className="sticky z-10 hidden bg-surface px-2 py-1.5 text-[13px] font-extrabold sm:table-cell" style={{ left: 192 }}>
                     <span className={p.total === 0 ? "text-danger-strong" : "text-heading"}>{p.total}</span>

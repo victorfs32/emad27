@@ -121,15 +121,21 @@ export async function excluirDispositivo(id: number) {
   revalidatePath("/", "layout");
 }
 
-/** Marca uma visita domiciliar num dia (conta no controle de visitas do mês). */
-export async function registrarVisitaDia(pacienteId: number, data: string): Promise<{ erro?: string }> {
+/** Registra uma visita domiciliar (conta no controle de visitas do mês e entra no acompanhamento da ficha). */
+export async function salvarVisita(pacienteId: number, data: string, nota: string): Promise<{ erro?: string }> {
   await exigirPermissao("editar");
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return { erro: "Data inválida." };
-  if (data > hojeISO()) return { erro: "Não é possível marcar visita em data futura." };
-  if (!Number.isSafeInteger(pacienteId)) return { erro: "Paciente inválido." };
-  await gravarVisita(pacienteId, data, "");
+  if (!Number.isSafeInteger(pacienteId)) return { erro: "Escolha o paciente." };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return { erro: "Informe a data da visita." };
+  if (data > hojeISO()) return { erro: "Não é possível registrar visita em data futura." };
+  const r = await gravarVisita(pacienteId, data, nota.slice(0, 1000));
+  if (r.erro) return r;
   revalidatePath("/", "layout");
   return {};
+}
+
+/** Clique num dia da grade: registra a visita daquele dia. */
+export async function registrarVisitaDia(pacienteId: number, data: string): Promise<{ erro?: string }> {
+  return salvarVisita(pacienteId, data, "");
 }
 
 export async function desfazerRegistro(id: number) {

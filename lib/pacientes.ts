@@ -581,8 +581,14 @@ export async function listarControleVisitas(mes: string, apenasUsuario: string |
   });
 }
 
-export async function registrarVisita(pacienteId: number, data: string, nota: string) {
+export async function registrarVisita(pacienteId: number, data: string, nota: string): Promise<{ erro?: string }> {
+  const sb = await supabaseServidor();
+  const ja = ok(
+    await sb.from("evolucoes").select("id, autor").eq("paciente_id", pacienteId).eq("tipo", TIPO_VISITA).eq("data", data).limit(1),
+  ) as { id: number; autor: string }[];
+  if (ja.length) return { erro: `Já existe visita registrada neste dia (por ${ja[0].autor}).` };
   await adicionarEvolucao(pacienteId, { data, tipo: TIPO_VISITA, texto: nota.trim() || "Visita domiciliar realizada." });
+  return {};
 }
 
 /** Remove um registro de acompanhamento lançado por engano (fica no histórico do paciente). */
