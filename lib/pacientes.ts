@@ -5,7 +5,7 @@ import { supabaseServidor } from "./supabase/servidor";
 import { exigirUsuario } from "./auth";
 import {
   CONTINENCIA, DE_QUEM, DIURESE, FISIO, MODALIDADES, SITUACOES, SITUACOES_ARQUIVADAS, SITUACOES_PRINCIPAIS,
-  TIPOS_DISPOSITIVO, VIAS_DIETA, VIAS_SONDA, hojeISO, somarMeses,
+  PROCEDIMENTOS, TIPOS_DISPOSITIVO, TIPO_VISITA, VIAS_DIETA, VIAS_SONDA, deslocarMes, hojeISO, limitesDoMes, somarMeses,
 } from "./opcoes";
 import { soDigitos, validarCns, validarCpf } from "./validacao";
 import { formularioVazio, type DadosForm, type Duplicado, type TriEstado } from "./formulario";
@@ -114,7 +114,7 @@ export async function listarProximasVisitas(): Promise<ItemLista[]> {
 
 export type Resumo = {
   cadastrados: number; ativos: number; visitas7dias: number; lpp: number; arquivados: number;
-  tqt: number; o2: number; sonda: number; dispositivos: number; lesoes: number;
+  tqt: number; o2: number; sonda: number; dispositivos: number; lesoes: number; visitasMes: number; procedimentosMes: number;
   porUaps: { nome: string; n: number }[]; porModalidade: { nome: string; n: number }[];
 };
 
@@ -130,7 +130,7 @@ export const resumoPainel = cache(async (): Promise<Resumo> => {
   const hoje = hojeISO();
   const limite = hojeISO(7);
   const r: Resumo = {
-    cadastrados: 0, ativos: 0, visitas7dias: 0, lpp: 0, arquivados: 0, tqt: 0, o2: 0, sonda: 0, dispositivos: 0, lesoes: 0, porUaps: [], porModalidade: [],
+    cadastrados: 0, ativos: 0, visitas7dias: 0, lpp: 0, arquivados: 0, tqt: 0, o2: 0, sonda: 0, dispositivos: 0, lesoes: 0, visitasMes: 0, procedimentosMes: 0, porUaps: [], porModalidade: [],
   };
   const uaps = new Map<string, number>();
   const mod = new Map<string, number>();
@@ -160,6 +160,13 @@ export const resumoPainel = cache(async (): Promise<Resumo> => {
     .select("id, pacientes!inner(situacao)", { count: "exact", head: true })
     .in("pacientes.situacao", [...SITUACOES_PRINCIPAIS]);
   r.dispositivos = contagemDisp.count ?? 0;
+  const { inicio, fim } = limitesDoMes(hoje.slice(0, 7));
+  const [cVisitas, cProc] = await Promise.all([
+    sb.from("evolucoes").select("id", { count: "exact", head: true }).eq("tipo", TIPO_VISITA).gte("data", inicio).lt("data", fim),
+    sb.from("procedimentos").select("id", { count: "exact", head: true }).gte("data", inicio).lt("data", fim),
+  ]);
+  r.visitasMes = cVisitas.count ?? 0;
+  r.procedimentosMes = cProc.count ?? 0;
   const ordenar = (m: Map<string, number>) => [...m].map(([nome, n]) => ({ nome, n })).sort((a, b) => b.n - a.n);
   r.porUaps = ordenar(uaps);
   r.porModalidade = ordenar(mod);
@@ -479,12 +486,12 @@ export async function listarDispositivos(): Promise<DispositivoLinha[]> {
   ) as unknown as DispositivoLinha[];
 }
 
-export async function listarPacientesBasico(): Promise<{ id: number; nome: string; prontuario: string }[]> {
+export async function listarPacientesBasico(): Promise<{ id: number; nome: string; prontuario: string; uaps: string | null }[]> {
   await exigirUsuario();
   const sb = await supabaseServidor();
   return ok(
-    await sb.from("pacientes").select("id, nome, prontuario").in("situacao", [...SITUACOES_PRINCIPAIS]).order("nome"),
-  ) as { id: number; nome: string; prontuario: string }[];
+    await sb.from("pacientes_resumo").select("id, nome, prontuario, uaps").in("situacao", [...SITUACOES_PRINCIPAIS]).order("nome"),
+  ) as { id: number; nome: string; prontuario: string; uaps: string | null }[];
 }
 
 export type DadosDispositivo = {
@@ -544,4 +551,86 @@ export async function listarLesoes(): Promise<LesaoComPaciente[]> {
       .order("data_avaliacao", { ascending: true, nullsFirst: true })
       .order("id"),
   ) as unknown as LesaoComPaciente[];
+}
+
+// ------------------------------------------------------------------ controle de visitas
+export type VisitaRegistro = { id: number; paciente_id: number; data: string; usuario_id: string | null; autor: string; texto: string };
+export type LinhaVisitas = {
+  id: number; nome: string; prontuario: string; uaps: string | null; bairro: string | null;
+  proxima_visita: string | null; situacao: string; visitas: VisitaRegistro[]; ultima: string | null;
+};
+
+/** Pacientes da lista padrão com as visitas domiciliares do mês (e a última visita dos 6 meses anteriores). */
+export async function listarControleVisitas(mes: string, apenasUsuario: string | null): Promise<LinhaVisitas[]> {
+  await exigirUsuario();
+  const sb = await supabaseServidor();
+  const { inicio, fim } = limitesDoMes(mes);
+  const janela = limitesDoMes(deslocarMes(mes, -6)).inicio;
+
+  const [pacientes, registros] = await Promise.all([
+    sb.from("pacientes_resumo").select("id, nome, prontuario, uaps, bairro, proxima_visita, situacao")
+      .in("situacao", [...SITUACOES_PRINCIPAIS]).order("nome"),
+    sb.from("evolucoes").select("id, paciente_id, data, usuario_id, autor, texto").eq("tipo", TIPO_VISITA)
+      .gte("data", janela).lt("data", fim).order("data"),
+  ]);
+  const regs = ok(registros) as VisitaRegistro[];
+  return (ok(pacientes) as Omit<LinhaVisitas, "visitas" | "ultima">[]).map((p) => {
+    const dele = regs.filter((r) => r.paciente_id === p.id && (!apenasUsuario || r.usuario_id === apenasUsuario));
+    const doMes = dele.filter((r) => r.data >= inicio);
+    return { ...p, visitas: doMes, ultima: dele.length ? dele[dele.length - 1].data : null };
+  });
+}
+
+export async function registrarVisita(pacienteId: number, data: string, nota: string) {
+  await adicionarEvolucao(pacienteId, { data, tipo: TIPO_VISITA, texto: nota.trim() || "Visita domiciliar realizada." });
+}
+
+/** Remove um registro de acompanhamento lançado por engano (fica no histórico do paciente). */
+export async function removerRegistro(id: number) {
+  await exigirUsuario();
+  const sb = await supabaseServidor();
+  const r = await sb.rpc("remover_evolucao", { p_id: id });
+  if (r.error) throw new Error(r.error.message);
+}
+
+// ------------------------------------------------------------------ procedimentos
+export type Procedimento = {
+  id: number; paciente_id: number; data: string; tipo: string; obs: string | null; autor: string;
+  pacientes: { id: number; nome: string; prontuario: string; uaps: { nome: string } | null };
+};
+
+export async function listarProcedimentos(f: { mes?: string; tipo?: string; pacienteId?: number }): Promise<Procedimento[]> {
+  await exigirUsuario();
+  const sb = await supabaseServidor();
+  let q = sb.from("procedimentos").select("id, paciente_id, data, tipo, obs, autor, pacientes!inner(id, nome, prontuario, uaps:uapss(nome))")
+    .order("data", { ascending: false }).order("id", { ascending: false }).limit(500);
+  if (f.mes) {
+    const { inicio, fim } = limitesDoMes(f.mes);
+    q = q.gte("data", inicio).lt("data", fim);
+  }
+  if (f.tipo) q = q.eq("tipo", f.tipo);
+  if (f.pacienteId) q = q.eq("paciente_id", f.pacienteId);
+  return ok(await q) as unknown as Procedimento[];
+}
+
+export async function gravarProcedimento(
+  pacienteId: number, d: { data: string; tipo: string; obs: string },
+): Promise<{ erro?: string }> {
+  const u = await exigirUsuario();
+  if (!u.perms.editar) return { erro: "Você não tem permissão para esta ação." };
+  if (!dataOk(d.data)) return { erro: "Informe a data do procedimento." };
+  if (d.data > hojeISO()) return { erro: "A data não pode ser futura." };
+  if (!(PROCEDIMENTOS as readonly string[]).includes(d.tipo)) return { erro: "Selecione o procedimento." };
+  const obs = d.obs.trim().slice(0, 1000);
+  const sb = await supabaseServidor();
+  const r = await sb.from("procedimentos").insert({ paciente_id: pacienteId, data: d.data, tipo: d.tipo, obs: obs || null });
+  if (r.error) return { erro: "Não foi possível salvar: " + r.error.message };
+  return {};
+}
+
+export async function removerProcedimentoDb(id: number) {
+  await exigirUsuario();
+  const sb = await supabaseServidor();
+  const r = await sb.rpc("remover_procedimento", { p_id: id });
+  if (r.error) throw new Error(r.error.message);
 }

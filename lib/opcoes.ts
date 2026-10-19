@@ -121,3 +121,30 @@ export function situacaoTroca(proxima: string | null | undefined, hoje: string):
   if (proxima < hoje) return "vencida";
   return proxima <= somarMeses(hoje, 1) ? "proxima" : "ok";
 }
+
+// ---- Visitas e procedimentos
+export const TIPO_VISITA = "Visita domiciliar";
+
+/** Mesmas colunas da planilha de procedimentos mensal. */
+export const PROCEDIMENTOS = ["GTT", "Curativo", "SVD", "SNG", "EV", "Fisio motora", "Fisio respiratória"] as const;
+export const ROTULO_PROCEDIMENTO: Record<string, string> = { EV: "EV (endovenoso)" };
+
+/** Limites de um mês "yyyy-mm": primeiro dia e primeiro dia do mês seguinte (exclusivo). */
+export function limitesDoMes(mes: string) {
+  const [a, m] = mes.split("-").map(Number);
+  const prox = new Date(Date.UTC(a, m, 1));
+  return { inicio: `${mes}-01`, fim: prox.toISOString().slice(0, 10) };
+}
+
+export function deslocarMes(mes: string, delta: number) {
+  const [a, m] = mes.split("-").map(Number);
+  return new Date(Date.UTC(a, m - 1 + delta, 1)).toISOString().slice(0, 7);
+}
+
+export function nomeDoMes(mes: string) {
+  const [a, m] = mes.split("-").map(Number);
+  const t = new Date(Date.UTC(a, m - 1, 1)).toLocaleDateString("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" });
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
+export const mesValido = (m: unknown): m is string => typeof m === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(m);

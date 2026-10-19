@@ -2,7 +2,7 @@ import { connection } from "next/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { exigirUsuario } from "@/lib/auth";
-import { listarEvolucoes, listarHistorico, listarUapss, obterFicha, type Ficha } from "@/lib/pacientes";
+import { listarEvolucoes, listarHistorico, listarProcedimentos, listarUapss, obterFicha, type Ficha } from "@/lib/pacientes";
 import {
   CONTINENCIA, DE_QUEM, DIURESE, FISIO, SITUACOES, SITUACOES_ARQUIVADAS, TIPOS_EVOLUCAO, VIAS_DIETA,
   TIPOS_DISPOSITIVO, calcularIdade, formatarData, formatarDataHora, hojeISO, rotulo, simNao, situacaoTroca, valorOuNI,
@@ -15,7 +15,7 @@ import { SeloStatus } from "../../selo-status";
 
 const ABAS = [
   ["identificacao", "Identificação"], ["contatos", "Contatos e endereço"], ["cuidador", "Cuidadores"],
-  ["acompanhamento", "Acompanhamento"], ["clinico", "Clínico"], ["historico", "Histórico"],
+  ["acompanhamento", "Acompanhamento"], ["clinico", "Clínico"], ["procedimentos", "Procedimentos"], ["historico", "Histórico"],
 ] as const;
 
 function Dado({ rotulo: r, valor, largo }: { rotulo: string; valor: string; largo?: boolean }) {
@@ -93,6 +93,7 @@ export default async function Ficha({ params, searchParams }: PageProps<"/pacien
       {aba === "cuidador" && <Cuidadores f={ficha} />}
       {aba === "acompanhamento" && <Acompanhamento f={ficha} editar={editar} arquivado={arquivado} />}
       {aba === "clinico" && <Clinico f={ficha} />}
+      {aba === "procedimentos" && <ProcedimentosDoPaciente id={ficha.id} />}
       {aba === "historico" && <Historico id={ficha.id} />}
     </div>
   );
@@ -388,7 +389,7 @@ function Clinico({ f }: { f: Ficha }) {
 }
 
 const TIPOS_HISTORICO: Record<string, string> = {
-  cadastro: "Cadastro", alteracao: "Alteração", situacao: "Situação", lista: "Lista", admissao: "Admissão", dispositivo: "Dispositivo",
+  cadastro: "Cadastro", alteracao: "Alteração", situacao: "Situação", lista: "Lista", admissao: "Admissão", dispositivo: "Dispositivo", procedimento: "Procedimento", evolucao: "Acompanhamento",
 };
 
 async function Historico({ id }: { id: number }) {
@@ -442,6 +443,29 @@ async function Historico({ id }: { id: number }) {
             );
           })}
         </ol>
+      )}
+    </Secao>
+  );
+}
+
+async function ProcedimentosDoPaciente({ id }: { id: number }) {
+  const itens = await listarProcedimentos({ pacienteId: id });
+  return (
+    <Secao titulo="Procedimentos realizados">
+      {itens.length === 0 ? (
+        <Vazio>
+          Nenhum procedimento registrado. <Link href="/procedimentos" className="font-semibold text-accent hover:underline">Registrar em Procedimentos</Link>
+        </Vazio>
+      ) : (
+        <ul className="m-0 grid list-none gap-2 p-0">
+          {itens.map((p) => (
+            <li key={p.id} className="rounded-2xl bg-detail px-4 py-3 text-sm">
+              <strong className="text-heading">{formatarData(p.data)}</strong> · <span className="font-semibold text-heading">{p.tipo}</span>
+              <span className="text-muted"> · {p.autor}</span>
+              {p.obs && <p className="mb-0 mt-1 text-muted">{p.obs}</p>}
+            </li>
+          ))}
+        </ul>
       )}
     </Secao>
   );

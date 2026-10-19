@@ -21,6 +21,8 @@ async function Casca({ children }: { children: React.ReactNode }) {
         cadastrados={resumo.cadastrados}
         dispositivos={resumo.dispositivos}
         lesoes={resumo.lesoes}
+        visitasMes={resumo.visitasMes}
+        procedimentosMes={resumo.procedimentosMes}
         visitas={resumo.visitas7dias}
         admin={usuario.perms.admin}
         arquivados={resumo.arquivados}

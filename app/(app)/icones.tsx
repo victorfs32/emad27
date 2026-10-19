@@ -41,3 +41,5 @@ export const IconeAjuda = (p: P) => <Icone {...p}><circle cx="12" cy="12" r="9" 
 export const IconeSeta = (p: P) => <Icone {...p}><path d="M9 6l6 6-6 6" /></Icone>;
 export const IconeDispositivo = (p: P) => <Icone {...p}><rect x="8" y="9" width="8" height="12" rx="2" /><path d="M10 9V6a2 2 0 012-2 2 2 0 012 2v3M12 13v4M10 15h4" /></Icone>;
 export const IconeLesao = (p: P) => <Icone {...p}><rect x="3" y="8.5" width="18" height="7" rx="3.5" transform="rotate(-35 12 12)" /><path d="M10.5 10.5h.01M13.5 13.5h.01M12 12h.01" /></Icone>;
+export const IconeVisita = (p: P) => <Icone {...p}><path d="M12 21s-6.5-5.600-6.500-11a6.500 6.500 0 0113 0c0 5.400-6.500 11-6.500 11z" /><path d="M9.500 10l1.800 1.800L14.700 8.400" /></Icone>;
+export const IconeProcedimento = (p: P) => <Icone {...p}><path d="M14 4l6 6M16 6l-9.500 9.500a2 2 0 00-.5 1L5 20l3.500-1a2 2 0 001-.5L19 9M4 20l3-3" /></Icone>;

@@ -5,11 +5,11 @@ import { revalidatePath } from "next/cache";
 import { exigirPermissao, exigirUsuario } from "@/lib/auth";
 import { supabaseServidor } from "@/lib/supabase/servidor";
 import {
-  adicionarEvolucao, buscarCid, gravarDispositivo, removerDispositivo, trocarDispositivo, definirProximaVisita, gravarPaciente, obterFicha, reAdmitir, salvarPerfil,
+  adicionarEvolucao, buscarCid, gravarProcedimento, registrarVisita as gravarVisita, removerProcedimentoDb, removerRegistro, gravarDispositivo, removerDispositivo, trocarDispositivo, definirProximaVisita, gravarPaciente, obterFicha, reAdmitir, salvarPerfil,
   type Perfil,
 } from "@/lib/pacientes";
 import type { DadosForm, ResultadoSalvar } from "@/lib/formulario";
-import { TIPOS_EVOLUCAO } from "@/lib/opcoes";
+import { TIPOS_EVOLUCAO, hojeISO } from "@/lib/opcoes";
 
 export type EstadoLogin = { erro?: string };
 
@@ -118,5 +118,41 @@ export async function registrarTroca(id: number, fd: FormData) {
 export async function excluirDispositivo(id: number) {
   await exigirPermissao("editar");
   await removerDispositivo(id);
+  revalidatePath("/", "layout");
+}
+
+/** Marca uma visita domiciliar num dia (conta no controle de visitas do mês). */
+export async function registrarVisitaDia(pacienteId: number, data: string): Promise<{ erro?: string }> {
+  await exigirPermissao("editar");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return { erro: "Data inválida." };
+  if (data > hojeISO()) return { erro: "Não é possível marcar visita em data futura." };
+  if (!Number.isSafeInteger(pacienteId)) return { erro: "Paciente inválido." };
+  await gravarVisita(pacienteId, data, "");
+  revalidatePath("/", "layout");
+  return {};
+}
+
+export async function desfazerRegistro(id: number) {
+  await exigirPermissao("editar");
+  await removerRegistro(id);
+  revalidatePath("/", "layout");
+}
+
+export type ResultadoProcedimento = { erro?: string; ok?: boolean };
+
+export async function salvarProcedimento(
+  pacienteId: number, dados: { data: string; tipo: string; obs: string },
+): Promise<ResultadoProcedimento> {
+  await exigirPermissao("editar");
+  if (!Number.isSafeInteger(pacienteId)) return { erro: "Selecione o paciente." };
+  const r = await gravarProcedimento(pacienteId, dados);
+  if (r.erro) return r;
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+export async function excluirProcedimento(id: number) {
+  await exigirPermissao("editar");
+  await removerProcedimentoDb(id);
   revalidatePath("/", "layout");
 }

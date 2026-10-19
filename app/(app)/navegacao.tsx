@@ -5,12 +5,13 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { sair } from "../actions";
 import {
-  IconeEscudo as IconeEquipe, IconeDispositivo, IconeLesao, IconeArquivo, IconeCalendario, IconeCasa, IconeEscudo, IconeFechar, IconeMais,
+  IconeEscudo as IconeEquipe, IconeDispositivo, IconeLesao, IconeVisita, IconeProcedimento, IconeArquivo, IconeCalendario, IconeCasa, IconeEscudo, IconeFechar, IconeMais,
   IconeMenu, IconePessoas, IconeSair,
 } from "./icones";
 
 type Props = {
   nome: string; cadastrados: number; dispositivos: number; lesoes: number; visitas: number; arquivados: number; admin: boolean;
+  visitasMes: number; procedimentosMes: number;
 };
 
 function Marca() {
@@ -29,7 +30,7 @@ function Marca() {
   );
 }
 
-export function Navegacao({ nome, cadastrados, dispositivos, lesoes, visitas, arquivados, admin }: Props) {
+export function Navegacao({ nome, cadastrados, dispositivos, lesoes, visitas, arquivados, admin, visitasMes, procedimentosMes }: Props) {
   const [aberto, setAberto] = useState(false);
   const rota = usePathname();
 
@@ -37,6 +38,8 @@ export function Navegacao({ nome, cadastrados, dispositivos, lesoes, visitas, ar
     { href: "/", rotulo: "Pacientes", icone: IconePessoas, n: cadastrados, ativo: rota === "/" || rota.startsWith("/pacientes") },
     { href: "/dispositivos", rotulo: "Dispositivos", icone: IconeDispositivo, n: dispositivos as number | null, ativo: rota === "/dispositivos" },
     { href: "/lesoes", rotulo: "Lesões", icone: IconeLesao, n: lesoes as number | null, ativo: rota === "/lesoes" },
+    { href: "/visitas", rotulo: "Controle de visitas", icone: IconeVisita, n: visitasMes as number | null, ativo: rota === "/visitas" },
+    { href: "/procedimentos", rotulo: "Procedimentos", icone: IconeProcedimento, n: procedimentosMes as number | null, ativo: rota === "/procedimentos" },
     { href: "/proximas-visitas", rotulo: "Próximas visitas", icone: IconeCalendario, n: visitas, ativo: rota === "/proximas-visitas" },
     { href: "/arquivados", rotulo: "Arquivados", icone: IconeArquivo, n: arquivados, ativo: rota === "/arquivados" },
     ...(admin ? [{ href: "/equipe", rotulo: "Equipe", icone: IconeEquipe, n: null as number | null, ativo: rota === "/equipe" }] : []),
