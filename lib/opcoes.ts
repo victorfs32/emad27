@@ -1,21 +1,49 @@
-export const STATUS = [
-  { valor: "ativo", rotulo: "Em acompanhamento", cor: "bg-emerald-100 text-emerald-800" },
-  { valor: "internado", rotulo: "Internado", cor: "bg-amber-100 text-amber-800" },
-  { valor: "suspenso", rotulo: "Suspenso", cor: "bg-slate-200 text-slate-700" },
-  { valor: "alta", rotulo: "Alta", cor: "bg-sky-100 text-sky-800" },
-  { valor: "obito", rotulo: "Óbito", cor: "bg-zinc-300 text-zinc-800" },
+export const SITUACOES = [
+  { valor: "ativo", rotulo: "Ativo" },
+  { valor: "internado", rotulo: "Internado temporariamente" },
+  { valor: "alta", rotulo: "Alta" },
+  { valor: "transferido", rotulo: "Transferido" },
+  { valor: "obito", rotulo: "Óbito" },
 ] as const;
 
-/** Pacientes na lista principal x arquivados. */
-export const STATUS_PRINCIPAIS = ["ativo", "internado", "suspenso"] as const;
-export const STATUS_ARQUIVADOS = ["alta", "obito"] as const;
+/** Lista padrão x arquivados (permanecem no histórico, fora da lista padrão). */
+export const SITUACOES_PRINCIPAIS = ["ativo", "internado"] as const;
+export const SITUACOES_ARQUIVADAS = ["alta", "transferido", "obito"] as const;
 
 export const MODALIDADES = ["AD1", "AD2", "AD3"] as const;
 
-export const SEXOS = [
-  { valor: "F", rotulo: "Feminino" },
-  { valor: "M", rotulo: "Masculino" },
-  { valor: "O", rotulo: "Outro" },
+export const DE_QUEM = [
+  { valor: "paciente", rotulo: "Paciente" },
+  { valor: "cuidador", rotulo: "Cuidador" },
+  { valor: "familiar", rotulo: "Familiar" },
+] as const;
+
+export const FISIO = [
+  { valor: "sim", rotulo: "Sim" },
+  { valor: "nao", rotulo: "Não" },
+  { valor: "aguardando", rotulo: "Aguardando avaliação" },
+] as const;
+
+export const VIAS_DIETA = [
+  { valor: "oral", rotulo: "Oral" },
+  { valor: "sng", rotulo: "Sonda nasogástrica" },
+  { valor: "sne", rotulo: "Sonda nasoenteral" },
+  { valor: "gastrostomia", rotulo: "Gastrostomia" },
+  { valor: "outra", rotulo: "Outra" },
+] as const;
+export const VIAS_SONDA = ["sng", "sne", "gastrostomia"] as const;
+
+export const DIURESE = [
+  { valor: "espontanea", rotulo: "Espontânea" },
+  { valor: "svd", rotulo: "Sonda vesical de demora" },
+  { valor: "cistostomia", rotulo: "Cistostomia" },
+  { valor: "outra", rotulo: "Outra" },
+] as const;
+
+export const CONTINENCIA = [
+  { valor: "continente", rotulo: "Continente" },
+  { valor: "parcial", rotulo: "Parcialmente continente" },
+  { valor: "incontinente", rotulo: "Incontinente" },
 ] as const;
 
 export const TIPOS_EVOLUCAO = [
@@ -27,8 +55,17 @@ export const TIPOS_EVOLUCAO = [
   "Outro",
 ] as const;
 
-export function rotuloStatus(valor: string) {
-  return STATUS.find((s) => s.valor === valor) ?? STATUS[0];
+export function rotulo<T extends readonly { valor: string; rotulo: string }[]>(lista: T, valor: string | null | undefined) {
+  return lista.find((i) => i.valor === valor)?.rotulo;
+}
+
+/** Informação ausente (null) é diferente de resposta negativa (false). */
+export function simNao(v: boolean | null | undefined) {
+  return v === true ? "Sim" : v === false ? "Não" : "Não informado";
+}
+
+export function valorOuNI(v: string | number | null | undefined) {
+  return v === null || v === undefined || v === "" ? "Não informado" : String(v);
 }
 
 export function formatarData(iso: string | null | undefined) {
@@ -37,12 +74,19 @@ export function formatarData(iso: string | null | undefined) {
   return a && m && d ? `${d}/${m}/${a}` : "—";
 }
 
+export function formatarDataHora(iso: string) {
+  return new Date(iso).toLocaleString("pt-BR", {
+    timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
+  });
+}
+
 /** Data de hoje (yyyy-mm-dd) no fuso de Brasília; o servidor da Vercel roda em UTC. */
 export function hojeISO(deslocamentoDias = 0) {
   const agora = new Date(Date.now() + deslocamentoDias * 86400000);
   return agora.toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
 }
 
+/** Idade em anos, sempre calculada a partir da data de nascimento. */
 export function calcularIdade(nascimento: string | null | undefined) {
   if (!nascimento) return null;
   const [a, m, d] = nascimento.split("-").map(Number);

@@ -5,11 +5,11 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { sair } from "../actions";
 import {
-  IconeArquivo, IconeCalendario, IconeCasa, IconeEscudo, IconeFechar, IconeMais,
+  IconeEscudo as IconeEquipe, IconeArquivo, IconeCalendario, IconeCasa, IconeEscudo, IconeFechar, IconeMais,
   IconeMenu, IconePessoas, IconeSair,
 } from "./icones";
 
-type Props = { nome: string; cadastrados: number; visitas: number; arquivados: number };
+type Props = { nome: string; cadastrados: number; visitas: number; arquivados: number; admin: boolean };
 
 function Marca() {
   return (
@@ -27,7 +27,7 @@ function Marca() {
   );
 }
 
-export function Navegacao({ nome, cadastrados, visitas, arquivados }: Props) {
+export function Navegacao({ nome, cadastrados, visitas, arquivados, admin }: Props) {
   const [aberto, setAberto] = useState(false);
   const rota = usePathname();
 
@@ -35,6 +35,7 @@ export function Navegacao({ nome, cadastrados, visitas, arquivados }: Props) {
     { href: "/", rotulo: "Pacientes", icone: IconePessoas, n: cadastrados, ativo: rota === "/" || rota.startsWith("/pacientes") },
     { href: "/proximas-visitas", rotulo: "Próximas visitas", icone: IconeCalendario, n: visitas, ativo: rota === "/proximas-visitas" },
     { href: "/arquivados", rotulo: "Arquivados", icone: IconeArquivo, n: arquivados, ativo: rota === "/arquivados" },
+    ...(admin ? [{ href: "/equipe", rotulo: "Equipe", icone: IconeEquipe, n: null as number | null, ativo: rota === "/equipe" }] : []),
   ];
 
   return (
@@ -97,9 +98,9 @@ export function Navegacao({ nome, cadastrados, visitas, arquivados }: Props) {
                 >
                   <Icone className="h-5 w-5" />
                   <span className="flex-1">{rotulo}</span>
-                  <span className={`rounded-md px-1.5 py-0.5 text-xs font-semibold ${ativo ? "bg-surface text-accent" : "bg-secondary"}`}>
-                    {n}
-                  </span>
+                  {n !== null && (
+                    <span className={`rounded-md px-1.5 py-0.5 text-xs font-semibold ${ativo ? "bg-surface text-accent" : "bg-secondary"}`}>{n}</span>
+                  )}
                 </Link>
               </li>
             ))}

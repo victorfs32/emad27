@@ -3,36 +3,37 @@ import type { ItemLista } from "@/lib/pacientes";
 import { calcularIdade, formatarData } from "@/lib/opcoes";
 import { SeloStatus } from "./selo-status";
 
-const Lpp = () => (
-  <span className="ml-2 rounded-full bg-danger-soft px-2 py-0.5 text-[11px] font-bold text-danger-strong">LPP</span>
-);
+function Etiquetas({ p }: { p: ItemLista }) {
+  const itens = [p.lpp && "LPP", p.tqt && "TQT", p.o2 && "O₂"].filter(Boolean);
+  return (
+    <>
+      {itens.map((t) => (
+        <span key={String(t)} className="ml-1.5 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-bold text-muted">{t}</span>
+      ))}
+    </>
+  );
+}
 
 export function TabelaPacientes({ pacientes }: { pacientes: ItemLista[] }) {
   return (
     <>
       {/* Celular: cartões */}
-      <ul className="grid gap-2.5 md:hidden">
+      <ul className="m-0 grid list-none gap-2.5 p-0 md:hidden">
         {pacientes.map((p) => {
           const idade = calcularIdade(p.data_nascimento);
           return (
             <li key={p.id}>
-              <Link
-                href={`/pacientes/${p.id}`}
-                className="block rounded-[22px] border border-border bg-surface px-4 py-4 shadow-card active:bg-detail"
-              >
+              <Link href={`/pacientes/${p.id}`} className="block rounded-[22px] border border-border bg-surface px-4 py-4 shadow-card active:bg-detail">
                 <div className="flex items-start justify-between gap-2">
-                  <strong className="text-heading">
-                    {p.nome}
-                    {p.possui_lpp && <Lpp />}
-                  </strong>
-                  <SeloStatus status={p.status} />
+                  <strong className="text-heading">{p.nome}<Etiquetas p={p} /></strong>
+                  <SeloStatus status={p.situacao} />
                 </div>
-                <p className="mt-1 text-sm text-muted">
-                  {[idade !== null && `${idade} anos`, p.bairro, p.modalidade].filter(Boolean).join(" · ") || "—"}
+                <p className="mb-0 mt-1 text-sm text-muted">
+                  Pront. {p.prontuario}
+                  {[idade !== null && `${idade} anos`, p.modalidade, p.uaps].filter(Boolean).map((x) => ` · ${x}`).join("")}
                 </p>
-                {p.diagnostico && <p className="mt-1 text-sm">{p.diagnostico}</p>}
-                <p className="mt-1.5 text-xs text-muted">
-                  Últ. evolução: {formatarData(p.ultima_evolucao)}
+                <p className="mb-0 mt-1.5 text-xs text-muted">
+                  {p.bairro ? `${p.bairro} · ` : ""}Últ. evolução: {formatarData(p.ultima_evolucao)}
                   {p.proxima_visita && ` · Próx. visita: ${formatarData(p.proxima_visita)}`}
                 </p>
               </Link>
@@ -46,32 +47,28 @@ export function TabelaPacientes({ pacientes }: { pacientes: ItemLista[] }) {
         <table className="w-full border-collapse text-left text-sm">
           <thead>
             <tr className="text-[11.5px] font-bold uppercase tracking-[0.08em] text-muted">
-              <th className="px-5 py-3">Paciente</th>
+              <th className="px-5 py-3">Prontuário</th>
+              <th className="px-3 py-3">Paciente</th>
               <th className="px-3 py-3">Idade</th>
-              <th className="px-3 py-3">Bairro</th>
-              <th className="px-3 py-3">Diagnóstico</th>
-              <th className="px-3 py-3">Mod.</th>
+              <th className="px-3 py-3">UAPS</th>
               <th className="px-3 py-3">Situação</th>
-              <th className="px-3 py-3">Próx. visita</th>
-              <th className="px-5 py-3">Últ. evolução</th>
+              <th className="px-3 py-3">Mod.</th>
+              <th className="px-5 py-3">Próx. visita</th>
             </tr>
           </thead>
           <tbody>
             {pacientes.map((p) => (
               <tr key={p.id} className="border-t border-border transition hover:bg-detail">
-                <td className="px-5 py-3.5 font-semibold">
-                  <Link href={`/pacientes/${p.id}`} className="text-heading hover:text-accent">
-                    {p.nome}
-                  </Link>
-                  {p.possui_lpp && <Lpp />}
+                <td className="px-5 py-3.5 font-medium tabular-nums">{p.prontuario}</td>
+                <td className="px-3 py-3.5 font-semibold">
+                  <Link href={`/pacientes/${p.id}`} className="text-heading hover:text-accent">{p.nome}</Link>
+                  <Etiquetas p={p} />
                 </td>
                 <td className="px-3 py-3.5">{calcularIdade(p.data_nascimento) ?? "—"}</td>
-                <td className="px-3 py-3.5">{p.bairro || "—"}</td>
-                <td className="px-3 py-3.5">{p.diagnostico || "—"}</td>
+                <td className="px-3 py-3.5">{p.uaps || "—"}</td>
+                <td className="px-3 py-3.5"><SeloStatus status={p.situacao} /></td>
                 <td className="px-3 py-3.5">{p.modalidade || "—"}</td>
-                <td className="px-3 py-3.5"><SeloStatus status={p.status} /></td>
-                <td className="px-3 py-3.5">{formatarData(p.proxima_visita)}</td>
-                <td className="px-5 py-3.5">{formatarData(p.ultima_evolucao)}</td>
+                <td className="px-5 py-3.5">{formatarData(p.proxima_visita)}</td>
               </tr>
             ))}
           </tbody>

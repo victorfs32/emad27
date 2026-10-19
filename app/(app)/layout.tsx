@@ -20,6 +20,7 @@ async function Casca({ children }: { children: React.ReactNode }) {
         nome={usuario.nome}
         cadastrados={resumo.cadastrados}
         visitas={resumo.visitas7dias}
+        admin={usuario.perms.admin}
         arquivados={resumo.arquivados}
       />
       <div className="min-w-0 flex-1">

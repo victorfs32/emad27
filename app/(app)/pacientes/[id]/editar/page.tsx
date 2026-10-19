@@ -1,19 +1,18 @@
 import { notFound } from "next/navigation";
-import { obterPaciente } from "@/lib/pacientes";
+import { exigirPermissao } from "@/lib/auth";
+import { listarBairros, listarUapss, obterFicha, paraFormulario } from "@/lib/pacientes";
 import { FormularioPaciente } from "../../formulario";
 
 export default async function EditarPaciente({ params }: PageProps<"/pacientes/[id]/editar">) {
+  await exigirPermissao("editar");
   const { id } = await params;
-  const paciente = await obterPaciente(Number(id));
-  if (!paciente) notFound();
+  const [ficha, uapss, bairros] = await Promise.all([obterFicha(Number(id)), listarUapss(), listarBairros()]);
+  if (!ficha) notFound();
 
-  const inicial = Object.fromEntries(
-    Object.entries(paciente).map(([k, v]) => [k, k === "possui_lpp" ? (v ? "sim" : "") : v == null ? "" : String(v)]),
-  );
   return (
-    <div className="space-y-4">
-      <h1 className="text-[28px] font-extrabold tracking-[-0.02em] text-heading">Editar paciente</h1>
-      <FormularioPaciente id={paciente.id} inicial={inicial} />
+    <div className="grid gap-4">
+      <h1 className="m-0 text-[28px] font-extrabold tracking-[-0.02em] text-heading">Editar paciente</h1>
+      <FormularioPaciente id={ficha.id} inicial={paraFormulario(ficha)} uapss={uapss} bairros={bairros} />
     </div>
   );
 }

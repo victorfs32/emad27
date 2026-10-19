@@ -52,9 +52,9 @@ export default async function ProximasVisitas() {
                     </span>
                     <span className="min-w-0 flex-1">
                       <strong className="block truncate text-heading">{p.nome}</strong>
-                      <small className="text-muted">{[p.bairro, p.diagnostico].filter(Boolean).join(" · ") || "—"}</small>
+                      <small className="text-muted">{[`Pront. ${p.prontuario}`, p.bairro, p.uaps].filter(Boolean).join(" · ")}</small>
                     </span>
-                    <SeloStatus status={p.status} />
+                    <SeloStatus status={p.situacao} />
                   </Link>
                 </li>
               ))}

@@ -3,174 +3,444 @@ import { cache } from "react";
 import { supabaseServidor } from "./supabase/servidor";
 import { exigirUsuario } from "./auth";
 import {
-  MODALIDADES, SEXOS, STATUS, STATUS_ARQUIVADOS, STATUS_PRINCIPAIS, hojeISO,
+  CONTINENCIA, DE_QUEM, DIURESE, FISIO, MODALIDADES, SITUACOES, SITUACOES_ARQUIVADAS, SITUACOES_PRINCIPAIS,
+  VIAS_DIETA, VIAS_SONDA, hojeISO,
 } from "./opcoes";
+import { soDigitos, validarCns, validarCpf } from "./validacao";
+import { formularioVazio, type DadosForm, type Duplicado, type TriEstado } from "./formulario";
 
-export const CAMPOS = [
-  "nome", "data_nascimento", "sexo", "cpf", "cns", "telefone",
-  "contato_nome", "contato_telefone", "endereco", "bairro", "municipio", "referencia",
-  "diagnostico", "cid", "origem", "modalidade", "data_admissao",
-  "status", "data_saida", "motivo_saida", "dispositivos", "observacoes",
-  "possui_lpp", "proxima_visita",
-] as const;
-
-export type Campo = (typeof CAMPOS)[number];
-/** Valores do formulário (possui_lpp = "sim" ou ""). */
-export type DadosPaciente = Record<Campo, string>;
-export type Paciente = Omit<{ [K in Campo]: string | null }, "possui_lpp" | "nome" | "status"> & {
-  id: number; nome: string; status: string; possui_lpp: boolean; criado_em: string; atualizado_em: string;
-};
-export type ItemLista = {
-  id: number; nome: string; data_nascimento: string | null; bairro: string | null;
-  diagnostico: string | null; modalidade: string | null; telefone: string | null; status: string;
-  possui_lpp: boolean; proxima_visita: string | null; ultima_evolucao: string | null;
-};
-export type Evolucao = { id: number; data: string; tipo: string; texto: string; autor: string };
+// ------------------------------------------------------------------ tipos
 export type Grupo = "principais" | "arquivados";
-export type Filtros = { busca: string; status: string; modalidade: string; lpp: boolean; grupo: Grupo };
 
-const soDigitos = (s: string) => s.replace(/\D/g, "");
-const dataValida = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s));
-const statusDoGrupo = (g: Grupo): readonly string[] => (g === "arquivados" ? STATUS_ARQUIVADOS : STATUS_PRINCIPAIS);
+export type ItemLista = {
+  id: number; prontuario: string; nome: string; data_nascimento: string | null; cpf: string | null; cns: string | null;
+  situacao: string; modalidade: string | null; uaps_id: number | null; uaps: string | null; bairro: string | null;
+  admissao: string; fisio: string | null; dieta_vias: string[]; diurese: string | null;
+  tqt: boolean | null; lpp: boolean | null; o2: boolean | null; proxima_visita: string | null; ultima_evolucao: string | null;
+};
 
-function ok<T>(r: { data: T | null; error: { message: string } | null }): T {
+export type Filtros = {
+  grupo: Grupo; q: string; uaps: string; bairro: string; situacao: string; modalidade: string;
+  de: string; ate: string; fisio: string; dieta: string; diurese: string; tqt: string; lpp: string; o2: string;
+};
+
+export const filtrosVazios = (grupo: Grupo): Filtros => ({
+  grupo, q: "", uaps: "", bairro: "", situacao: "", modalidade: "", de: "", ate: "",
+  fisio: "", dieta: "", diurese: "", tqt: "", lpp: "", o2: "",
+});
+
+type Bool = boolean | null;
+export type Ficha = {
+  id: number; prontuario: string; nome: string; uaps_id: number | null; uaps: { nome: string } | null;
+  situacao: string; modalidade: string | null; situacao_data: string | null; situacao_motivo: string | null; situacao_obs: string | null;
+  data_nascimento: string | null; admissao: string; cpf: string | null; cns: string | null; rg: string | null; nome_mae: string | null;
+  cep: string | null; municipio: string | null; bairro: string | null; rua: string | null; numero: string | null;
+  complemento: string | null; referencia: string | null;
+  fisio: string | null; fisio_frequencia: string | null; fisio_obs: string | null;
+  dieta_vias: string[]; dieta_outra: string | null; dieta_obs: string | null;
+  diurese: string | null; diurese_outra: string | null; usa_fralda: Bool; continencia: string | null;
+  tqt: Bool; tqt_canula_tipo: string | null; tqt_calibre: string | null; tqt_ultima_troca: string | null; tqt_obs: string | null;
+  lpp: Bool; o2: Bool; o2_dispositivo: string | null; o2_fluxo: number | null; o2_regime: string | null; o2_obs: string | null;
+  proxima_visita: string | null; observacoes: string | null;
+  criado_em: string; atualizado_em: string;
+  telefones: { id: number; numero: string; de_quem: string; whatsapp: Bool }[];
+  cuidadores: { id: number; nome: string; principal: boolean; vinculo: string | null; telefone: string | null; cns: string | null; cpf: string | null }[];
+  diagnosticos: { id: number; cid: string; descricao: string | null; principal: boolean }[];
+  lesoes_pressao: { id: number; localizacao: string; classificacao: string | null; cobertura: string | null; data_avaliacao: string | null }[];
+  admissoes: { id: number; admissao: string | null; saida: string | null; situacao_saida: string | null; motivo: string | null; obs: string | null }[];
+};
+
+export type Evolucao = { id: number; data: string; tipo: string; texto: string; autor: string };
+export type RegistroHistorico = {
+  id: number; em: string; autor: string; tipo: string; resumo: string; detalhes: Record<string, unknown> | null;
+};
+export type Uaps = { id: number; nome: string };
+
+function ok<T>(r: { data: T | null; error: { message: string; code?: string } | null }): T {
   if (r.error) throw new Error(r.error.message);
   return r.data as T;
 }
 
-/** Lê o FormData, normaliza e valida. */
-export function lerFormulario(fd: FormData): { dados: DadosPaciente; erro?: string } {
-  const dados = {} as DadosPaciente;
-  for (const c of CAMPOS) dados[c] = String(fd.get(c) ?? "").trim().slice(0, c === "observacoes" ? 5000 : 500);
-  dados.cpf = soDigitos(dados.cpf);
-  dados.cns = soDigitos(dados.cns);
-  dados.cid = dados.cid.toUpperCase();
-  dados.possui_lpp = dados.possui_lpp === "sim" ? "sim" : "";
-  if (!dados.status) dados.status = "ativo";
-
-  let erro: string | undefined;
-  if (!dados.nome) erro = "Informe o nome do paciente.";
-  else if (dados.cpf && dados.cpf.length !== 11) erro = "CPF deve ter 11 dígitos.";
-  else if (dados.cns && dados.cns.length !== 15) erro = "Cartão SUS (CNS) deve ter 15 dígitos.";
-  else if (!STATUS.some((s) => s.valor === dados.status)) erro = "Situação inválida.";
-  else if (dados.modalidade && !(MODALIDADES as readonly string[]).includes(dados.modalidade)) erro = "Modalidade inválida.";
-  else if (dados.sexo && !SEXOS.some((s) => s.valor === dados.sexo)) erro = "Sexo inválido.";
-  else if (["data_nascimento", "data_admissao", "data_saida", "proxima_visita"].some((c) => dados[c as Campo] && !dataValida(dados[c as Campo])))
-    erro = "Há uma data inválida.";
-  return { dados, erro };
+// ------------------------------------------------------------------ consultas
+/** Aplica os filtros combinados à view pacientes_resumo (ou a qualquer consulta equivalente). */
+function aplicarFiltros<Q>(consulta: Q, f: Filtros): Q {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let q: any = consulta;
+  const grupo = f.grupo === "arquivados" ? SITUACOES_ARQUIVADAS : SITUACOES_PRINCIPAIS;
+  q = q.in("situacao", [...grupo]);
+  if (f.situacao && (grupo as readonly string[]).includes(f.situacao)) q = q.eq("situacao", f.situacao);
+  if (/^\d+$/.test(f.uaps)) q = q.eq("uaps_id", Number(f.uaps));
+  if (f.bairro) q = q.eq("bairro", f.bairro);
+  if ((MODALIDADES as readonly string[]).includes(f.modalidade)) q = q.eq("modalidade", f.modalidade);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(f.de)) q = q.gte("admissao", f.de);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(f.ate)) q = q.lte("admissao", f.ate);
+  if (FISIO.some((x) => x.valor === f.fisio)) q = q.eq("fisio", f.fisio);
+  if (VIAS_DIETA.some((x) => x.valor === f.dieta)) q = q.contains("dieta_vias", [f.dieta]);
+  if (DIURESE.some((x) => x.valor === f.diurese)) q = q.eq("diurese", f.diurese);
+  for (const campo of ["tqt", "lpp", "o2"] as const) {
+    const v = f[campo];
+    if (v === "sim") q = q.eq(campo, true);
+    else if (v === "nao") q = q.eq(campo, false);
+    else if (v === "ni") q = q.is(campo, null);
+  }
+  const busca = f.q.trim();
+  if (busca) {
+    // remove caracteres que têm significado na sintaxe do filtro .or()
+    const t = busca.replace(/[,()%*\\]/g, " ").trim();
+    const dig = soDigitos(busca);
+    const partes = [`nome.ilike.%${t}%`, `prontuario.ilike.%${t}%`];
+    if (dig.length >= 3) partes.push(`cpf.like.%${dig}%`, `cns.like.%${dig}%`);
+    if (t) q = q.or(partes.join(","));
+  }
+  return q as Q;
 }
-
-const paraBanco = (d: DadosPaciente) =>
-  Object.fromEntries(CAMPOS.map((c) => [c, c === "possui_lpp" ? d.possui_lpp === "sim" : d[c] || null]));
 
 export async function listarPacientes(f: Filtros): Promise<ItemLista[]> {
   await exigirUsuario();
   const sb = await supabaseServidor();
-  const grupo = statusDoGrupo(f.grupo);
-  let q = sb.from("pacientes_resumo").select("*").in("status", [...grupo]).order("nome");
-  if (f.status && grupo.includes(f.status)) q = q.eq("status", f.status);
-  if (f.modalidade && (MODALIDADES as readonly string[]).includes(f.modalidade)) q = q.eq("modalidade", f.modalidade);
-  if (f.lpp) q = q.eq("possui_lpp", true);
-  if (f.busca) {
-    // remove caracteres que têm significado na sintaxe do filtro .or()
-    const t = f.busca.replace(/[,()%*\\]/g, " ").trim();
-    const dig = soDigitos(f.busca);
-    const filtros = [`nome.ilike.%${t}%`, `bairro.ilike.%${t}%`, `diagnostico.ilike.%${t}%`];
-    if (dig) filtros.push(`cpf.like.%${dig}%`, `cns.like.%${dig}%`);
-    if (t) q = q.or(filtros.join(","));
-  }
-  return ok(await q) as ItemLista[];
+  return ok(await aplicarFiltros(sb.from("pacientes_resumo").select("*").order("nome"), f)) as ItemLista[];
 }
 
 export async function listarProximasVisitas(): Promise<ItemLista[]> {
   await exigirUsuario();
   const sb = await supabaseServidor();
   return ok(
-    await sb
-      .from("pacientes_resumo")
-      .select("*")
-      .in("status", [...STATUS_PRINCIPAIS])
-      .not("proxima_visita", "is", null)
-      .order("proxima_visita")
-      .order("nome"),
+    await sb.from("pacientes_resumo").select("*").in("situacao", [...SITUACOES_PRINCIPAIS])
+      .not("proxima_visita", "is", null).order("proxima_visita").order("nome"),
   ) as ItemLista[];
 }
 
 export type Resumo = {
-  cadastrados: number; acompanhamento: number; visitas7dias: number; lpp: number; arquivados: number;
+  cadastrados: number; ativos: number; visitas7dias: number; lpp: number; arquivados: number;
+  tqt: number; o2: number; sonda: number;
+  porUaps: { nome: string; n: number }[]; porModalidade: { nome: string; n: number }[];
 };
 
 /** Números do painel e do menu lateral. */
 export const resumoPainel = cache(async (): Promise<Resumo> => {
   await exigirUsuario();
   const sb = await supabaseServidor();
-  const linhas = ok(await sb.from("pacientes").select("status, proxima_visita, possui_lpp")) as {
-    status: string; proxima_visita: string | null; possui_lpp: boolean;
-  }[];
+  const linhas = ok(
+    await sb.from("pacientes_resumo").select("situacao, proxima_visita, lpp, tqt, o2, dieta_vias, uaps, modalidade"),
+  ) as { situacao: string; proxima_visita: string | null; lpp: Bool; tqt: Bool; o2: Bool; dieta_vias: string[]; uaps: string | null; modalidade: string | null }[];
+
   const hoje = hojeISO();
   const limite = hojeISO(7);
-  const r: Resumo = { cadastrados: 0, acompanhamento: 0, visitas7dias: 0, lpp: 0, arquivados: 0 };
+  const r: Resumo = {
+    cadastrados: 0, ativos: 0, visitas7dias: 0, lpp: 0, arquivados: 0, tqt: 0, o2: 0, sonda: 0, porUaps: [], porModalidade: [],
+  };
+  const uaps = new Map<string, number>();
+  const mod = new Map<string, number>();
   for (const l of linhas) {
-    if ((STATUS_ARQUIVADOS as readonly string[]).includes(l.status)) {
+    if ((SITUACOES_ARQUIVADAS as readonly string[]).includes(l.situacao)) {
       r.arquivados++;
       continue;
     }
     r.cadastrados++;
-    if (l.status === "ativo") r.acompanhamento++;
-    if (l.possui_lpp) r.lpp++;
+    if (l.situacao === "ativo") r.ativos++;
+    if (l.lpp) r.lpp++;
+    if (l.tqt) r.tqt++;
+    if (l.o2) r.o2++;
+    if (l.dieta_vias?.some((v) => (VIAS_SONDA as readonly string[]).includes(v))) r.sonda++;
     if (l.proxima_visita && l.proxima_visita >= hoje && l.proxima_visita <= limite) r.visitas7dias++;
+    uaps.set(l.uaps ?? "Não informada", (uaps.get(l.uaps ?? "Não informada") ?? 0) + 1);
+    mod.set(l.modalidade ?? "Não informada", (mod.get(l.modalidade ?? "Não informada") ?? 0) + 1);
   }
+  const ordenar = (m: Map<string, number>) => [...m].map(([nome, n]) => ({ nome, n })).sort((a, b) => b.n - a.n);
+  r.porUaps = ordenar(uaps);
+  r.porModalidade = ordenar(mod);
   return r;
 });
 
-export async function obterPaciente(id: number): Promise<Paciente | null> {
+export async function listarUapss(): Promise<Uaps[]> {
+  await exigirUsuario();
+  const sb = await supabaseServidor();
+  return ok(await sb.from("uapss").select("id, nome").eq("ativo", true).order("nome")) as Uaps[];
+}
+
+export async function listarBairros(): Promise<string[]> {
+  await exigirUsuario();
+  const sb = await supabaseServidor();
+  const linhas = ok(await sb.from("pacientes").select("bairro").not("bairro", "is", null)) as { bairro: string }[];
+  return [...new Set(linhas.map((l) => l.bairro))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+}
+
+export async function obterFicha(id: number): Promise<Ficha | null> {
   await exigirUsuario();
   if (!Number.isSafeInteger(id)) return null;
   const sb = await supabaseServidor();
-  return ok(await sb.from("pacientes").select("*").eq("id", id).maybeSingle()) as Paciente | null;
-}
-
-export async function listarTodosParaExportar(): Promise<Paciente[]> {
-  await exigirUsuario();
-  const sb = await supabaseServidor();
-  return ok(await sb.from("pacientes").select("*").order("nome")) as Paciente[];
+  const r = await sb
+    .from("pacientes")
+    .select("*, uaps:uapss(nome), telefones(*), cuidadores(*), diagnosticos(*), lesoes_pressao(*), admissoes(*)")
+    .eq("id", id)
+    .order("id", { referencedTable: "telefones" })
+    .order("id", { referencedTable: "cuidadores" })
+    .order("id", { referencedTable: "diagnosticos" })
+    .order("id", { referencedTable: "lesoes_pressao" })
+    .order("id", { referencedTable: "admissoes", ascending: false })
+    .maybeSingle();
+  return ok(r) as unknown as Ficha | null;
 }
 
 export async function listarEvolucoes(pacienteId: number): Promise<Evolucao[]> {
   await exigirUsuario();
   const sb = await supabaseServidor();
   return ok(
-    await sb
-      .from("evolucoes")
-      .select("id, data, tipo, texto, autor")
-      .eq("paciente_id", pacienteId)
-      .order("data", { ascending: false })
-      .order("id", { ascending: false }),
+    await sb.from("evolucoes").select("id, data, tipo, texto, autor").eq("paciente_id", pacienteId)
+      .order("data", { ascending: false }).order("id", { ascending: false }),
   ) as Evolucao[];
 }
 
-export async function criarPaciente(dados: DadosPaciente): Promise<number> {
+export async function listarHistorico(pacienteId: number): Promise<RegistroHistorico[]> {
   await exigirUsuario();
   const sb = await supabaseServidor();
-  const criado = ok(await sb.from("pacientes").insert(paraBanco(dados)).select("id").single()) as { id: number };
-  return criado.id;
+  return ok(
+    await sb.from("historico").select("id, em, autor, tipo, resumo, detalhes").eq("paciente_id", pacienteId)
+      .order("em", { ascending: false }).order("id", { ascending: false }),
+  ) as RegistroHistorico[];
 }
 
-export async function atualizarPaciente(id: number, dados: DadosPaciente) {
+export async function buscarCid(termo: string): Promise<{ codigo: string; descricao: string }[]> {
   await exigirUsuario();
+  const t = termo.replace(/[,()%*\\]/g, " ").trim();
+  if (t.length < 2) return [];
   const sb = await supabaseServidor();
-  ok(await sb.from("pacientes").update({ ...paraBanco(dados), atualizado_em: new Date().toISOString() }).eq("id", id));
+  return ok(
+    await sb.from("cid10").select("codigo, descricao").or(`codigo.ilike.${t}%,descricao.ilike.%${t}%`).order("codigo").limit(12),
+  ) as { codigo: string; descricao: string }[];
+}
+
+export async function verificarDuplicados(idAtual: number | null, cpf: string | null, cns: string | null): Promise<Duplicado[]> {
+  const sb = await supabaseServidor();
+  const achados: Duplicado[] = [];
+  for (const [campo, valor] of [["CPF", cpf], ["CNS", cns]] as const) {
+    if (!valor) continue;
+    let q = sb.from("pacientes").select("id, nome, prontuario").eq(campo.toLowerCase(), valor);
+    if (idAtual) q = q.neq("id", idAtual);
+    for (const p of ok(await q) as { id: number; nome: string; prontuario: string }[]) achados.push({ ...p, campo });
+  }
+  return achados;
+}
+
+// ------------------------------------------------------------------ gravação
+const dataOk = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s));
+const nul = (s: string) => s.trim() || null;
+const tri = (v: TriEstado | string): Bool => (v === "sim" ? true : v === "nao" ? false : null);
+const triForm = (v: Bool): TriEstado => (v === true ? "sim" : v === false ? "nao" : "");
+
+type Normalizado = { erro: string } | { erro?: undefined; paciente: Record<string, unknown>; listas: Record<string, unknown[]>; cpf: string | null; cns: string | null; uapsNova: string | null };
+
+/** Valida e converte o formulário no formato que a função salvar_paciente espera. */
+export function normalizar(d: DadosForm): Normalizado {
+  const prontuario = d.prontuario.trim();
+  if (!prontuario) return { erro: "Informe o prontuário." };
+  if (prontuario.length > 30) return { erro: "Prontuário muito longo." };
+  if (!d.nome.trim()) return { erro: "Informe o nome do paciente." };
+  if (!SITUACOES.some((s) => s.valor === d.situacao)) return { erro: "Selecione a situação." };
+  if (!dataOk(d.admissao)) return { erro: "Informe a data de admissão." };
+
+  for (const [rotulo, v] of [
+    ["data de nascimento", d.data_nascimento], ["data da situação", d.situacao_data], ["próxima visita", d.proxima_visita],
+    ["última troca da cânula", d.tqt_ultima_troca],
+  ] as const)
+    if (v && !dataOk(v)) return { erro: `A ${rotulo} é inválida.` };
+
+  const cpf = soDigitos(d.cpf) || null;
+  const cns = soDigitos(d.cns) || null;
+  if (cpf && !validarCpf(cpf)) return { erro: "CPF do paciente inválido." };
+  if (cns && !validarCns(cns)) return { erro: "CNS do paciente inválido." };
+  if (d.modalidade && !(MODALIDADES as readonly string[]).includes(d.modalidade)) return { erro: "Modalidade inválida." };
+  if (d.fisio && !FISIO.some((x) => x.valor === d.fisio)) return { erro: "Fisioterapia inválida." };
+  if (d.diurese && !DIURESE.some((x) => x.valor === d.diurese)) return { erro: "Diurese inválida." };
+  if (d.continencia && !CONTINENCIA.some((x) => x.valor === d.continencia)) return { erro: "Continência inválida." };
+  const vias = d.dieta_vias.filter((v) => VIAS_DIETA.some((x) => x.valor === v));
+
+  let fluxo: number | null = null;
+  if (d.o2 === "sim" && d.o2_fluxo.trim()) {
+    fluxo = Number(d.o2_fluxo.replace(",", "."));
+    if (!Number.isFinite(fluxo) || fluxo <= 0 || fluxo > 40) return { erro: "Fluxo de oxigênio inválido (L/min)." };
+  }
+
+  const telefones = d.telefones.filter((t) => t.numero.trim()).map((t) => ({
+    numero: soDigitos(t.numero), de_quem: t.de_quem, whatsapp: tri(t.whatsapp),
+  }));
+  for (const t of telefones) {
+    if (t.numero.length < 10 || t.numero.length > 11) return { erro: "Há telefone com número incompleto (use DDD + número)." };
+    if (!DE_QUEM.some((x) => x.valor === t.de_quem)) return { erro: "Informe de quem é cada telefone." };
+  }
+
+  const cuidadores = d.cuidadores.filter((c) => c.nome.trim() || c.cpf.trim() || c.cns.trim() || c.telefone.trim());
+  for (const c of cuidadores) {
+    if (!c.nome.trim()) return { erro: "Informe o nome de cada cuidador." };
+    if (c.cpf.trim() && !validarCpf(c.cpf)) return { erro: `CPF do cuidador ${c.nome.trim()} inválido.` };
+    if (c.cns.trim() && !validarCns(c.cns)) return { erro: `CNS do cuidador ${c.nome.trim()} inválido.` };
+  }
+  if (cuidadores.filter((c) => c.principal).length > 1) return { erro: "Só pode haver um cuidador principal." };
+  if (cuidadores.length && !cuidadores.some((c) => c.principal)) cuidadores[0].principal = true;
+
+  const diagnosticos = d.diagnosticos.filter((x) => x.cid.trim());
+  if (diagnosticos.filter((x) => x.principal).length > 1) return { erro: "Só pode haver um diagnóstico principal." };
+  if (diagnosticos.length && !diagnosticos.some((x) => x.principal)) diagnosticos[0].principal = true;
+
+  const lesoes = d.lpp === "sim" ? d.lesoes.filter((l) => l.localizacao.trim()) : [];
+  for (const l of lesoes) if (l.data_avaliacao && !dataOk(l.data_avaliacao)) return { erro: "Data de avaliação da lesão inválida." };
+
+  const ativo = d.situacao === "ativo";
+  const paciente = {
+    prontuario, nome: d.nome.trim().replace(/\s+/g, " "), situacao: d.situacao, modalidade: nul(d.modalidade),
+    situacao_data: ativo ? null : nul(d.situacao_data), situacao_motivo: ativo ? null : nul(d.situacao_motivo),
+    situacao_obs: ativo ? null : nul(d.situacao_obs),
+    data_nascimento: nul(d.data_nascimento), admissao: d.admissao, cpf, cns, rg: nul(d.rg), nome_mae: nul(d.nome_mae),
+    cep: soDigitos(d.cep) || null, municipio: nul(d.municipio), bairro: nul(d.bairro), rua: nul(d.rua), numero: nul(d.numero),
+    complemento: nul(d.complemento), referencia: nul(d.referencia),
+    fisio: nul(d.fisio), fisio_frequencia: d.fisio === "sim" ? nul(d.fisio_frequencia) : null, fisio_obs: nul(d.fisio_obs),
+    dieta_vias: vias, dieta_outra: vias.includes("outra") ? nul(d.dieta_outra) : null, dieta_obs: nul(d.dieta_obs),
+    diurese: nul(d.diurese), diurese_outra: d.diurese === "outra" ? nul(d.diurese_outra) : null,
+    usa_fralda: tri(d.usa_fralda), continencia: nul(d.continencia),
+    tqt: tri(d.tqt),
+    tqt_canula_tipo: d.tqt === "sim" ? nul(d.tqt_canula_tipo) : null, tqt_calibre: d.tqt === "sim" ? nul(d.tqt_calibre) : null,
+    tqt_ultima_troca: d.tqt === "sim" ? nul(d.tqt_ultima_troca) : null, tqt_obs: d.tqt === "sim" ? nul(d.tqt_obs) : null,
+    lpp: tri(d.lpp),
+    o2: tri(d.o2), o2_dispositivo: d.o2 === "sim" ? nul(d.o2_dispositivo) : null, o2_fluxo: fluxo,
+    o2_regime: d.o2 === "sim" ? nul(d.o2_regime) : null, o2_obs: d.o2 === "sim" ? nul(d.o2_obs) : null,
+    proxima_visita: nul(d.proxima_visita), observacoes: nul(d.observacoes),
+    uaps_id: /^\d+$/.test(d.uaps_id) ? Number(d.uaps_id) : null,
+  };
+  return {
+    paciente, cpf, cns, uapsNova: d.uaps_id === "nova" ? nul(d.uaps_nova) : null,
+    listas: {
+      telefones,
+      cuidadores: cuidadores.map((c) => ({
+        nome: c.nome.trim(), principal: c.principal, vinculo: nul(c.vinculo), telefone: soDigitos(c.telefone) || null,
+        cns: soDigitos(c.cns) || null, cpf: soDigitos(c.cpf) || null,
+      })),
+      diagnosticos: diagnosticos.map((x) => ({ cid: x.cid.trim().toUpperCase(), descricao: nul(x.descricao), principal: x.principal })),
+      lesoes_pressao: lesoes.map((l) => ({
+        localizacao: l.localizacao.trim(), classificacao: nul(l.classificacao), cobertura: nul(l.cobertura), data_avaliacao: nul(l.data_avaliacao),
+      })),
+    },
+  };
+}
+
+export async function gravarPaciente(
+  id: number | null, d: DadosForm, confirmarDuplicado: boolean,
+): Promise<{ erro?: string; duplicados?: Duplicado[]; id?: number }> {
+  const u = await exigirUsuario();
+  if (id === null ? !u.perms.cadastrar : !u.perms.editar) return { erro: "Você não tem permissão para esta ação." };
+
+  const n = normalizar(d);
+  if (n.erro !== undefined) return { erro: n.erro };
+
+  const sb = await supabaseServidor();
+  if (!confirmarDuplicado) {
+    const dup = await verificarDuplicados(id, n.cpf, n.cns);
+    if (dup.length) return { duplicados: dup };
+  }
+
+  if (n.uapsNova) {
+    const existente = ok(await sb.from("uapss").select("id").ilike("nome", n.uapsNova).maybeSingle()) as { id: number } | null;
+    if (existente) n.paciente.uaps_id = existente.id;
+    else n.paciente.uaps_id = (ok(await sb.from("uapss").insert({ nome: n.uapsNova }).select("id").single()) as { id: number }).id;
+  }
+
+  const r = await sb.rpc("salvar_paciente", { p_id: id, p: { paciente: n.paciente, ...n.listas } });
+  if (r.error) {
+    if (r.error.code === "23505") return { erro: "Já existe um paciente com este prontuário." };
+    if (r.error.code === "42501") return { erro: "Você não tem permissão para esta ação." };
+    return { erro: "Não foi possível salvar: " + r.error.message };
+  }
+  return { id: r.data as number };
 }
 
 export async function definirProximaVisita(id: number, data: string | null) {
   await exigirUsuario();
   const sb = await supabaseServidor();
-  ok(await sb.from("pacientes").update({ proxima_visita: data, atualizado_em: new Date().toISOString() }).eq("id", id));
+  const r = await sb.rpc("definir_proxima_visita", { p_id: id, p_data: data });
+  if (r.error) throw new Error(r.error.message);
+}
+
+export async function reAdmitir(id: number, data: string) {
+  await exigirUsuario();
+  const sb = await supabaseServidor();
+  const r = await sb.rpc("nova_admissao", { p_id: id, p_data: data });
+  if (r.error) throw new Error(r.error.message);
 }
 
 export async function adicionarEvolucao(pacienteId: number, e: { data: string; tipo: string; texto: string }) {
-  const u = await exigirUsuario();
+  await exigirUsuario();
   const sb = await supabaseServidor();
-  ok(await sb.from("evolucoes").insert({ paciente_id: pacienteId, ...e, autor: u.nome }));
-  ok(await sb.from("pacientes").update({ atualizado_em: new Date().toISOString() }).eq("id", pacienteId));
+  ok(await sb.from("evolucoes").insert({ paciente_id: pacienteId, ...e }));
+}
+
+// ------------------------------------------------------------------ ficha -> formulário
+export function paraFormulario(f: Ficha): DadosForm {
+  const v = formularioVazio();
+  const s = (x: string | number | null | undefined) => (x === null || x === undefined ? "" : String(x));
+  return {
+    ...v,
+    prontuario: f.prontuario, nome: f.nome, uaps_id: s(f.uaps_id), situacao: f.situacao, modalidade: s(f.modalidade),
+    situacao_data: s(f.situacao_data), situacao_motivo: s(f.situacao_motivo), situacao_obs: s(f.situacao_obs),
+    data_nascimento: s(f.data_nascimento), admissao: s(f.admissao), cpf: s(f.cpf), cns: s(f.cns), rg: s(f.rg), nome_mae: s(f.nome_mae),
+    cep: s(f.cep), municipio: s(f.municipio), bairro: s(f.bairro), rua: s(f.rua), numero: s(f.numero),
+    complemento: s(f.complemento), referencia: s(f.referencia),
+    fisio: s(f.fisio), fisio_frequencia: s(f.fisio_frequencia), fisio_obs: s(f.fisio_obs),
+    dieta_vias: f.dieta_vias ?? [], dieta_outra: s(f.dieta_outra), dieta_obs: s(f.dieta_obs),
+    diurese: s(f.diurese), diurese_outra: s(f.diurese_outra), usa_fralda: triForm(f.usa_fralda), continencia: s(f.continencia),
+    tqt: triForm(f.tqt), tqt_canula_tipo: s(f.tqt_canula_tipo), tqt_calibre: s(f.tqt_calibre),
+    tqt_ultima_troca: s(f.tqt_ultima_troca), tqt_obs: s(f.tqt_obs),
+    lpp: triForm(f.lpp),
+    o2: triForm(f.o2), o2_dispositivo: s(f.o2_dispositivo), o2_fluxo: s(f.o2_fluxo), o2_regime: s(f.o2_regime), o2_obs: s(f.o2_obs),
+    proxima_visita: s(f.proxima_visita), observacoes: s(f.observacoes),
+    telefones: f.telefones.map((t) => ({ numero: t.numero, de_quem: t.de_quem, whatsapp: triForm(t.whatsapp) })),
+    cuidadores: f.cuidadores.map((c) => ({
+      nome: c.nome, principal: c.principal, vinculo: s(c.vinculo), telefone: s(c.telefone), cns: s(c.cns), cpf: s(c.cpf),
+    })),
+    diagnosticos: f.diagnosticos.map((x) => ({ cid: x.cid, descricao: s(x.descricao), principal: x.principal })),
+    lesoes: f.lesoes_pressao.map((l) => ({
+      localizacao: l.localizacao, classificacao: s(l.classificacao), cobertura: s(l.cobertura), data_avaliacao: s(l.data_avaliacao),
+    })),
+  };
+}
+
+// ------------------------------------------------------------------ exportação e equipe
+export async function listarParaExportar(f: Filtros): Promise<Ficha[]> {
+  const u = await exigirUsuario();
+  if (!u.perms.exportar) throw new Error("Sem permissão para exportar.");
+  const sb = await supabaseServidor();
+  const ids = ok(await aplicarFiltros(sb.from("pacientes_resumo").select("id").order("nome"), f)) as { id: number }[];
+  if (!ids.length) return [];
+  return ok(
+    await sb.from("pacientes").select("*, uaps:uapss(nome), telefones(*), cuidadores(*), diagnosticos(*), lesoes_pressao(*), admissoes(*)")
+      .in("id", ids.map((i) => i.id)).order("nome"),
+  ) as unknown as Ficha[];
+}
+
+export type Perfil = {
+  user_id: string; nome: string; ativo: boolean; admin: boolean; pode_cadastrar: boolean; pode_editar: boolean; pode_exportar: boolean;
+};
+
+export async function listarPerfis(): Promise<Perfil[]> {
+  const u = await exigirUsuario();
+  if (!u.perms.admin) throw new Error("Sem permissão.");
+  const sb = await supabaseServidor();
+  return ok(await sb.from("perfis").select("*").order("nome")) as Perfil[];
+}
+
+export async function salvarPerfil(userId: string, p: Omit<Perfil, "user_id">) {
+  const u = await exigirUsuario();
+  if (!u.perms.admin) throw new Error("Sem permissão.");
+  const sb = await supabaseServidor();
+  ok(await sb.from("perfis").update(p).eq("user_id", userId));
+}
+
+
+/** Lê os filtros da URL (?q=…&uaps=…) com segurança. */
+export function lerFiltros(sp: Record<string, string | string[] | undefined>, grupo: Grupo): Filtros {
+  const f = filtrosVazios(grupo);
+  for (const k of Object.keys(f) as (keyof Filtros)[]) {
+    if (k === "grupo") continue;
+    const v = sp[k];
+    if (typeof v === "string") (f[k] as string) = v.trim().slice(0, 100);
+  }
+  return f;
 }

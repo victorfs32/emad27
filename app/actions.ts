@@ -2,16 +2,16 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { exigirUsuario } from "@/lib/auth";
+import { exigirPermissao, exigirUsuario } from "@/lib/auth";
 import { supabaseServidor } from "@/lib/supabase/servidor";
 import {
-  adicionarEvolucao, atualizarPaciente, criarPaciente, definirProximaVisita, lerFormulario, obterPaciente,
-  type DadosPaciente,
+  adicionarEvolucao, buscarCid, definirProximaVisita, gravarPaciente, obterFicha, reAdmitir, salvarPerfil,
+  type Perfil,
 } from "@/lib/pacientes";
+import type { DadosForm, ResultadoSalvar } from "@/lib/formulario";
 import { TIPOS_EVOLUCAO } from "@/lib/opcoes";
 
 export type EstadoLogin = { erro?: string };
-export type EstadoPaciente = { erro?: string; valores?: DadosPaciente };
 
 export async function entrar(_: EstadoLogin, fd: FormData): Promise<EstadoLogin> {
   const email = String(fd.get("email") ?? "").trim();
@@ -29,37 +29,66 @@ export async function sair() {
   redirect("/login");
 }
 
-export async function salvarPaciente(id: number | null, _: EstadoPaciente, fd: FormData): Promise<EstadoPaciente> {
-  await exigirUsuario();
-  const { dados, erro } = lerFormulario(fd);
-  if (erro) return { erro, valores: dados };
-
-  if (id === null) {
-    redirect(`/pacientes/${await criarPaciente(dados)}`);
-  }
-  if (!(await obterPaciente(id))) redirect("/");
-  await atualizarPaciente(id, dados);
-  revalidatePath("/");
-  redirect(`/pacientes/${id}`);
+/** Cria (id = null) ou atualiza o paciente. Em caso de sucesso, redireciona para a ficha. */
+export async function salvarPaciente(
+  id: number | null, dados: DadosForm, confirmarDuplicado: boolean,
+): Promise<ResultadoSalvar> {
+  await exigirPermissao(id === null ? "cadastrar" : "editar");
+  const r = await gravarPaciente(id, dados, confirmarDuplicado);
+  if (r.erro || r.duplicados) return { erro: r.erro, duplicados: r.duplicados };
+  revalidatePath("/", "layout");
+  redirect(`/pacientes/${r.id}`);
 }
 
 export async function agendarVisita(pacienteId: number, fd: FormData) {
-  await exigirUsuario();
+  await exigirPermissao("editar");
   const data = String(fd.get("proxima_visita") ?? "");
   if (data && !/^\d{4}-\d{2}-\d{2}$/.test(data)) return;
-  if (!(await obterPaciente(pacienteId))) return;
   await definirProximaVisita(pacienteId, data || null);
-  revalidatePath(`/pacientes/${pacienteId}`);
-  revalidatePath("/proximas-visitas");
+  revalidatePath("/", "layout");
+}
+
+export async function novaAdmissao(pacienteId: number, fd: FormData) {
+  await exigirPermissao("editar");
+  const data = String(fd.get("data") ?? "");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return;
+  if (!(await obterFicha(pacienteId))) return;
+  await reAdmitir(pacienteId, data);
+  revalidatePath("/", "layout");
+  redirect(`/pacientes/${pacienteId}?aba=acompanhamento`);
 }
 
 export async function registrarEvolucao(pacienteId: number, fd: FormData) {
-  await exigirUsuario();
+  await exigirPermissao("editar");
   const texto = String(fd.get("texto") ?? "").trim().slice(0, 5000);
   const tipo = String(fd.get("tipo") ?? "");
   const data = String(fd.get("data") ?? "");
   if (!texto || !/^\d{4}-\d{2}-\d{2}$/.test(data) || !(TIPOS_EVOLUCAO as readonly string[]).includes(tipo)) return;
-  if (!(await obterPaciente(pacienteId))) return;
   await adicionarEvolucao(pacienteId, { data, tipo, texto });
   revalidatePath(`/pacientes/${pacienteId}`);
+}
+
+export async function pesquisarCid(termo: string) {
+  await exigirUsuario();
+  return buscarCid(termo);
+}
+
+export async function atualizarPerfil(userId: string, fd: FormData) {
+  const eu = await exigirPermissao("admin");
+  const marcado = (k: string) => fd.get(k) === "on";
+  const p: Omit<Perfil, "user_id"> = {
+    nome: String(fd.get("nome") ?? "").trim().slice(0, 120) || "Sem nome",
+    ativo: marcado("ativo"),
+    admin: marcado("admin"),
+    pode_cadastrar: marcado("pode_cadastrar"),
+    pode_editar: marcado("pode_editar"),
+    pode_exportar: marcado("pode_exportar"),
+  };
+  // Evita o administrador se trancar para fora do sistema.
+  if (userId === eu.id) {
+    p.ativo = true;
+    p.admin = true;
+  }
+  await salvarPerfil(userId, p);
+  revalidatePath("/equipe");
 }
