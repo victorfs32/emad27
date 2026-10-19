@@ -94,7 +94,7 @@ export default async function Dispositivos({ searchParams }: PageProps<"/disposi
         <div>
           <p className="m-0 text-[12.5px] font-semibold uppercase tracking-[0.14em] text-muted">Controle de trocas</p>
           <h1 className="m-0 mt-1 text-[32px] font-extrabold tracking-[-0.02em] text-heading">Dispositivos<span className="text-accent">.</span></h1>
-          <p className="m-0 mt-1 text-sm text-muted">GTT, SNG, SNE, SVD e cistostomia: número, confecção, troca e próxima troca de cada paciente.</p>
+          <p className="m-0 mt-1 text-sm text-muted">GTT, SNG e SVD: número, confecção, troca e próxima troca de cada paciente.</p>
         </div>
       </header>
 
@@ -215,7 +215,7 @@ export default async function Dispositivos({ searchParams }: PageProps<"/disposi
         </>
       )}
       <p className="m-0 text-xs text-muted">
-        “Trocou” registra a troca na data escolhida e calcula a próxima automaticamente (GTT 6 meses, SNG/SNE 3 meses, SVD/cistostomia 1 mês).
+        “Trocou” registra a troca na data escolhida e calcula a próxima automaticamente (GTT 6 meses, SNG 3 meses, SVD 1 mês).
         Para outro prazo, use “Editar”. Pacientes com alta, transferidos ou óbito não aparecem aqui.
       </p>
     </div>

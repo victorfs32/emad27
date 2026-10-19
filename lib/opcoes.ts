@@ -101,9 +101,7 @@ export function calcularIdade(nascimento: string | null | undefined) {
 export const TIPOS_DISPOSITIVO = [
   { valor: "gtt", rotulo: "Gastrostomia (GTT)", sigla: "GTT", meses: 6 },
   { valor: "sng", rotulo: "Sonda nasogástrica (SNG)", sigla: "SNG", meses: 3 },
-  { valor: "sne", rotulo: "Sonda nasoenteral (SNE)", sigla: "SNE", meses: 3 },
   { valor: "svd", rotulo: "Sonda vesical de demora (SVD)", sigla: "SVD", meses: 1 },
-  { valor: "cistostomia", rotulo: "Cistostomia", sigla: "Cistostomia", meses: 1 },
 ] as const;
 
 /** Soma meses a uma data yyyy-mm-dd, mantendo o dia (ou o último dia do mês quando não existir). */

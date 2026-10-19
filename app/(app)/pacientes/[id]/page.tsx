@@ -315,7 +315,7 @@ function Clinico({ f }: { f: Ficha }) {
       <Secao titulo="Dispositivos e trocas">
         {f.dispositivos.length === 0 ? (
           <Vazio>
-            Nenhum dispositivo (GTT, SNG, SNE, SVD, cistostomia) registrado.{" "}
+            Nenhum dispositivo (GTT, SNG ou SVD) registrado.{" "}
             <Link href="/dispositivos" className="font-semibold text-accent hover:underline">Registrar em Dispositivos</Link>
           </Vazio>
         ) : (

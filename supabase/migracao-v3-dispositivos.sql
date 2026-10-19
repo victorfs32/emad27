@@ -1,4 +1,4 @@
--- EMAD 27 — versão 3: controle de dispositivos (GTT, SNG, SNE, SVD, cistostomia)
+-- EMAD 27 — versão 3: controle de dispositivos (GTT, SNG e SVD)
 -- com número, confecção, data da troca e próxima troca. Equivale à planilha DEVICES.
 -- Execute no Supabase: SQL Editor > New query > colar > Run. Pode ser repetido; não apaga dados.
 -- (O mesmo bloco também está no final de schema.sql.)
@@ -6,7 +6,7 @@
 create table if not exists public.dispositivos (
   id bigint generated always as identity primary key,
   paciente_id bigint not null references public.pacientes(id) on delete cascade,
-  tipo text not null check (tipo in ('gtt','sng','sne','svd','cistostomia')),
+  tipo text not null check (tipo in ('gtt','sng','svd')),
   numero text,
   confeccao text,
   troca date,
@@ -25,8 +25,7 @@ create policy ver_dispositivos on public.dispositivos for select to authenticate
 create or replace function public.rotulo_dispositivo(t text) returns text
 language sql immutable as $$
   select case t when 'gtt' then 'Gastrostomia (GTT)' when 'sng' then 'Sonda nasogástrica (SNG)'
-    when 'sne' then 'Sonda nasoenteral (SNE)' when 'svd' then 'Sonda vesical de demora (SVD)'
-    when 'cistostomia' then 'Cistostomia' else t end
+    when 'svd' then 'Sonda vesical de demora (SVD)' else t end
 $$;
 
 -- Cria (p_id nulo) ou atualiza um dispositivo e registra no histórico do paciente.
