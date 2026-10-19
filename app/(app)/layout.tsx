@@ -19,6 +19,8 @@ async function Casca({ children }: { children: React.ReactNode }) {
       <Navegacao
         nome={usuario.nome}
         cadastrados={resumo.cadastrados}
+        dispositivos={resumo.dispositivos}
+        lesoes={resumo.lesoes}
         visitas={resumo.visitas7dias}
         admin={usuario.perms.admin}
         arquivados={resumo.arquivados}

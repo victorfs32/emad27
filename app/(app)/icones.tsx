@@ -39,3 +39,5 @@ export const IconeMenu = (p: P) => <Icone {...p}><path d="M4 7h16M4 12h16M4 17h1
 export const IconeFechar = (p: P) => <Icone {...p}><path d="M6 6l12 12M18 6L6 18" /></Icone>;
 export const IconeAjuda = (p: P) => <Icone {...p}><circle cx="12" cy="12" r="9" /><path d="M9.500 9.500a2.500 2.500 0 114 2c-.9.600-1.500 1-1.500 2M12 17h.01" /></Icone>;
 export const IconeSeta = (p: P) => <Icone {...p}><path d="M9 6l6 6-6 6" /></Icone>;
+export const IconeDispositivo = (p: P) => <Icone {...p}><rect x="8" y="9" width="8" height="12" rx="2" /><path d="M10 9V6a2 2 0 012-2 2 2 0 012 2v3M12 13v4M10 15h4" /></Icone>;
+export const IconeLesao = (p: P) => <Icone {...p}><rect x="3" y="8.5" width="18" height="7" rx="3.5" transform="rotate(-35 12 12)" /><path d="M10.5 10.5h.01M13.5 13.5h.01M12 12h.01" /></Icone>;

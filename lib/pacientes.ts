@@ -113,7 +113,7 @@ export async function listarProximasVisitas(): Promise<ItemLista[]> {
 
 export type Resumo = {
   cadastrados: number; ativos: number; visitas7dias: number; lpp: number; arquivados: number;
-  tqt: number; o2: number; sonda: number;
+  tqt: number; o2: number; sonda: number; dispositivos: number; lesoes: number;
   porUaps: { nome: string; n: number }[]; porModalidade: { nome: string; n: number }[];
 };
 
@@ -122,14 +122,14 @@ export const resumoPainel = cache(async (): Promise<Resumo> => {
   await exigirUsuario();
   const sb = await supabaseServidor();
   const linhas = ok(
-    await sb.from("pacientes_resumo").select("situacao, proxima_visita, lpp, tqt, o2, dieta_vias, uaps, modalidade"),
-  ) as { situacao: string; proxima_visita: string | null; lpp: Bool; tqt: Bool; o2: Bool; dieta_vias: string[]; uaps: string | null; modalidade: string | null }[];
+    await sb.from("pacientes_resumo").select("situacao, proxima_visita, lpp, tqt, o2, dieta_vias, diurese, uaps, modalidade"),
+  ) as { situacao: string; proxima_visita: string | null; lpp: Bool; tqt: Bool; o2: Bool; dieta_vias: string[]; diurese: string | null; uaps: string | null; modalidade: string | null }[];
 
   await connection(); // usa a data atual: não pode entrar na pré-renderização
   const hoje = hojeISO();
   const limite = hojeISO(7);
   const r: Resumo = {
-    cadastrados: 0, ativos: 0, visitas7dias: 0, lpp: 0, arquivados: 0, tqt: 0, o2: 0, sonda: 0, porUaps: [], porModalidade: [],
+    cadastrados: 0, ativos: 0, visitas7dias: 0, lpp: 0, arquivados: 0, tqt: 0, o2: 0, sonda: 0, dispositivos: 0, lesoes: 0, porUaps: [], porModalidade: [],
   };
   const uaps = new Map<string, number>();
   const mod = new Map<string, number>();
@@ -143,11 +143,18 @@ export const resumoPainel = cache(async (): Promise<Resumo> => {
     if (l.lpp) r.lpp++;
     if (l.tqt) r.tqt++;
     if (l.o2) r.o2++;
-    if (l.dieta_vias?.some((v) => (VIAS_SONDA as readonly string[]).includes(v))) r.sonda++;
+    const sonda = !!l.dieta_vias?.some((v) => (VIAS_SONDA as readonly string[]).includes(v));
+    if (sonda) r.sonda++;
+    if (l.tqt || l.o2 || sonda || l.diurese === "svd" || l.diurese === "cistostomia") r.dispositivos++;
     if (l.proxima_visita && l.proxima_visita >= hoje && l.proxima_visita <= limite) r.visitas7dias++;
     uaps.set(l.uaps ?? "Não informada", (uaps.get(l.uaps ?? "Não informada") ?? 0) + 1);
     mod.set(l.modalidade ?? "Não informada", (mod.get(l.modalidade ?? "Não informada") ?? 0) + 1);
   }
+  const contagemLesoes = await sb
+    .from("lesoes_pressao")
+    .select("id, pacientes!inner(situacao)", { count: "exact", head: true })
+    .in("pacientes.situacao", [...SITUACOES_PRINCIPAIS]);
+  r.lesoes = contagemLesoes.count ?? 0;
   const ordenar = (m: Map<string, number>) => [...m].map(([nome, n]) => ({ nome, n })).sort((a, b) => b.n - a.n);
   r.porUaps = ordenar(uaps);
   r.porModalidade = ordenar(mod);
@@ -445,4 +452,62 @@ export function lerFiltros(sp: Record<string, string | string[] | undefined>, gr
     if (typeof v === "string") (f[k] as string) = v.trim().slice(0, 100);
   }
   return f;
+}
+
+// ------------------------------------------------------------------ dispositivos e lesões
+export type TipoDispositivo = "tqt" | "o2" | "sonda" | "urinario";
+export const TIPOS_DISPOSITIVO: { valor: TipoDispositivo; rotulo: string }[] = [
+  { valor: "tqt", rotulo: "Traqueostomia" },
+  { valor: "o2", rotulo: "Oxigênio" },
+  { valor: "sonda", rotulo: "Sonda / gastrostomia" },
+  { valor: "urinario", rotulo: "Sonda vesical / cistostomia" },
+];
+
+export type PacienteDispositivos = {
+  id: number; nome: string; prontuario: string; bairro: string | null; uaps: { nome: string } | null;
+  tqt: boolean | null; tqt_canula_tipo: string | null; tqt_calibre: string | null; tqt_ultima_troca: string | null;
+  o2: boolean | null; o2_dispositivo: string | null; o2_fluxo: number | null; o2_regime: string | null;
+  dieta_vias: string[]; diurese: string | null;
+};
+
+const CONDICAO_DISPOSITIVO: Record<TipoDispositivo, string> = {
+  tqt: "tqt.eq.true",
+  o2: "o2.eq.true",
+  sonda: `dieta_vias.ov.{${VIAS_SONDA.join(",")}}`,
+  urinario: "diurese.in.(svd,cistostomia)",
+};
+
+/** Pacientes (lista padrão) que usam algum dispositivo; opcionalmente de um só tipo. */
+export async function listarDispositivos(tipo: string): Promise<PacienteDispositivos[]> {
+  await exigirUsuario();
+  const sb = await supabaseServidor();
+  const alvo = TIPOS_DISPOSITIVO.find((t) => t.valor === tipo)?.valor;
+  const condicao = alvo ? CONDICAO_DISPOSITIVO[alvo] : Object.values(CONDICAO_DISPOSITIVO).join(",");
+  return ok(
+    await sb
+      .from("pacientes")
+      .select("id, nome, prontuario, bairro, uaps:uapss(nome), tqt, tqt_canula_tipo, tqt_calibre, tqt_ultima_troca, o2, o2_dispositivo, o2_fluxo, o2_regime, dieta_vias, diurese")
+      .in("situacao", [...SITUACOES_PRINCIPAIS])
+      .or(condicao)
+      .order("nome"),
+  ) as unknown as PacienteDispositivos[];
+}
+
+export type LesaoComPaciente = {
+  id: number; localizacao: string; classificacao: string | null; cobertura: string | null; data_avaliacao: string | null;
+  pacientes: { id: number; nome: string; prontuario: string; bairro: string | null };
+};
+
+/** Lesões por pressão registradas, dos pacientes da lista padrão (mais antigas primeiro). */
+export async function listarLesoes(): Promise<LesaoComPaciente[]> {
+  await exigirUsuario();
+  const sb = await supabaseServidor();
+  return ok(
+    await sb
+      .from("lesoes_pressao")
+      .select("id, localizacao, classificacao, cobertura, data_avaliacao, pacientes!inner(id, nome, prontuario, bairro, situacao)")
+      .in("pacientes.situacao", [...SITUACOES_PRINCIPAIS])
+      .order("data_avaliacao", { ascending: true, nullsFirst: true })
+      .order("id"),
+  ) as unknown as LesaoComPaciente[];
 }
