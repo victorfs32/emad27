@@ -39,16 +39,16 @@ export function GradeVisitas({ grupos, dias, hoje, editar }: Props) {
   }
 
   return (
-    <div>
+    <div className="min-w-0">
       {aviso && <p role="alert" className="mb-3 mt-0 rounded-2xl bg-danger-soft px-4 py-3 text-sm font-semibold text-danger-strong">{aviso}</p>}
       <div className={`overflow-x-auto rounded-[22px] border border-border bg-surface shadow-card transition ${pendente ? "opacity-60" : ""}`}>
         <table className="border-collapse text-center text-xs">
           <thead>
             <tr className="bg-[#0d5c63] text-white">
-              <th className="sticky left-0 z-20 min-w-48 bg-[#0d5c63] px-4 py-2 text-left text-[11.5px] font-bold uppercase tracking-[0.06em]">Paciente</th>
+              <th className="sticky left-0 z-20 w-36 min-w-36 bg-[#0d5c63] px-3 py-2 text-left text-[11.5px] font-bold uppercase tracking-[0.06em] sm:w-48 sm:min-w-48 sm:px-4">Paciente</th>
               <th className="sticky left-48 z-20 hidden bg-[#0d5c63] px-2 py-2 text-[11.5px] font-bold uppercase sm:table-cell" style={{ left: 192 }}>Total</th>
               {dias.map((d) => (
-                <th key={d.iso} className={`min-w-9 px-0.5 py-1.5 font-bold ${d.iso === hoje ? "bg-warning text-white" : d.fimDeSemana ? "bg-[#0a4a50]" : ""}`}>
+                <th key={d.iso} className={`min-w-10 px-0.5 py-1.5 font-bold ${d.iso === hoje ? "bg-warning text-white" : d.fimDeSemana ? "bg-[#0a4a50]" : ""}`}>
                   <span className="block text-[10px] opacity-80">{d.sem}</span>
                   <span className="block text-[13px]">{d.n}</span>
                 </th>
@@ -58,23 +58,25 @@ export function GradeVisitas({ grupos, dias, hoje, editar }: Props) {
           {grupos.map((g) => (
             <tbody key={g.uaps}>
               <tr>
-                <th colSpan={2 + dias.length} className="sticky left-0 bg-accent-soft px-4 py-1.5 text-left text-[11px] font-bold uppercase tracking-[0.08em] text-accent">{g.uaps}</th>
+                <th colSpan={2 + dias.length} className="sticky left-0 bg-accent-soft px-3 py-1.5 text-left text-[11px] font-bold uppercase tracking-[0.08em] text-accent sm:px-4">{g.uaps}</th>
               </tr>
               {g.pacientes.map((p) => (
                 <tr key={p.id} className="border-t border-border">
-                  <td className="sticky left-0 z-10 bg-surface px-4 py-1.5 text-left text-[13px] font-semibold">
-                    <Link href={`/pacientes/${p.id}?aba=acompanhamento`} className="text-heading hover:text-accent">{p.nome}</Link>
-                    <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-md bg-secondary px-1 text-[11px] font-bold text-heading sm:hidden">{p.total}</span>
-                    {editar && diaHoje && !(p.porDia[hoje]?.length) && (
-                      <button
-                        type="button"
-                        disabled={pendente}
-                        onClick={() => clicar(p, diaHoje)}
-                        className="ml-2 rounded-lg border border-accent-soft-strong bg-accent-soft px-2 py-0.5 text-[11px] font-bold text-accent hover:bg-accent hover:text-white"
-                      >
-                        + hoje
-                      </button>
-                    )}
+                  <td className="sticky left-0 z-10 w-36 min-w-36 max-w-36 bg-surface px-3 py-1.5 text-left text-[13px] font-semibold sm:w-48 sm:min-w-48 sm:max-w-48 sm:px-4">
+                    <Link href={`/pacientes/${p.id}?aba=acompanhamento`} title={p.nome} className="block truncate text-heading hover:text-accent">{p.nome}</Link>
+                    <span className="mt-0.5 flex items-center gap-1.5">
+                      <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-md bg-secondary px-1 text-[11px] font-bold text-heading sm:hidden">{p.total}</span>
+                      {editar && diaHoje && !(p.porDia[hoje]?.length) && (
+                        <button
+                          type="button"
+                          disabled={pendente}
+                          onClick={() => clicar(p, diaHoje)}
+                          className="rounded-lg border border-accent-soft-strong bg-accent-soft px-2 py-0.5 text-[11px] font-bold text-accent hover:bg-accent hover:text-white"
+                        >
+                          + hoje
+                        </button>
+                      )}
+                    </span>
                   </td>
                   <td className="sticky z-10 hidden bg-surface px-2 py-1.5 text-[13px] font-extrabold sm:table-cell" style={{ left: 192 }}>
                     <span className={p.total === 0 ? "text-danger-strong" : "text-heading"}>{p.total}</span>
@@ -92,12 +94,12 @@ export function GradeVisitas({ grupos, dias, hoje, editar }: Props) {
                             onClick={() => clicar(p, d)}
                             title={marcado ? `Visita por ${v.map((x) => x.autor).join(", ")}` : `Marcar visita em ${d.n}`}
                             aria-label={`${p.nome}, dia ${d.n}: ${marcado ? "visita registrada" : "sem visita"}`}
-                            className={`flex h-9 w-9 items-center justify-center text-[13px] font-extrabold ${marcado ? "bg-[#d9f2e2] text-success-strong hover:bg-danger-soft hover:text-danger-strong" : "text-transparent hover:bg-accent-soft hover:text-accent"}`}
+                            className={`flex h-10 w-10 items-center justify-center text-[13px] font-extrabold ${marcado ? "bg-[#d9f2e2] text-success-strong hover:bg-danger-soft hover:text-danger-strong" : "text-transparent hover:bg-accent-soft hover:text-accent"}`}
                           >
                             {marcado ? (v.length > 1 ? v.length : "X") : "+"}
                           </button>
                         ) : (
-                          <span className={`flex h-9 w-9 items-center justify-center text-[13px] font-extrabold ${marcado ? "bg-[#d9f2e2] text-success-strong" : ""}`}>
+                          <span className={`flex h-10 w-10 items-center justify-center text-[13px] font-extrabold ${marcado ? "bg-[#d9f2e2] text-success-strong" : ""}`}>
                             {marcado ? (v.length > 1 ? v.length : "X") : ""}
                           </span>
                         )}

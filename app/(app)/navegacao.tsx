@@ -38,7 +38,7 @@ export function Navegacao({ nome, cadastrados, dispositivos, lesoes, visitas, ar
     { href: "/", rotulo: "Pacientes", icone: IconePessoas, n: cadastrados, ativo: rota === "/" || rota.startsWith("/pacientes") },
     { href: "/dispositivos", rotulo: "Dispositivos", icone: IconeDispositivo, n: dispositivos as number | null, ativo: rota === "/dispositivos" },
     { href: "/lesoes", rotulo: "Lesões", icone: IconeLesao, n: lesoes as number | null, ativo: rota === "/lesoes" },
-    { href: "/visitas", rotulo: "Controle de visitas", icone: IconeVisita, n: visitasMes as number | null, ativo: rota === "/visitas" },
+    { href: "/visitas", rotulo: "Visitas", icone: IconeVisita, n: visitasMes as number | null, ativo: rota === "/visitas" },
     { href: "/procedimentos", rotulo: "Procedimentos", icone: IconeProcedimento, n: procedimentosMes as number | null, ativo: rota === "/procedimentos" },
     { href: "/proximas-visitas", rotulo: "Próximas visitas", icone: IconeCalendario, n: visitas, ativo: rota === "/proximas-visitas" },
     { href: "/arquivados", rotulo: "Arquivados", icone: IconeArquivo, n: arquivados, ativo: rota === "/arquivados" },
@@ -65,7 +65,7 @@ export function Navegacao({ nome, cadastrados, dispositivos, lesoes, visitas, ar
 
       {/* Menu lateral */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col gap-6 overflow-y-auto border-r border-border bg-gradient-to-b from-sidebar-start to-sidebar-end p-6 text-heading transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col gap-4 overflow-y-auto lg:gap-6 border-r border-border bg-gradient-to-b from-sidebar-start to-sidebar-end p-6 text-heading transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
           aberto ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -114,7 +114,7 @@ export function Navegacao({ nome, cadastrados, dispositivos, lesoes, visitas, ar
           </ul>
         </nav>
 
-        <div className="rounded-2xl bg-accent-soft p-4 text-sm">
+        <div className="hidden rounded-2xl bg-accent-soft p-4 text-sm lg:block">
           <IconeEscudo className="h-5 w-5 text-accent" />
           <p className="mt-2 font-semibold">Seu espaço de cuidado</p>
           <p className="mt-1 text-sidebar-muted">Acesso privado, vinculado à sua conta.</p>

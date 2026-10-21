@@ -117,3 +117,25 @@ body {
 .cartao {
   @apply rounded-[22px] border border-border bg-surface p-4 shadow-card sm:p-5;
 }
+
+/* ---- Celular ---- */
+html {
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  overflow-x: clip;
+}
+@media (max-width: 767px) {
+  /* iOS aplica zoom ao focar campos com fonte menor que 16px */
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Raiz de cada página: a coluna da grade pode encolher; tabelas largas rolam dentro do próprio quadro
+   em vez de alargar a página inteira. */
+main > .grid {
+  grid-template-columns: minmax(0, 1fr);
+}
