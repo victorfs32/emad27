@@ -5,7 +5,7 @@ import { supabaseServidor } from "./supabase/servidor";
 import { exigirUsuario } from "./auth";
 import {
   CONTINENCIA, DE_QUEM, DIURESE, FISIO, MODALIDADES, SITUACOES, SITUACOES_ARQUIVADAS, SITUACOES_PRINCIPAIS,
-  PROCEDIMENTOS, TIPOS_DISPOSITIVO, TIPO_VISITA, VIAS_DIETA, VIAS_SONDA, deslocarMes, hojeISO, limitesDoMes, somarMeses,
+  PROCEDIMENTOS, TIPOS_DISPOSITIVO, TIPO_VISITA, VIAS_DIETA, VIAS_SONDA, hojeISO, limitesDoMes, somarMeses,
 } from "./opcoes";
 import { soDigitos, validarCns, validarCpf } from "./validacao";
 import { formularioVazio, type DadosForm, type Duplicado, type TriEstado } from "./formulario";
@@ -560,20 +560,24 @@ export type LinhaVisitas = {
   proxima_visita: string | null; situacao: string; visitas: VisitaRegistro[]; ultima: string | null;
 };
 
-/** Pacientes da lista padrão com as visitas domiciliares do mês (e a última visita dos 6 meses anteriores). */
+/** Pacientes da lista padrão com as visitas domiciliares do mês selecionado. */
 export async function listarControleVisitas(mes: string, apenasUsuario: string | null): Promise<LinhaVisitas[]> {
   await exigirUsuario();
   const sb = await supabaseServidor();
   const { inicio, fim } = limitesDoMes(mes);
-  const janela = limitesDoMes(deslocarMes(mes, -6)).inicio;
 
-  const [pacientes, registros] = await Promise.all([
-    sb.from("pacientes_resumo").select("id, nome, prontuario, uaps, bairro, proxima_visita, situacao")
-      .in("situacao", [...SITUACOES_PRINCIPAIS]).order("nome"),
-    sb.from("evolucoes").select("id, paciente_id, data, usuario_id, autor, texto").eq("tipo", TIPO_VISITA)
-      .gte("data", janela).lt("data", fim).order("data"),
-  ]);
-  const regs = ok(registros) as VisitaRegistro[];
+  const pacientes = await sb.from("pacientes_resumo").select("id, nome, prontuario, uaps, bairro, proxima_visita, situacao")
+    .in("situacao", [...SITUACOES_PRINCIPAIS]).order("nome");
+  // O Supabase devolve no máximo 1000 linhas por consulta: busca em páginas até acabar.
+  const regs: VisitaRegistro[] = [];
+  for (let de = 0; ; de += 1000) {
+    const pagina = ok(
+      await sb.from("evolucoes").select("id, paciente_id, data, usuario_id, autor, texto").eq("tipo", TIPO_VISITA)
+        .gte("data", inicio).lt("data", fim).order("data").order("id").range(de, de + 999),
+    ) as VisitaRegistro[];
+    regs.push(...pagina);
+    if (pagina.length < 1000) break;
+  }
   return (ok(pacientes) as Omit<LinhaVisitas, "visitas" | "ultima">[]).map((p) => {
     const dele = regs.filter((r) => r.paciente_id === p.id && (!apenasUsuario || r.usuario_id === apenasUsuario));
     const doMes = dele.filter((r) => r.data >= inicio);
@@ -608,15 +612,21 @@ export type Procedimento = {
 export async function listarProcedimentos(f: { mes?: string; tipo?: string; pacienteId?: number }): Promise<Procedimento[]> {
   await exigirUsuario();
   const sb = await supabaseServidor();
-  let q = sb.from("procedimentos").select("id, paciente_id, data, tipo, obs, autor, pacientes!inner(id, nome, prontuario, uaps:uapss(nome))")
-    .order("data", { ascending: false }).order("id", { ascending: false }).limit(500);
-  if (f.mes) {
-    const { inicio, fim } = limitesDoMes(f.mes);
-    q = q.gte("data", inicio).lt("data", fim);
+  const itens: Procedimento[] = [];
+  for (let de = 0; ; de += 1000) {
+    let q = sb.from("procedimentos").select("id, paciente_id, data, tipo, obs, autor, pacientes!inner(id, nome, prontuario, uaps:uapss(nome))")
+      .order("data", { ascending: false }).order("id", { ascending: false });
+    if (f.mes) {
+      const { inicio, fim } = limitesDoMes(f.mes);
+      q = q.gte("data", inicio).lt("data", fim);
+    }
+    if (f.tipo) q = q.eq("tipo", f.tipo);
+    if (f.pacienteId) q = q.eq("paciente_id", f.pacienteId);
+    const pagina = ok(await q.range(de, de + 999)) as unknown as Procedimento[];
+    itens.push(...pagina);
+    if (pagina.length < 1000) break;
   }
-  if (f.tipo) q = q.eq("tipo", f.tipo);
-  if (f.pacienteId) q = q.eq("paciente_id", f.pacienteId);
-  return ok(await q) as unknown as Procedimento[];
+  return itens;
 }
 
 export async function gravarProcedimento(
