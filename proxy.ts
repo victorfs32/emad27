@@ -12,6 +12,7 @@ export async function proxy(request: NextRequest) {
     SUPABASE_URL,
     SUPABASE_CHAVE,
     {
+    cookieOptions: { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/" },
       cookies: {
         getAll: () => request.cookies.getAll(),
         setAll(lista) {

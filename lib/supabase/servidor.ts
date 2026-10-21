@@ -9,6 +9,7 @@ export async function supabaseServidor() {
     SUPABASE_URL,
     SUPABASE_CHAVE,
     {
+    cookieOptions: { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/" },
       cookies: {
         getAll: () => store.getAll(),
         setAll(lista) {

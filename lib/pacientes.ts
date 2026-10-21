@@ -369,7 +369,8 @@ export async function gravarPaciente(
   if (r.error) {
     if (r.error.code === "23505") return { erro: "Já existe um paciente com este prontuário." };
     if (r.error.code === "42501") return { erro: "Você não tem permissão para esta ação." };
-    return { erro: "Não foi possível salvar: " + r.error.message };
+    console.error("[gravarPaciente]", r.error.message);
+    return { erro: "Não foi possível salvar. Tente novamente; se continuar, avise a coordenação." };
   }
   return { id: r.data as number };
 }
@@ -513,7 +514,10 @@ export async function gravarDispositivo(id: number | null, pacienteId: number, d
       troca: nul(d.troca), proxima_troca: nul(d.proxima_troca), obs: nul(d.obs.slice(0, 500)),
     },
   });
-  if (r.error) return { erro: r.error.code === "42501" ? "Você não tem permissão para esta ação." : "Não foi possível salvar: " + r.error.message };
+  if (r.error) {
+    console.error("[gravarDispositivo]", r.error.message);
+    return { erro: r.error.code === "42501" ? "Você não tem permissão para esta ação." : "Não foi possível salvar. Tente novamente; se continuar, avise a coordenação." };
+  }
   return {};
 }
 
@@ -640,7 +644,10 @@ export async function gravarProcedimento(
   const obs = d.obs.trim().slice(0, 1000);
   const sb = await supabaseServidor();
   const r = await sb.from("procedimentos").insert({ paciente_id: pacienteId, data: d.data, tipo: d.tipo, obs: obs || null });
-  if (r.error) return { erro: "Não foi possível salvar: " + r.error.message };
+  if (r.error) {
+    console.error("[gravarProcedimento]", r.error.message);
+    return { erro: "Não foi possível salvar. Tente novamente; se continuar, avise a coordenação." };
+  }
   return {};
 }
 
