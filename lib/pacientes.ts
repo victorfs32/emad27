@@ -42,7 +42,7 @@ export type Ficha = {
   diurese: string | null; diurese_outra: string | null; usa_fralda: Bool; continencia: string | null;
   tqt: Bool; tqt_canula_tipo: string | null; tqt_calibre: string | null; tqt_ultima_troca: string | null; tqt_obs: string | null;
   lpp: Bool; o2: Bool; o2_dispositivo: string | null; o2_fluxo: number | null; o2_regime: string | null; o2_obs: string | null;
-  proxima_visita: string | null; observacoes: string | null;
+  proxima_visita: string | null; observacoes: string | null; usa_cama_pmec: Bool;
   criado_em: string; atualizado_em: string;
   telefones: { id: number; numero: string; de_quem: string; whatsapp: Bool }[];
   cuidadores: { id: number; nome: string; principal: boolean; vinculo: string | null; telefone: string | null; cns: string | null; cpf: string | null }[];
@@ -325,7 +325,7 @@ export function normalizar(d: DadosForm): Normalizado {
     lpp: tri(d.lpp),
     o2: tri(d.o2), o2_dispositivo: d.o2 === "sim" ? nul(d.o2_dispositivo) : null, o2_fluxo: fluxo,
     o2_regime: d.o2 === "sim" ? nul(d.o2_regime) : null, o2_obs: d.o2 === "sim" ? nul(d.o2_obs) : null,
-    proxima_visita: nul(d.proxima_visita), observacoes: nul(d.observacoes),
+    proxima_visita: nul(d.proxima_visita), observacoes: nul(d.observacoes), usa_cama_pmec: tri(d.usa_cama_pmec),
     uaps_id: /^\d+$/.test(d.uaps_id) ? Number(d.uaps_id) : null,
   };
   return {
@@ -412,7 +412,7 @@ export function paraFormulario(f: Ficha): DadosForm {
     tqt_ultima_troca: s(f.tqt_ultima_troca), tqt_obs: s(f.tqt_obs),
     lpp: triForm(f.lpp),
     o2: triForm(f.o2), o2_dispositivo: s(f.o2_dispositivo), o2_fluxo: s(f.o2_fluxo), o2_regime: s(f.o2_regime), o2_obs: s(f.o2_obs),
-    proxima_visita: s(f.proxima_visita), observacoes: s(f.observacoes),
+    proxima_visita: s(f.proxima_visita), observacoes: s(f.observacoes), usa_cama_pmec: triForm(f.usa_cama_pmec),
     telefones: f.telefones.map((t) => ({ numero: t.numero, de_quem: t.de_quem, whatsapp: triForm(t.whatsapp) })),
     cuidadores: f.cuidadores.map((c) => ({
       nome: c.nome, principal: c.principal, vinculo: s(c.vinculo), telefone: s(c.telefone), cns: s(c.cns), cpf: s(c.cpf),

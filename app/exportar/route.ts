@@ -48,6 +48,7 @@ export async function GET(request: Request) {
     ["TQT", (f) => simNao(f.tqt)],
     ["LPP", (f) => simNao(f.lpp)],
     ["Oxigênio", (f) => simNao(f.o2)],
+    ["Usa cama do PMEC", (f) => simNao(f.usa_cama_pmec)],
     ["Fluxo O₂ (L/min)", (f) => (f.o2_fluxo === null ? "" : String(f.o2_fluxo))],
     ["Dispositivos (número / troca / próxima troca)", (f) =>
       f.dispositivos
