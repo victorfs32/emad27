@@ -254,7 +254,8 @@ export function FormularioPaciente({ id, inicial, uapss, bairros }: Props) {
           <input value={d.cns} onChange={(e) => set("cns", formatarCns(e.target.value))} inputMode="numeric" placeholder="000 0000 0000 0000" className="campo" />
         </Campo>
         <Campo rotulo="RG">{texto("rg", { maxLength: 30, autoComplete: "off" })}</Campo>
-        <Campo rotulo="Nome da mãe" largo>{texto("nome_mae")}</Campo>
+        <Campo rotulo="Nome da mãe">{texto("nome_mae")}</Campo>
+        <Campo rotulo="Nome do pai">{texto("nome_pai")}</Campo>
       </Bloco>
 
       <Bloco id="contatos" titulo="Contatos e endereço">

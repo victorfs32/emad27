@@ -114,7 +114,8 @@ function Identificacao({ f, idade }: { f: Ficha; idade: number | null }) {
           <Dado rotulo="CPF" valor={f.cpf ? formatarCpf(f.cpf) : "Não informado"} />
           <Dado rotulo="CNS" valor={f.cns ? formatarCns(f.cns) : "Não informado"} />
           <Dado rotulo="RG" valor={valorOuNI(f.rg)} />
-          <Dado rotulo="Nome da mãe" valor={valorOuNI(f.nome_mae)} largo />
+          <Dado rotulo="Nome da mãe" valor={valorOuNI(f.nome_mae)} />
+          <Dado rotulo="Nome do pai" valor={valorOuNI(f.nome_pai)} />
         </Grade>
       </Secao>
       <Secao titulo="Situação atual">

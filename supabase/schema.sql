@@ -92,7 +92,7 @@ create table if not exists public.pacientes (
   situacao_obs text,
   data_nascimento date,
   admissao date not null,
-  cpf text, cns text, rg text, nome_mae text,
+  cpf text, cns text, rg text, nome_mae text, nome_pai text,
   cep text, municipio text, bairro text, rua text, numero text, complemento text, referencia text,
   fisio text check (fisio in ('sim','nao','aguardando')),
   fisio_frequencia text, fisio_obs text,
@@ -118,6 +118,7 @@ create index if not exists ix2_pac_cns on public.pacientes (cns);
 create index if not exists ix2_pac_bairro on public.pacientes (bairro);
 create index if not exists ix2_pac_situacao on public.pacientes (situacao);
 create index if not exists ix2_pac_uaps on public.pacientes (uaps_id);
+alter table public.pacientes add column if not exists nome_pai text;
 
 create table if not exists public.telefones (
   id bigint generated always as identity primary key,
@@ -254,7 +255,7 @@ language plpgsql security definer set search_path = public as $$
 declare
   v_id bigint := p_id;
   cols text := 'prontuario, nome, uaps_id, situacao, modalidade, situacao_data, situacao_motivo, situacao_obs, '
-    'data_nascimento, admissao, cpf, cns, rg, nome_mae, cep, municipio, bairro, rua, numero, complemento, referencia, '
+    'data_nascimento, admissao, cpf, cns, rg, nome_mae, nome_pai, cep, municipio, bairro, rua, numero, complemento, referencia, '
     'fisio, fisio_frequencia, fisio_obs, dieta_vias, dieta_outra, dieta_obs, diurese, diurese_outra, usa_fralda, continencia, '
     'tqt, tqt_canula_tipo, tqt_calibre, tqt_ultima_troca, tqt_obs, lpp, o2, o2_dispositivo, o2_fluxo, o2_regime, o2_obs, '
     'proxima_visita, observacoes';

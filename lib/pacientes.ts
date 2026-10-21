@@ -34,7 +34,7 @@ type Bool = boolean | null;
 export type Ficha = {
   id: number; prontuario: string; nome: string; uaps_id: number | null; uaps: { nome: string } | null;
   situacao: string; modalidade: string | null; situacao_data: string | null; situacao_motivo: string | null; situacao_obs: string | null;
-  data_nascimento: string | null; admissao: string; cpf: string | null; cns: string | null; rg: string | null; nome_mae: string | null;
+  data_nascimento: string | null; admissao: string; cpf: string | null; cns: string | null; rg: string | null; nome_mae: string | null; nome_pai: string | null;
   cep: string | null; municipio: string | null; bairro: string | null; rua: string | null; numero: string | null;
   complemento: string | null; referencia: string | null;
   fisio: string | null; fisio_frequencia: string | null; fisio_obs: string | null;
@@ -312,7 +312,7 @@ export function normalizar(d: DadosForm): Normalizado {
     prontuario, nome: d.nome.trim().replace(/\s+/g, " "), situacao: d.situacao, modalidade: nul(d.modalidade),
     situacao_data: ativo ? null : nul(d.situacao_data), situacao_motivo: ativo ? null : nul(d.situacao_motivo),
     situacao_obs: ativo ? null : nul(d.situacao_obs),
-    data_nascimento: nul(d.data_nascimento), admissao: d.admissao, cpf, cns, rg: nul(d.rg), nome_mae: nul(d.nome_mae),
+    data_nascimento: nul(d.data_nascimento), admissao: d.admissao, cpf, cns, rg: nul(d.rg), nome_mae: nul(d.nome_mae), nome_pai: nul(d.nome_pai),
     cep: soDigitos(d.cep) || null, municipio: nul(d.municipio), bairro: nul(d.bairro), rua: nul(d.rua), numero: nul(d.numero),
     complemento: nul(d.complemento), referencia: nul(d.referencia),
     fisio: nul(d.fisio), fisio_frequencia: d.fisio === "sim" ? nul(d.fisio_frequencia) : null, fisio_obs: nul(d.fisio_obs),
@@ -402,7 +402,7 @@ export function paraFormulario(f: Ficha): DadosForm {
     ...v,
     prontuario: f.prontuario, nome: f.nome, uaps_id: s(f.uaps_id), situacao: f.situacao, modalidade: s(f.modalidade),
     situacao_data: s(f.situacao_data), situacao_motivo: s(f.situacao_motivo), situacao_obs: s(f.situacao_obs),
-    data_nascimento: s(f.data_nascimento), admissao: s(f.admissao), cpf: s(f.cpf), cns: s(f.cns), rg: s(f.rg), nome_mae: s(f.nome_mae),
+    data_nascimento: s(f.data_nascimento), admissao: s(f.admissao), cpf: s(f.cpf), cns: s(f.cns), rg: s(f.rg), nome_mae: s(f.nome_mae), nome_pai: s(f.nome_pai),
     cep: s(f.cep), municipio: s(f.municipio), bairro: s(f.bairro), rua: s(f.rua), numero: s(f.numero),
     complemento: s(f.complemento), referencia: s(f.referencia),
     fisio: s(f.fisio), fisio_frequencia: s(f.fisio_frequencia), fisio_obs: s(f.fisio_obs),

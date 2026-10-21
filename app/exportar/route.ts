@@ -32,6 +32,7 @@ export async function GET(request: Request) {
     ["CNS", (f) => (f.cns ? formatarCns(f.cns) : "")],
     ["RG", (f) => f.rg],
     ["Nome da mãe", (f) => f.nome_mae],
+    ["Nome do pai", (f) => f.nome_pai],
     ["Telefones", (f) => f.telefones.map((t) => `${formatarTelefone(t.numero)} (${t.de_quem})`).join(" | ")],
     ["Município", (f) => f.municipio],
     ["Bairro", (f) => f.bairro],
