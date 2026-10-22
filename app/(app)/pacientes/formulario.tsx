@@ -430,6 +430,8 @@ export function FormularioPaciente({ id, inicial, uapss, bairros }: Props) {
           </Condicional>
         )}
 
+        <Campo rotulo="Colostomia" largo><Tri valor={d.colostomia} onChange={(v) => set("colostomia", v)} /></Campo>
+
         <Campo rotulo="Usa cama do PMEC?" largo><Tri valor={d.usa_cama_pmec} onChange={(v) => set("usa_cama_pmec", v)} /></Campo>
 
         <Campo rotulo="Próxima visita">{texto("proxima_visita", { type: "date" })}</Campo>

@@ -18,7 +18,7 @@ export type DadosForm = {
   tqt: TriEstado; tqt_canula_tipo: string; tqt_calibre: string; tqt_ultima_troca: string; tqt_obs: string;
   lpp: TriEstado;
   o2: TriEstado; o2_dispositivo: string; o2_fluxo: string; o2_regime: string; o2_obs: string;
-  proxima_visita: string; observacoes: string; usa_cama_pmec: TriEstado;
+  proxima_visita: string; observacoes: string; usa_cama_pmec: TriEstado; colostomia: TriEstado;
   telefones: TelefoneForm[]; cuidadores: CuidadorForm[]; diagnosticos: DiagnosticoForm[]; lesoes: LesaoForm[];
 };
 
@@ -29,7 +29,7 @@ export const formularioVazio = (): DadosForm => ({
   fisio: "", fisio_frequencia: "", fisio_obs: "", dieta_vias: [], dieta_outra: "", dieta_obs: "",
   diurese: "", diurese_outra: "", usa_fralda: "", continencia: "",
   tqt: "", tqt_canula_tipo: "", tqt_calibre: "", tqt_ultima_troca: "", tqt_obs: "",
-  lpp: "", o2: "", o2_dispositivo: "", o2_fluxo: "", o2_regime: "", o2_obs: "", proxima_visita: "", observacoes: "", usa_cama_pmec: "",
+  lpp: "", o2: "", o2_dispositivo: "", o2_fluxo: "", o2_regime: "", o2_obs: "", proxima_visita: "", observacoes: "", usa_cama_pmec: "", colostomia: "",
   telefones: [], cuidadores: [], diagnosticos: [], lesoes: [],
 });
 

@@ -385,6 +385,10 @@ function Clinico({ f }: { f: Ficha }) {
         </Grade>
       </Secao>
 
+      <Secao titulo="Colostomia">
+        <Grade><Dado rotulo="Possui colostomia" valor={simNao(f.colostomia)} /></Grade>
+      </Secao>
+
       {f.observacoes && <Secao titulo="Observações gerais"><p className="m-0 whitespace-pre-wrap text-heading">{f.observacoes}</p></Secao>}
     </div>
   );
