@@ -93,6 +93,7 @@ create table if not exists public.pacientes (
   data_nascimento date,
   admissao date not null,
   cpf text, cns text, rg text, nome_mae text, nome_pai text,
+  sexo text check (sexo in ('F','M')),
   cep text, municipio text, bairro text, rua text, numero text, complemento text, referencia text,
   fisio text check (fisio in ('sim','nao','aguardando')),
   fisio_frequencia text, fisio_obs text,
@@ -123,6 +124,7 @@ create index if not exists ix2_pac_uaps on public.pacientes (uaps_id);
 alter table public.pacientes add column if not exists nome_pai text;
 alter table public.pacientes add column if not exists usa_cama_pmec boolean;
 alter table public.pacientes add column if not exists colostomia boolean;
+alter table public.pacientes add column if not exists sexo text check (sexo in ('F','M'));
 
 create table if not exists public.telefones (
   id bigint generated always as identity primary key,
@@ -262,7 +264,7 @@ declare
     'data_nascimento, admissao, cpf, cns, rg, nome_mae, nome_pai, cep, municipio, bairro, rua, numero, complemento, referencia, '
     'fisio, fisio_frequencia, fisio_obs, dieta_vias, dieta_outra, dieta_obs, diurese, diurese_outra, usa_fralda, continencia, '
     'tqt, tqt_canula_tipo, tqt_calibre, tqt_ultima_troca, tqt_obs, lpp, o2, o2_dispositivo, o2_fluxo, o2_regime, o2_obs, '
-    'proxima_visita, observacoes, usa_cama_pmec, colostomia';
+    'proxima_visita, observacoes, usa_cama_pmec, colostomia, sexo';
   ant jsonb; dep jsonb; t record; linhas int;
 begin
   if p_id is null then
@@ -611,5 +613,26 @@ end $$;
 
 revoke execute on function public.registrar_relatorio(bigint) from public;
 grant execute on function public.registrar_relatorio(bigint) to authenticated;
+
+notify pgrst, 'reload schema';
+
+-- ================================================================ versão 9: sexo e documentos gerados
+
+create or replace function public.registrar_documento(p_id bigint, p_tipo text) returns void
+language plpgsql security definer set search_path = public as $$
+declare v_resumo text;
+begin
+  if not public.perm('exportar') then raise exception 'Sem permissão.' using errcode = '42501'; end if;
+  v_resumo := case p_tipo
+    when 'relatorio' then 'Relatório em PDF gerado'
+    when 'prescricao' then 'Formulário de prescrição médica gerado'
+    else null end;
+  if v_resumo is null then raise exception 'Tipo de documento inválido.'; end if;
+  insert into public.historico (paciente_id, usuario_id, autor, tipo, resumo)
+  values (p_id, auth.uid(), public.nome_do_usuario(), 'documento', v_resumo);
+end $$;
+
+revoke execute on function public.registrar_documento(bigint, text) from public;
+grant execute on function public.registrar_documento(bigint, text) to authenticated;
 
 notify pgrst, 'reload schema';

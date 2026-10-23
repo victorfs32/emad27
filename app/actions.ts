@@ -5,13 +5,14 @@ import { revalidatePath } from "next/cache";
 import { exigirPermissao, exigirUsuario } from "@/lib/auth";
 import { supabaseServidor } from "@/lib/supabase/servidor";
 import {
-  adicionarEvolucao, buscarCid, listarEvolucoes, listarProcedimentos, registrarRelatorioGerado, gravarProcedimento, registrarVisita as gravarVisita, removerProcedimentoDb, removerRegistro, gravarDispositivo, removerDispositivo, trocarDispositivo, definirProximaVisita, gravarPaciente, obterFicha, reAdmitir, salvarPerfil,
+  adicionarEvolucao, buscarCid, listarEvolucoes, listarProcedimentos, registrarDocumentoGerado, gravarProcedimento, registrarVisita as gravarVisita, removerProcedimentoDb, removerRegistro, gravarDispositivo, removerDispositivo, trocarDispositivo, definirProximaVisita, gravarPaciente, obterFicha, reAdmitir, salvarPerfil,
   type Perfil,
 } from "@/lib/pacientes";
 import { criarUsuario, trocarSenhaPropria } from "@/lib/usuarios";
 import type { DadosForm, ResultadoSalvar } from "@/lib/formulario";
 import { TIPOS_EVOLUCAO, TIPO_VISITA, hojeISO } from "@/lib/opcoes";
 import type { DadosRelatorio } from "@/lib/relatorio-pdf";
+import type { DadosPrescricao } from "@/lib/prescricao-pdf";
 
 export type EstadoLogin = { erro?: string };
 
@@ -208,7 +209,7 @@ export async function dadosRelatorio(pacienteId: number): Promise<{ erro?: strin
   const procedimentosPorTipo: Record<string, number> = {};
   for (const p of procedimentos) procedimentosPorTipo[p.tipo] = (procedimentosPorTipo[p.tipo] ?? 0) + 1;
 
-  await registrarRelatorioGerado(pacienteId);
+  await registrarDocumentoGerado(pacienteId, "relatorio");
 
   return {
     dados: {
@@ -224,6 +225,23 @@ export async function dadosRelatorio(pacienteId: number): Promise<{ erro?: strin
       visitasMes: visitas.filter((e) => e.data.startsWith(mes)).length,
       visitasTotal: visitas.length,
       ultimaVisita: visitas[0]?.data ?? null,
+    },
+  };
+}
+
+/** Dados do paciente para o formulário de prescrição médica (montado no navegador). Exige permissão de exportar. */
+export async function dadosPrescricao(pacienteId: number): Promise<{ erro?: string; dados?: DadosPrescricao }> {
+  const eu = await exigirPermissao("exportar");
+  if (!Number.isSafeInteger(pacienteId)) return { erro: "Paciente inválido." };
+  const ficha = await obterFicha(pacienteId);
+  if (!ficha) return { erro: "Paciente não encontrado." };
+  await registrarDocumentoGerado(pacienteId, "prescricao");
+  return {
+    dados: {
+      ficha,
+      geradoPor: eu.nome,
+      hoje: hojeISO(),
+      geradoEm: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }),
     },
   };
 }

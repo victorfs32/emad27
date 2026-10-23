@@ -411,6 +411,7 @@ export async function montarRelatorioPdf(d: DadosRelatorio): Promise<{ doc: JsPD
     ["UAPS de referência", valorOuNI(f.uaps?.nome)],
     ["Data de nascimento", f.data_nascimento ? formatarData(f.data_nascimento) : "Não informado"],
     ["Idade", idade === null ? "Não informado" : `${idade} anos`],
+    ["Sexo", f.sexo === "F" ? "Feminino" : f.sexo === "M" ? "Masculino" : "Não informado"],
     ["Admissão na EMAD", formatarData(f.admissao)],
     ["Modalidade", valorOuNI(f.modalidade)],
     ["CPF", f.cpf ? formatarCpf(f.cpf) : "Não informado"],

@@ -24,6 +24,7 @@ export async function GET(request: Request) {
     ["Paciente", (f) => f.nome],
     ["Idade", (f) => String(calcularIdade(f.data_nascimento) ?? "")],
     ["Nascimento", (f) => (f.data_nascimento ? formatarData(f.data_nascimento) : "")],
+    ["Sexo", (f) => (f.sexo === "F" ? "Feminino" : f.sexo === "M" ? "Masculino" : "")],
     ["UAPS", (f) => f.uaps?.nome ?? ""],
     ["Situação", (f) => rotulo(SITUACOES, f.situacao) ?? f.situacao],
     ["Modalidade", (f) => f.modalidade],

@@ -10,7 +10,7 @@ export type LesaoForm = { localizacao: string; classificacao: string; cobertura:
 export type DadosForm = {
   prontuario: string; nome: string; uaps_id: string; uaps_nova: string;
   situacao: string; modalidade: string; situacao_data: string; situacao_motivo: string; situacao_obs: string;
-  data_nascimento: string; admissao: string; cpf: string; cns: string; rg: string; nome_mae: string; nome_pai: string;
+  data_nascimento: string; admissao: string; cpf: string; cns: string; rg: string; nome_mae: string; nome_pai: string; sexo: string;
   cep: string; municipio: string; bairro: string; rua: string; numero: string; complemento: string; referencia: string;
   fisio: string; fisio_frequencia: string; fisio_obs: string;
   dieta_vias: string[]; dieta_outra: string; dieta_obs: string;
@@ -24,7 +24,7 @@ export type DadosForm = {
 
 export const formularioVazio = (): DadosForm => ({
   prontuario: "", nome: "", uaps_id: "", uaps_nova: "", situacao: "ativo", modalidade: "", situacao_data: "",
-  situacao_motivo: "", situacao_obs: "", data_nascimento: "", admissao: "", cpf: "", cns: "", rg: "", nome_mae: "", nome_pai: "",
+  situacao_motivo: "", situacao_obs: "", data_nascimento: "", admissao: "", cpf: "", cns: "", rg: "", nome_mae: "", nome_pai: "", sexo: "",
   cep: "", municipio: "", bairro: "", rua: "", numero: "", complemento: "", referencia: "",
   fisio: "", fisio_frequencia: "", fisio_obs: "", dieta_vias: [], dieta_outra: "", dieta_obs: "",
   diurese: "", diurese_outra: "", usa_fralda: "", continencia: "",

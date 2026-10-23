@@ -12,6 +12,11 @@ export const SITUACOES_ARQUIVADAS = ["alta", "transferido", "obito"] as const;
 
 export const MODALIDADES = ["AD1", "AD2", "AD3"] as const;
 
+export const SEXOS = [
+  { valor: "F", rotulo: "Feminino" },
+  { valor: "M", rotulo: "Masculino" },
+] as const;
+
 export const DE_QUEM = [
   { valor: "paciente", rotulo: "Paciente" },
   { valor: "cuidador", rotulo: "Cuidador" },

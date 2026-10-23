@@ -11,6 +11,7 @@ import { formatarCep, formatarCns, formatarCpf, formatarTelefone } from "@/lib/v
 import { nomeDoCampo, valorLegivel } from "@/lib/rotulos";
 import { agendarVisita, novaAdmissao, registrarEvolucao } from "../../../actions";
 import { IconeCalendario } from "../../icones";
+import { BotaoPrescricao } from "./botao-prescricao";
 import { BotaoRelatorio } from "./botao-relatorio";
 import { SeloStatus } from "../../selo-status";
 
@@ -70,6 +71,7 @@ export default async function Ficha({ params, searchParams }: PageProps<"/pacien
           </div>
         </div>
         <div className="flex flex-wrap items-start gap-2">
+          {usuario.perms.exportar && <BotaoPrescricao pacienteId={ficha.id} />}
           {usuario.perms.exportar && <BotaoRelatorio pacienteId={ficha.id} />}
           {editar && (
             <Link href={`/pacientes/${ficha.id}/editar`} className="inline-flex min-h-11 items-center rounded-2xl border border-white/35 px-5 text-sm font-semibold text-white hover:bg-white/10">
@@ -114,6 +116,7 @@ function Identificacao({ f, idade }: { f: Ficha; idade: number | null }) {
           <Dado rotulo="Modalidade" valor={valorOuNI(f.modalidade)} />
           <Dado rotulo="Data de nascimento" valor={f.data_nascimento ? formatarData(f.data_nascimento) : "Não informado"} />
           <Dado rotulo="Idade" valor={idade === null ? "Não informado" : `${idade} anos`} />
+          <Dado rotulo="Sexo" valor={f.sexo === "F" ? "Feminino" : f.sexo === "M" ? "Masculino" : "Não informado"} />
           <Dado rotulo="Admissão" valor={formatarData(f.admissao)} />
           <Dado rotulo="CPF" valor={f.cpf ? formatarCpf(f.cpf) : "Não informado"} />
           <Dado rotulo="CNS" valor={f.cns ? formatarCns(f.cns) : "Não informado"} />
@@ -399,7 +402,7 @@ function Clinico({ f }: { f: Ficha }) {
 }
 
 const TIPOS_HISTORICO: Record<string, string> = {
-  cadastro: "Cadastro", alteracao: "Alteração", situacao: "Situação", lista: "Lista", admissao: "Admissão", dispositivo: "Dispositivo", procedimento: "Procedimento", evolucao: "Acompanhamento", relatorio: "Relatório",
+  cadastro: "Cadastro", alteracao: "Alteração", situacao: "Situação", lista: "Lista", admissao: "Admissão", dispositivo: "Dispositivo", procedimento: "Procedimento", evolucao: "Acompanhamento", relatorio: "Relatório", documento: "Documento",
 };
 
 async function Historico({ id }: { id: number }) {

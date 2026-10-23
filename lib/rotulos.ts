@@ -6,7 +6,7 @@ import { formatarCns, formatarCpf, formatarTelefone } from "./validacao";
 const NOMES: Record<string, string> = {
   prontuario: "Prontuário", nome: "Nome", uaps_id: "UAPS", situacao: "Situação", modalidade: "Modalidade",
   situacao_data: "Data da situação", situacao_motivo: "Motivo da situação", situacao_obs: "Observações da situação",
-  data_nascimento: "Data de nascimento", admissao: "Admissão", cpf: "CPF", cns: "CNS", rg: "RG", nome_mae: "Nome da mãe", nome_pai: "Nome do pai",
+  data_nascimento: "Data de nascimento", admissao: "Admissão", cpf: "CPF", cns: "CNS", rg: "RG", nome_mae: "Nome da mãe", nome_pai: "Nome do pai", sexo: "Sexo",
   cep: "CEP", municipio: "Município", bairro: "Bairro", rua: "Rua", numero: "Número", complemento: "Complemento",
   referencia: "Ponto de referência", fisio: "Fisioterapia", fisio_frequencia: "Frequência da fisioterapia",
   fisio_obs: "Obs. da fisioterapia", dieta_vias: "Via de alimentação", dieta_outra: "Outra via de alimentação",
@@ -27,6 +27,7 @@ export function valorLegivel(campo: string, v: unknown, uapss: Map<number, strin
   const s = String(v);
   switch (campo) {
     case "situacao": return rotulo(SITUACOES, s) ?? s;
+    case "sexo": return s === "F" ? "Feminino" : s === "M" ? "Masculino" : s;
     case "fisio": return rotulo(FISIO, s) ?? s;
     case "diurese": return rotulo(DIURESE, s) ?? s;
     case "continencia": return rotulo(CONTINENCIA, s) ?? s;

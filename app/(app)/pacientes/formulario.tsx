@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { pesquisarCid, salvarPaciente } from "../../actions";
 import {
-  CONTINENCIA, DE_QUEM, DIURESE, FISIO, MODALIDADES, SITUACOES, VIAS_DIETA, calcularIdade,
+  CONTINENCIA, DE_QUEM, DIURESE, FISIO, MODALIDADES, SEXOS, SITUACOES, VIAS_DIETA, calcularIdade,
 } from "@/lib/opcoes";
 import { formatarCep, formatarCns, formatarCpf, formatarTelefone } from "@/lib/validacao";
 import type { DadosForm, Duplicado, TriEstado } from "@/lib/formulario";
@@ -245,6 +245,12 @@ export function FormularioPaciente({ id, inicial, uapss, bairros }: Props) {
           <p className="m-0 flex min-h-12 items-center rounded-2xl bg-secondary px-3.5 text-[15px] font-semibold text-heading">
             {idade === null ? "Não informada" : `${idade} anos`}
           </p>
+        </Campo>
+        <Campo rotulo="Sexo" dica="Usado no formulário de prescrição médica.">
+          <select value={d.sexo} onChange={(e) => set("sexo", e.target.value)} className="campo">
+            <option value="">Não informado</option>
+            {SEXOS.map((x) => <option key={x.valor} value={x.valor}>{x.rotulo}</option>)}
+          </select>
         </Campo>
         <Campo rotulo="Admissão" obrigatorio dica="Data de entrada no acompanhamento da equipe.">{texto("admissao", { type: "date" })}</Campo>
         <Campo rotulo="CPF">
