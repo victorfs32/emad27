@@ -25,6 +25,13 @@ async function Casca({ children }: { children: React.ReactNode }) {
         procedimentosMes={resumo.procedimentosMes}
         visitas={resumo.visitas7dias}
         admin={usuario.perms.admin}
+        papel={
+          usuario.perms.admin
+            ? "Administrador"
+            : usuario.perms.cadastrar || usuario.perms.editar || usuario.perms.exportar
+              ? "Acesso personalizado"
+              : "Somente visualização"
+        }
         arquivados={resumo.arquivados}
       />
       <div className="min-w-0 flex-1">

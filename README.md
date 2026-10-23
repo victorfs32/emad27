@@ -7,8 +7,8 @@ Cadastro e acompanhamento de pacientes (acesso restrito). Next.js + Supabase (Po
 1. Crie um projeto no [Supabase](https://supabase.com).
 2. **SQL Editor** → cole e execute `supabase/schema.sql` (pode ser repetido; não apaga dados).
 3. **Authentication → Sign In / Providers**: desligue "Allow new users to sign up".
-4. **Authentication → Users → Add user**: crie cada profissional (e-mail + senha, "Auto Confirm User"). O primeiro usuário vira administrador; os demais entram só com consulta e o administrador libera permissões em **Equipe** (cadastrar, editar, exportar).
-5. Variáveis de ambiente (Vercel ou `.env.local`): `SUPABASE_URL` e `SUPABASE_ANON_KEY` (ou `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`). Veja `.env.example`.
+4. Primeiro acesso: crie o primeiro usuário em **Authentication → Users → Add user** (e-mail + senha, "Auto Confirm User"); ele vira administrador. Os demais são cadastrados pelo próprio site, em **Equipe → Cadastrar novo usuário** (por padrão só visualizam; administradores cadastram e alteram tudo).
+5. Variáveis de ambiente (Vercel ou `.env.local`): `SUPABASE_URL` e `SUPABASE_ANON_KEY` (ou `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`). Veja `.env.example`. Para cadastrar usuários pelo site, defina também `SUPABASE_SERVICE_ROLE_KEY` (chave de administração, **somente no servidor**; nunca com prefixo `NEXT_PUBLIC_`).
 6. `npm install` e `npm run dev`.
 
 ## Segurança

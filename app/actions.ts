@@ -5,11 +5,13 @@ import { revalidatePath } from "next/cache";
 import { exigirPermissao, exigirUsuario } from "@/lib/auth";
 import { supabaseServidor } from "@/lib/supabase/servidor";
 import {
-  adicionarEvolucao, buscarCid, gravarProcedimento, registrarVisita as gravarVisita, removerProcedimentoDb, removerRegistro, gravarDispositivo, removerDispositivo, trocarDispositivo, definirProximaVisita, gravarPaciente, obterFicha, reAdmitir, salvarPerfil,
+  adicionarEvolucao, buscarCid, listarEvolucoes, listarProcedimentos, registrarRelatorioGerado, gravarProcedimento, registrarVisita as gravarVisita, removerProcedimentoDb, removerRegistro, gravarDispositivo, removerDispositivo, trocarDispositivo, definirProximaVisita, gravarPaciente, obterFicha, reAdmitir, salvarPerfil,
   type Perfil,
 } from "@/lib/pacientes";
+import { criarUsuario, trocarSenhaPropria } from "@/lib/usuarios";
 import type { DadosForm, ResultadoSalvar } from "@/lib/formulario";
-import { TIPOS_EVOLUCAO, hojeISO } from "@/lib/opcoes";
+import { TIPOS_EVOLUCAO, TIPO_VISITA, hojeISO } from "@/lib/opcoes";
+import type { DadosRelatorio } from "@/lib/relatorio-pdf";
 
 export type EstadoLogin = { erro?: string };
 
@@ -76,21 +78,50 @@ export async function pesquisarCid(termo: string) {
 export async function atualizarPerfil(userId: string, fd: FormData) {
   const eu = await exigirPermissao("admin");
   const marcado = (k: string) => fd.get(k) === "on";
+  const perfil = String(fd.get("perfil") ?? "personalizado");
+  const todos = perfil === "admin";
+  const nenhum = perfil === "visualizacao";
   const p: Omit<Perfil, "user_id"> = {
     nome: String(fd.get("nome") ?? "").trim().slice(0, 120) || "Sem nome",
     ativo: marcado("ativo"),
-    admin: marcado("admin"),
-    pode_cadastrar: marcado("pode_cadastrar"),
-    pode_editar: marcado("pode_editar"),
-    pode_exportar: marcado("pode_exportar"),
+    // "Administrador" e "Somente visualização" definem tudo de uma vez; "Personalizado" usa as caixas.
+    admin: todos || (!nenhum && marcado("admin")),
+    pode_cadastrar: todos || (!nenhum && marcado("pode_cadastrar")),
+    pode_editar: todos || (!nenhum && marcado("pode_editar")),
+    pode_exportar: todos || (!nenhum && marcado("pode_exportar")),
   };
-  // Evita o administrador se trancar para fora do sistema.
+  // Evita o administrador se trancar para fora do sistema: o próprio usuário continua ativo e administrador.
   if (userId === eu.id) {
     p.ativo = true;
     p.admin = true;
+    p.pode_cadastrar = true;
+    p.pode_editar = true;
+    p.pode_exportar = true;
   }
   await salvarPerfil(userId, p);
   revalidatePath("/equipe");
+}
+
+export type ResultadoNovoUsuario = { erro?: string; ok?: boolean };
+
+/** Cadastra um novo login (só administradores). Por padrão o usuário só consulta. */
+export async function cadastrarUsuario(
+  dados: { nome: string; email: string; senha: string; perfil: string },
+): Promise<ResultadoNovoUsuario> {
+  await exigirPermissao("admin");
+  const r = await criarUsuario(dados);
+  if (r.erro) return r;
+  revalidatePath("/equipe");
+  return { ok: true };
+}
+
+export async function alterarMinhaSenha(
+  dados: { atual: string; nova: string; confirmar: string },
+): Promise<{ erro?: string; ok?: boolean }> {
+  await exigirUsuario();
+  if (dados.nova !== dados.confirmar) return { erro: "A confirmação não é igual à nova senha." };
+  const r = await trocarSenhaPropria(dados.atual, dados.nova);
+  return r.erro ? r : { ok: true };
 }
 
 export type ResultadoDispositivo = { erro?: string; ok?: boolean };
@@ -161,4 +192,38 @@ export async function excluirProcedimento(id: number) {
   await exigirPermissao("editar");
   await removerProcedimentoDb(id);
   revalidatePath("/", "layout");
+}
+
+/** Reúne os dados do paciente para o relatório em PDF (montado no navegador). Exige permissão de exportar. */
+export async function dadosRelatorio(pacienteId: number): Promise<{ erro?: string; dados?: DadosRelatorio }> {
+  const eu = await exigirPermissao("exportar");
+  if (!Number.isSafeInteger(pacienteId)) return { erro: "Paciente inválido." };
+  const ficha = await obterFicha(pacienteId);
+  if (!ficha) return { erro: "Paciente não encontrado." };
+
+  const [evolucoes, procedimentos] = await Promise.all([listarEvolucoes(pacienteId), listarProcedimentos({ pacienteId })]);
+  const hoje = hojeISO();
+  const mes = hoje.slice(0, 7);
+  const visitas = evolucoes.filter((e) => e.tipo === TIPO_VISITA);
+  const procedimentosPorTipo: Record<string, number> = {};
+  for (const p of procedimentos) procedimentosPorTipo[p.tipo] = (procedimentosPorTipo[p.tipo] ?? 0) + 1;
+
+  await registrarRelatorioGerado(pacienteId);
+
+  return {
+    dados: {
+      geradoEm: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }),
+      geradoPor: eu.nome,
+      hoje,
+      ficha,
+      evolucoes: evolucoes.slice(0, 12).map((e) => ({ data: e.data, tipo: e.tipo, texto: e.texto, autor: e.autor })),
+      totalEvolucoes: evolucoes.length,
+      procedimentos: procedimentos.slice(0, 20).map((p) => ({ data: p.data, tipo: p.tipo, obs: p.obs, autor: p.autor })),
+      procedimentosPorTipo,
+      procedimentosMes: procedimentos.filter((p) => p.data.startsWith(mes)).length,
+      visitasMes: visitas.filter((e) => e.data.startsWith(mes)).length,
+      visitasTotal: visitas.length,
+      ultimaVisita: visitas[0]?.data ?? null,
+    },
+  };
 }

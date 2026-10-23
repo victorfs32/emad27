@@ -657,3 +657,10 @@ export async function removerProcedimentoDb(id: number) {
   const r = await sb.rpc("remover_procedimento", { p_id: id });
   if (r.error) throw new Error(r.error.message);
 }
+
+/** Registra no histórico do paciente quem gerou um relatório em PDF (não bloqueia se a função ainda não existir). */
+export async function registrarRelatorioGerado(pacienteId: number) {
+  const sb = await supabaseServidor();
+  const r = await sb.rpc("registrar_relatorio", { p_id: pacienteId });
+  if (r.error) console.error("[registrarRelatorio]", r.error.message);
+}

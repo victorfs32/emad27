@@ -52,6 +52,7 @@ function Distribuicao({ titulo, itens }: { titulo: string; itens: { nome: string
 export default async function Listagem({ searchParams }: PageProps<"/">) {
   await connection();
   const sp = await searchParams;
+  const semPermissao = sp.erro === "permissao";
   const filtros = lerFiltros(sp, "principais");
   const [usuario, pacientes, resumo, uapss, bairros] = await Promise.all([
     exigirUsuario(), listarPacientes(filtros), resumoPainel(), listarUapss(), listarBairros(),
@@ -61,6 +62,11 @@ export default async function Listagem({ searchParams }: PageProps<"/">) {
 
   return (
     <div className="grid gap-6">
+      {semPermissao && (
+        <p role="alert" className="m-0 rounded-2xl border border-warning/40 bg-warning-soft px-4 py-3 text-sm font-semibold text-warning-strong">
+          Seu acesso é somente de visualização. Para essa ação, fale com um administrador.
+        </p>
+      )}
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="m-0 text-[12.5px] font-semibold uppercase tracking-[0.14em] text-muted">Gestão do cuidado · EMAD 27</p>

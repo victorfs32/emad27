@@ -13,6 +13,7 @@ const TITULOS: Record<string, string> = {
   "/procedimentos": "Procedimentos",
   "/pacientes/novo": "Novo paciente",
   "/equipe": "Equipe e permissões",
+  "/conta": "Minha conta",
 };
 
 export function Migalhas() {

@@ -11,6 +11,7 @@ import { formatarCep, formatarCns, formatarCpf, formatarTelefone } from "@/lib/v
 import { nomeDoCampo, valorLegivel } from "@/lib/rotulos";
 import { agendarVisita, novaAdmissao, registrarEvolucao } from "../../../actions";
 import { IconeCalendario } from "../../icones";
+import { BotaoRelatorio } from "./botao-relatorio";
 import { SeloStatus } from "../../selo-status";
 
 const ABAS = [
@@ -68,11 +69,14 @@ export default async function Ficha({ params, searchParams }: PageProps<"/pacien
             {ficha.o2 && <span className="rounded-full bg-white/20 px-2.5 py-1 text-xs font-bold">O₂</span>}
           </div>
         </div>
-        {editar && (
-          <Link href={`/pacientes/${ficha.id}/editar`} className="inline-flex min-h-11 items-center rounded-2xl border border-white/35 px-5 text-sm font-semibold text-white hover:bg-white/10">
-            Editar cadastro
-          </Link>
-        )}
+        <div className="flex flex-wrap items-start gap-2">
+          {usuario.perms.exportar && <BotaoRelatorio pacienteId={ficha.id} />}
+          {editar && (
+            <Link href={`/pacientes/${ficha.id}/editar`} className="inline-flex min-h-11 items-center rounded-2xl border border-white/35 px-5 text-sm font-semibold text-white hover:bg-white/10">
+              Editar cadastro
+            </Link>
+          )}
+        </div>
       </div>
 
       <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:px-0" aria-label="Seções da ficha">
@@ -395,7 +399,7 @@ function Clinico({ f }: { f: Ficha }) {
 }
 
 const TIPOS_HISTORICO: Record<string, string> = {
-  cadastro: "Cadastro", alteracao: "Alteração", situacao: "Situação", lista: "Lista", admissao: "Admissão", dispositivo: "Dispositivo", procedimento: "Procedimento", evolucao: "Acompanhamento",
+  cadastro: "Cadastro", alteracao: "Alteração", situacao: "Situação", lista: "Lista", admissao: "Admissão", dispositivo: "Dispositivo", procedimento: "Procedimento", evolucao: "Acompanhamento", relatorio: "Relatório",
 };
 
 async function Historico({ id }: { id: number }) {

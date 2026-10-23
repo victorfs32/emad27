@@ -61,3 +61,13 @@ export function formatarCep(valor: string | null | undefined) {
   const c = soDigitos(valor ?? "").slice(0, 8);
   return c.length > 5 ? `${c.slice(0, 5)}-${c.slice(5)}` : c;
 }
+
+export const emailValido = (e: string) => e.trim().length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e.trim());
+
+/** Regras mínimas de senha (o Supabase pode exigir mais). Devolve a mensagem do problema ou null. */
+export function problemaNaSenha(senha: string): string | null {
+  if (senha.length < 10) return "A senha precisa ter pelo menos 10 caracteres.";
+  if (senha.length > 72) return "A senha pode ter no máximo 72 caracteres.";
+  if (!/[A-Za-z]/.test(senha) || !/\d/.test(senha)) return "Use letras e números na senha.";
+  return null;
+}

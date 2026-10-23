@@ -11,7 +11,7 @@ import {
 
 type Props = {
   nome: string; cadastrados: number; dispositivos: number; lesoes: number; visitas: number; arquivados: number; admin: boolean;
-  visitasMes: number; procedimentosMes: number;
+  visitasMes: number; procedimentosMes: number; papel: string;
 };
 
 function Marca() {
@@ -30,7 +30,7 @@ function Marca() {
   );
 }
 
-export function Navegacao({ nome, cadastrados, dispositivos, lesoes, visitas, arquivados, admin, visitasMes, procedimentosMes }: Props) {
+export function Navegacao({ nome, cadastrados, dispositivos, lesoes, visitas, arquivados, admin, visitasMes, procedimentosMes, papel }: Props) {
   const [aberto, setAberto] = useState(false);
   const rota = usePathname();
 
@@ -124,13 +124,15 @@ export function Navegacao({ nome, cadastrados, dispositivos, lesoes, visitas, ar
         </div>
 
         <div className="mt-auto flex items-center gap-3 border-t border-border pt-[18px]">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-accent-soft text-base font-bold text-accent">
-            {nome.trim().charAt(0).toUpperCase()}
-          </span>
-          <span className="flex min-w-0 flex-1 flex-col leading-tight">
-            <strong className="truncate text-sm">{nome}</strong>
-            <span className="text-xs text-muted">Equipe</span>
-          </span>
+          <Link href="/conta" onClick={() => setAberto(false)} className="flex min-w-0 flex-1 items-center gap-3" title="Minha conta e senha">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-accent-soft text-base font-bold text-accent">
+              {nome.trim().charAt(0).toUpperCase()}
+            </span>
+            <span className="flex min-w-0 flex-1 flex-col leading-tight">
+              <strong className="truncate text-sm">{nome}</strong>
+              <span className="text-xs text-muted">{papel}</span>
+            </span>
+          </Link>
           <form action={sair}>
             <button className="flex h-10 w-10 items-center justify-center rounded-xl text-sidebar-muted hover:bg-secondary hover:text-heading" aria-label="Sair">
               <IconeSair />
