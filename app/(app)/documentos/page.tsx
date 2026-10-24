@@ -2,7 +2,10 @@ import { connection } from "next/server";
 import { exigirUsuario } from "@/lib/auth";
 import { listarPacientesBasico } from "@/lib/pacientes";
 import { hojeISO } from "@/lib/opcoes";
+import { FormAntimicrobiano } from "./form-antimicrobiano";
 import { FormAutomatico } from "./form-automatico";
+import { FormExames } from "./form-exames";
+import { FormFraldas } from "./form-fraldas";
 import { FormReceituario } from "./form-receituario";
 
 export default async function Documentos() {
@@ -35,6 +38,39 @@ export default async function Documentos() {
           <FormAutomatico tipo="dieta_enteral" pacientes={pacientes} botao="Gerar requerimento em PDF" />
         ) : (
           <p className="m-0 text-sm text-muted">Você não tem permissão para gerar documentos. Peça à coordenação, em Equipe.</p>
+        )}
+      </section>
+      <section className="cartao grid gap-4">
+        <div>
+          <h2 className="m-0 text-base font-bold text-heading">Ficha de antimicrobiano</h2>
+          <p className="mb-0 mt-1 text-sm text-muted">Identificação do paciente vem do cadastro; você marca o foco, a origem e escreve a prescrição.</p>
+        </div>
+        {usuario.perms.prescrever ? (
+          <FormAntimicrobiano pacientes={pacientes} hoje={hojeISO()} />
+        ) : (
+          <p className="m-0 text-sm text-muted">Somente quem tem a permissão “Prescrever” gera este documento. Peça à coordenação, em Equipe.</p>
+        )}
+      </section>
+      <section className="cartao grid gap-4">
+        <div>
+          <h2 className="m-0 text-base font-bold text-heading">Requerimento para fraldas descartáveis</h2>
+          <p className="mb-0 mt-1 text-sm text-muted">Nome, CNS, nascimento e diagnósticos vêm do cadastro; você informa tipo, marca, tamanho e quantidade.</p>
+        </div>
+        {usuario.perms.prescrever ? (
+          <FormFraldas pacientes={pacientes} hoje={hojeISO()} />
+        ) : (
+          <p className="m-0 text-sm text-muted">Somente quem tem a permissão “Prescrever” gera este documento. Peça à coordenação, em Equipe.</p>
+        )}
+      </section>
+      <section className="cartao grid gap-4">
+        <div>
+          <h2 className="m-0 text-base font-bold text-heading">Solicitação de exames</h2>
+          <p className="mb-0 mt-1 text-sm text-muted">Dados do paciente, mãe e endereço vêm do cadastro; você marca os exames. Sai em duas vias.</p>
+        </div>
+        {usuario.perms.prescrever ? (
+          <FormExames pacientes={pacientes} hoje={hojeISO()} />
+        ) : (
+          <p className="m-0 text-sm text-muted">Somente quem tem a permissão “Prescrever” gera este documento. Peça à coordenação, em Equipe.</p>
         )}
       </section>
     </div>

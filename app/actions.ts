@@ -14,9 +14,9 @@ import { TIPOS_EVOLUCAO, TIPO_VISITA, hojeISO } from "@/lib/opcoes";
 import type { DadosRelatorio } from "@/lib/relatorio-pdf";
 import type { DadosPrescricao } from "@/lib/prescricao-pdf";
 import { gravarPrescricao, obterPrescricao, removerPrescricaoDb } from "@/lib/prescricoes";
-import { formatarCns } from "@/lib/validacao";
+import { formatarCep, formatarCns } from "@/lib/validacao";
 import type { DadosDietaEnteral } from "@/lib/dieta-enteral-pdf";
-import { VIAS_DIETA } from "@/lib/opcoes";
+import { VIAS_DIETA, calcularIdade } from "@/lib/opcoes";
 import type { DadosFormPrescricao } from "@/lib/prescricao-tipos";
 
 export type EstadoLogin = { erro?: string };
@@ -323,4 +323,30 @@ export async function dadosDietaEnteral(pacienteId: number): Promise<{ erro?: st
     .filter(Boolean).join(" e ");
   await registrarDocumentoGerado(pacienteId, "doc_dieta_enteral");
   return { dados: { nome: f.nome, nascimento: f.data_nascimento ?? "", cns: f.cns ? formatarCns(f.cns) : "", diagnostico, via, data: hojeISO() } };
+}
+
+export type CadastroDocumento = { nome: string; cns: string; nascimento: string; sexo: string; idade: string; diagnostico: string; mae: string; endereco: string; hoje: string };
+
+/** Dados do cadastro para documentos que o médico completa na tela (antimicrobiano, fraldas). Exige "Prescrever". */
+export async function dadosCadastroDocumento(
+  tipo: "antimicrobiano" | "fraldas" | "exames", pacienteId: number,
+): Promise<{ erro?: string; dados?: CadastroDocumento }> {
+  await exigirPermissao("prescrever");
+  if (tipo !== "antimicrobiano" && tipo !== "fraldas" && tipo !== "exames") return { erro: "Documento inválido." };
+  if (!Number.isSafeInteger(pacienteId)) return { erro: "Paciente inválido." };
+  const f = await obterFicha(pacienteId);
+  if (!f) return { erro: "Paciente não encontrado." };
+  const idade = calcularIdade(f.data_nascimento);
+  const diagnostico = [...f.diagnosticos].sort((a, b) => Number(b.principal) - Number(a.principal))
+    .map((x) => (x.descricao ? `${x.cid} - ${x.descricao}` : x.cid)).join("; ");
+  await registrarDocumentoGerado(pacienteId, tipo === "fraldas" ? "doc_fraldas" : tipo === "exames" ? "doc_exames" : "doc_antimicrobiano");
+  const via = [f.rua, f.numero ? `nº ${f.numero}` : "", f.complemento].filter(Boolean).join(", ");
+  const local = [f.bairro, f.municipio].filter(Boolean).join(" - ");
+  const endereco = [[via, local].filter(Boolean).join(", "), f.cep ? `CEP ${formatarCep(f.cep)}` : ""].filter(Boolean).join("  ");
+  return {
+    dados: {
+      nome: f.nome, cns: f.cns ? formatarCns(f.cns) : "", nascimento: f.data_nascimento ?? "", sexo: f.sexo ?? "",
+      idade: idade === null ? "" : `${idade} anos`, diagnostico, mae: f.nome_mae ?? "", endereco, hoje: hojeISO(),
+    },
+  };
 }
