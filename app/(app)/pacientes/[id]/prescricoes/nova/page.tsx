@@ -34,7 +34,7 @@ export default async function NovaPrescricao({ params, searchParams }: PageProps
 
   return (
     <div className="grid gap-4">
-      <Link href={`/pacientes/${ficha.id}?aba=prescricoes`} className="text-sm font-semibold text-accent hover:underline">← Voltar às prescrições</Link>
+      <Link href={`/prescricoes?paciente=${ficha.id}`} className="text-sm font-semibold text-accent hover:underline">← Voltar às prescrições</Link>
       <header>
         <h1 className="m-0 text-[28px] font-extrabold tracking-[-0.02em] text-heading">{renovacao ? "Renovar prescrição" : "Nova prescrição"}</h1>
         <p className="mb-0 mt-1 text-sm text-muted">{ficha.nome} · prontuário {ficha.prontuario}</p>

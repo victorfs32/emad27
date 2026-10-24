@@ -138,7 +138,7 @@ export function FormPrescricao({ pacienteId, id, inicial }: Props) {
 
       <div className="flex flex-wrap gap-3">
         <button className="btn-primario" disabled={pendente}>{pendente ? "Salvando…" : id ? "Salvar alterações" : "Salvar prescrição"}</button>
-        <Link href={`/pacientes/${pacienteId}?aba=prescricoes`} className="btn-secundario">Cancelar</Link>
+        <Link href={`/prescricoes?paciente=${pacienteId}`} className="btn-secundario">Cancelar</Link>
       </div>
     </form>
   );

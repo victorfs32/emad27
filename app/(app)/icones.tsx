@@ -43,3 +43,4 @@ export const IconeDispositivo = (p: P) => <Icone {...p}><rect x="8" y="9" width=
 export const IconeLesao = (p: P) => <Icone {...p}><rect x="3" y="8.5" width="18" height="7" rx="3.5" transform="rotate(-35 12 12)" /><path d="M10.5 10.5h.01M13.5 13.5h.01M12 12h.01" /></Icone>;
 export const IconeVisita = (p: P) => <Icone {...p}><path d="M12 21s-6.5-5.600-6.500-11a6.500 6.500 0 0113 0c0 5.400-6.500 11-6.500 11z" /><path d="M9.500 10l1.800 1.800L14.700 8.400" /></Icone>;
 export const IconeProcedimento = (p: P) => <Icone {...p}><path d="M14 4l6 6M16 6l-9.500 9.500a2 2 0 00-.5 1L5 20l3.500-1a2 2 0 001-.5L19 9M4 20l3-3" /></Icone>;
+export const IconePrescricao = (p: P) => <Icone {...p}><path d="M7 3h8l4 4v14H7zM15 3v4h4M10 12h6M10 16h6M10 8h2" /></Icone>;

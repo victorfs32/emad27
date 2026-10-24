@@ -259,7 +259,7 @@ export async function salvarPrescricao(
   const r = await gravarPrescricao(id, pacienteId, dados);
   if (r.erro) return { erro: r.erro };
   revalidatePath("/", "layout");
-  redirect(`/pacientes/${pacienteId}?aba=prescricoes`);
+  redirect(`/prescricoes?paciente=${pacienteId}`);
 }
 
 export async function excluirPrescricao(id: number): Promise<{ erro?: string }> {

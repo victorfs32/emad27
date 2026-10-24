@@ -11,11 +11,11 @@ export default async function EditarPrescricao({ params }: PageProps<"/pacientes
   const [ficha, presc] = await Promise.all([obterFicha(Number(id)), obterPrescricao(Number(pid))]);
   if (!ficha || !presc || presc.paciente_id !== ficha.id) notFound();
   // só o autor ou o administrador alteram (o banco também confere)
-  if (!usuario.perms.admin && presc.usuario_id !== usuario.id) redirect(`/pacientes/${ficha.id}?aba=prescricoes`);
+  if (!usuario.perms.admin && presc.usuario_id !== usuario.id) redirect(`/prescricoes?paciente=${ficha.id}`);
 
   return (
     <div className="grid gap-4">
-      <Link href={`/pacientes/${ficha.id}?aba=prescricoes`} className="text-sm font-semibold text-accent hover:underline">← Voltar às prescrições</Link>
+      <Link href={`/prescricoes?paciente=${ficha.id}`} className="text-sm font-semibold text-accent hover:underline">← Voltar às prescrições</Link>
       <header>
         <h1 className="m-0 text-[28px] font-extrabold tracking-[-0.02em] text-heading">Editar prescrição</h1>
         <p className="mb-0 mt-1 text-sm text-muted">{ficha.nome} · prontuário {ficha.prontuario}</p>

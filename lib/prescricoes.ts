@@ -103,3 +103,20 @@ export async function removerPrescricaoDb(id: number): Promise<{ erro?: string }
   }
   return {};
 }
+
+export type PrescricaoComPaciente = PrescricaoSalva & { paciente_id: number; paciente: string; prontuario: string };
+
+/** Últimas prescrições de todos os pacientes (tela Prescrições). */
+export async function listarPrescricoesRecentes(limite = 30): Promise<PrescricaoComPaciente[]> {
+  await exigirUsuario();
+  const sb = await supabaseServidor();
+  const r = await sb.from("prescricoes").select(`${COLUNAS}, paciente_id, pacientes(nome, prontuario)`)
+    .order("data", { ascending: false }).order("id", { ascending: false }).limit(limite);
+  if (r.error) throw new Error(r.error.message);
+  return (r.data as unknown as (Linha & { paciente_id: number; pacientes: { nome: string; prontuario: string } | null })[]).map((l) => ({
+    ...paraPrescricao(l),
+    paciente_id: l.paciente_id,
+    paciente: l.pacientes?.nome ?? "",
+    prontuario: l.pacientes?.prontuario ?? "",
+  }));
+}
