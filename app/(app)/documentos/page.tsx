@@ -3,6 +3,7 @@ import { exigirUsuario } from "@/lib/auth";
 import { listarPacientesBasico } from "@/lib/pacientes";
 import { hojeISO } from "@/lib/opcoes";
 import { FormAntimicrobiano } from "./form-antimicrobiano";
+import { FormAtestado } from "./form-atestado";
 import { FormAutomatico } from "./form-automatico";
 import { FormControleEspecial } from "./form-controle-especial";
 import { FormElegibilidade } from "./form-elegibilidade";
@@ -119,6 +120,14 @@ export default async function Documentos() {
           <FormIaec pacientes={pacientes} hoje={hojeISO()} />
         ) : (
           <p className="m-0 text-sm text-muted">Somente quem tem a permissão “Prescrever” gera este documento. Peça à coordenação, em Equipe.</p>
+        )}
+      </section>
+      <section className="cartao grid gap-4">
+        <h2 className="m-0 text-base font-bold text-heading">Atestado médico</h2>
+        {usuario.perms.prescrever ? (
+          <FormAtestado pacientes={pacientes} hoje={hojeISO()} />
+        ) : (
+          <p className="m-0 text-sm text-muted">Somente quem tem a permissão “Prescrever” gera atestados. Peça à coordenação, em Equipe.</p>
         )}
       </section>
     </div>

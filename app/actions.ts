@@ -371,3 +371,13 @@ export async function fichaParaDocumento(
   await registrarDocumentoGerado(pacienteId, TIPOS_DOC_FICHA[tipo]);
   return { dados: { ficha, medico: eu.nome, hoje: hojeISO() } };
 }
+
+/** Nome do paciente para o atestado médico; registra a geração no histórico. Exige "Prescrever". */
+export async function dadosAtestado(pacienteId: number): Promise<{ erro?: string; nome?: string }> {
+  await exigirPermissao("prescrever");
+  if (!Number.isSafeInteger(pacienteId)) return { erro: "Paciente inválido." };
+  const ficha = await obterFicha(pacienteId);
+  if (!ficha) return { erro: "Paciente não encontrado." };
+  await registrarDocumentoGerado(pacienteId, "doc_atestado");
+  return { nome: ficha.nome };
+}

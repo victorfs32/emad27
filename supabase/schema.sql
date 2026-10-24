@@ -639,6 +639,7 @@ begin
     when 'doc_elegibilidade_admissao' then 'Avaliação de elegibilidade e admissão gerada'
     when 'doc_medicamentos_especiais' then 'Solicitação de medicamentos especiais gerada'
     when 'doc_iaec_d' then 'Instrumento IAEC-D gerado'
+    when 'doc_atestado' then 'Atestado médico gerado'
     else null end;
   if v_resumo is null then raise exception 'Tipo de documento inválido.'; end if;
   insert into public.historico (paciente_id, usuario_id, autor, tipo, resumo)
