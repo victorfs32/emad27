@@ -8,6 +8,7 @@ import { FormControleEspecial } from "./form-controle-especial";
 import { FormElegibilidade } from "./form-elegibilidade";
 import { FormExames } from "./form-exames";
 import { FormFraldas } from "./form-fraldas";
+import { FormIaec } from "./form-iaec";
 import { FormMedicamentosEspeciais } from "./form-medicamentos-especiais";
 import { FormReceituario } from "./form-receituario";
 
@@ -105,6 +106,17 @@ export default async function Documentos() {
         </div>
         {usuario.perms.prescrever ? (
           <FormElegibilidade pacientes={pacientes} hoje={hojeISO()} />
+        ) : (
+          <p className="m-0 text-sm text-muted">Somente quem tem a permissão “Prescrever” gera este documento. Peça à coordenação, em Equipe.</p>
+        )}
+      </section>
+      <section className="cartao grid gap-4">
+        <div>
+          <h2 className="m-0 text-base font-bold text-heading">IAEC-AD — elegibilidade e complexidade da atenção domiciliar</h2>
+          <p className="mb-0 mt-1 text-sm text-muted">Você marca as respostas; os pontos de cada bloco, a pontuação final e a modalidade (AD1, AD2 ou AD3) são calculados sozinhos.</p>
+        </div>
+        {usuario.perms.prescrever ? (
+          <FormIaec pacientes={pacientes} hoje={hojeISO()} />
         ) : (
           <p className="m-0 text-sm text-muted">Somente quem tem a permissão “Prescrever” gera este documento. Peça à coordenação, em Equipe.</p>
         )}

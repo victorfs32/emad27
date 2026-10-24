@@ -356,6 +356,7 @@ const TIPOS_DOC_FICHA = {
   controle_especial: "doc_receituario_controle_especial",
   medicamentos_especiais: "doc_medicamentos_especiais",
   elegibilidade_admissao: "doc_elegibilidade_admissao",
+  iaec_ad: "doc_iaec_d",
 } as const;
 
 /** Ficha completa do paciente para formulários que o médico completa na tela. Exige "Prescrever". */
