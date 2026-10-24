@@ -630,6 +630,15 @@ begin
     when 'relatorio' then 'Relatório em PDF gerado'
     when 'prescricao' then 'Formulário de prescrição médica gerado'
     when 'prescricao_impressa' then 'Prescrição impressa'
+    when 'doc_receituario_medico' then 'Receituário médico gerado'
+    when 'doc_receituario_controle_especial' then 'Receituário de controle especial gerado'
+    when 'doc_dieta_enteral' then 'Requerimento de dieta enteral gerado'
+    when 'doc_antimicrobiano' then 'Ficha de antimicrobiano gerada'
+    when 'doc_fraldas' then 'Requerimento de fraldas descartáveis gerado'
+    when 'doc_exames' then 'Solicitação de exames gerada'
+    when 'doc_elegibilidade_admissao' then 'Avaliação de elegibilidade e admissão gerada'
+    when 'doc_medicamentos_especiais' then 'Solicitação de medicamentos especiais gerada'
+    when 'doc_iaec_d' then 'Instrumento IAEC-D gerado'
     else null end;
   if v_resumo is null then raise exception 'Tipo de documento inválido.'; end if;
   insert into public.historico (paciente_id, usuario_id, autor, tipo, resumo)

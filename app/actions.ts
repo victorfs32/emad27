@@ -14,6 +14,9 @@ import { TIPOS_EVOLUCAO, TIPO_VISITA, hojeISO } from "@/lib/opcoes";
 import type { DadosRelatorio } from "@/lib/relatorio-pdf";
 import type { DadosPrescricao } from "@/lib/prescricao-pdf";
 import { gravarPrescricao, obterPrescricao, removerPrescricaoDb } from "@/lib/prescricoes";
+import { formatarCns } from "@/lib/validacao";
+import type { DadosDietaEnteral } from "@/lib/dieta-enteral-pdf";
+import { VIAS_DIETA } from "@/lib/opcoes";
 import type { DadosFormPrescricao } from "@/lib/prescricao-tipos";
 
 export type EstadoLogin = { erro?: string };
@@ -294,4 +297,30 @@ export async function dadosPrescricaoSalva(prescricaoId: number): Promise<{ erro
       },
     },
   };
+}
+
+/** Nome do paciente para o receituário médico; registra a geração no histórico. Exige "Prescrever". */
+export async function dadosReceituario(pacienteId: number): Promise<{ erro?: string; nome?: string; hoje?: string }> {
+  await exigirPermissao("prescrever");
+  if (!Number.isSafeInteger(pacienteId)) return { erro: "Paciente inválido." };
+  const ficha = await obterFicha(pacienteId);
+  if (!ficha) return { erro: "Paciente não encontrado." };
+  await registrarDocumentoGerado(pacienteId, "doc_receituario_medico");
+  return { nome: ficha.nome, hoje: hojeISO() };
+}
+
+/** Dados do requerimento de dieta enteral, todos tirados do cadastro. Exige exportar. */
+export async function dadosDietaEnteral(pacienteId: number): Promise<{ erro?: string; dados?: DadosDietaEnteral }> {
+  await exigirPermissao("exportar");
+  if (!Number.isSafeInteger(pacienteId)) return { erro: "Paciente inválido." };
+  const f = await obterFicha(pacienteId);
+  if (!f) return { erro: "Paciente não encontrado." };
+  const diagnostico = [...f.diagnosticos].sort((a, b) => Number(b.principal) - Number(a.principal))
+    .map((x) => (x.descricao ? `${x.cid} - ${x.descricao}` : x.cid)).join("; ");
+  const via = f.dieta_vias
+    .filter((v) => v !== "oral" || f.dieta_vias.length === 1)
+    .map((v) => (v === "outra" ? (f.dieta_outra ?? "") : (VIAS_DIETA.find((x) => x.valor === v)?.rotulo ?? v).toLowerCase()))
+    .filter(Boolean).join(" e ");
+  await registrarDocumentoGerado(pacienteId, "doc_dieta_enteral");
+  return { dados: { nome: f.nome, nascimento: f.data_nascimento ?? "", cns: f.cns ? formatarCns(f.cns) : "", diagnostico, via, data: hojeISO() } };
 }
