@@ -440,7 +440,7 @@ export async function listarParaExportar(f: Filtros): Promise<Ficha[]> {
 }
 
 export type Perfil = {
-  user_id: string; nome: string; ativo: boolean; admin: boolean; pode_cadastrar: boolean; pode_editar: boolean; pode_exportar: boolean;
+  user_id: string; nome: string; ativo: boolean; admin: boolean; pode_cadastrar: boolean; pode_editar: boolean; pode_exportar: boolean; pode_prescrever: boolean;
 };
 
 export async function listarPerfis(): Promise<Perfil[]> {
@@ -660,7 +660,7 @@ export async function removerProcedimentoDb(id: number) {
 }
 
 /** Registra no histórico do paciente quem gerou um documento em PDF (não bloqueia se a função ainda não existir). */
-export async function registrarDocumentoGerado(pacienteId: number, tipo: "relatorio" | "prescricao") {
+export async function registrarDocumentoGerado(pacienteId: number, tipo: "relatorio" | "prescricao" | "prescricao_impressa") {
   const sb = await supabaseServidor();
   const r = await sb.rpc("registrar_documento", { p_id: pacienteId, p_tipo: tipo });
   if (r.error) console.error("[registrarDocumento]", r.error.message);

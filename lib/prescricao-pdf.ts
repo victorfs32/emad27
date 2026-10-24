@@ -3,6 +3,7 @@
 import type { jsPDF as JsPDF } from "jspdf";
 import type { Ficha } from "./pacientes";
 import { formatarData } from "./opcoes";
+import type { ItemPrescricao } from "./prescricao-tipos";
 import { formatarCep, formatarCns, formatarTelefone } from "./validacao";
 
 export type DadosPrescricao = {
@@ -10,6 +11,14 @@ export type DadosPrescricao = {
   geradoEm: string;
   geradoPor: string;
   hoje: string;
+  /** Prescrição digitada; sem ela sai o formulário em branco para preencher à mão. */
+  prescricao?: {
+    data: string;
+    datas_aprazamento: string[];
+    itens: ItemPrescricao[];
+    observacoes: string;
+    autor: string;
+  };
 };
 
 /** Dados fixos do modelo impresso. */
@@ -103,7 +112,75 @@ export async function montarPrescricaoPdf(d: DadosPrescricao): Promise<{ doc: Js
     doc.text(m.linhas, x + 1.8 + m.lw, y + 5.1, { lineHeightFactor: 1.2 });
   };
 
-  const desenharPagina = (pagina: number, total: number) => {
+  const linhasCab: { x: number; w: number; r: string; v: string; sexo?: boolean }[][] = [
+    [
+      { x: X0, w: 207, r: "NOME:", v: f.nome },
+      { x: 217, w: 70, r: "SEXO:", v: "", sexo: true },
+    ],
+    [
+      { x: X0, w: 62, r: "CNS:", v: f.cns ? formatarCns(f.cns) : "" },
+      { x: 72, w: 70, r: "DATA DO NASCIMENTO:", v: f.data_nascimento ? formatarData(f.data_nascimento) : "" },
+      { x: 142, w: 70, r: "PRONTUÁRIO:", v: f.prontuario },
+      { x: 212, w: 75, r: "EMAD:", v: MODELO.emad },
+    ],
+    [
+      { x: X0, w: 207, r: "HIPÓTESE DIAGNÓSTICA:", v: textoDiagnostico(f) },
+      { x: 217, w: 70, r: "TELEFONE:", v: textoTelefone(f) },
+    ],
+    [{ x: X0, w: LARG, r: "ENDEREÇO:", v: textoEndereco(f) }],
+  ];
+  const alturasCab = linhasCab.map((cs) => Math.max(...cs.map((c) => (c.sexo ? 8.2 : medirCelula(c.r, c.v, c.w).h))));
+
+  // ---- geometria da tabela e distribuição das linhas nas páginas
+  const topoTabela = 36 + alturasCab.reduce((a, b) => a + b, 0) + 3.5;
+  const hCab = 6.4, hMascara = 5.2;
+  const xData = X0, xPresc = 34, xApraz = 197;
+  const larguraDia = (X1 - xApraz) / 5;
+  const inicioCorpo = topoTabela + hCab + hMascara;
+  const fimCorpo = 176;
+  const hLinha = (fimCorpo - inicioCorpo) / MODELO.linhasPorPagina;
+  const alturaCorpo = fimCorpo - inicioCorpo;
+
+  type LinhaTab = { data: string; texto: string[]; apraz: string[][]; italico?: boolean; h: number };
+  const dataCurta = (iso: string) => (/^\d{4}-\d{2}-\d{2}$/.test(iso) ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(2, 4)}` : "");
+  const paginas: LinhaTab[][] = [];
+  const pr = d.prescricao;
+  if (!pr) {
+    for (let p = 0; p < MODELO.paginas; p++) {
+      paginas.push(Array.from({ length: MODELO.linhasPorPagina }, () => ({ data: "", texto: [], apraz: [], h: hLinha })));
+    }
+  } else {
+    const maxLinhas = Math.floor((alturaCorpo - 2.6) / 3.7);
+    const montar = (data: string, texto: string, apraz: string[], italico?: boolean): LinhaTab => {
+      fonte(italico ? 8.2 : 8.6, italico ? "italic" : "normal");
+      const t = (doc.splitTextToSize(limpar(texto), xApraz - xPresc - 4) as string[]).slice(0, maxLinhas);
+      fonte(7.4, "normal");
+      const a = apraz.map((x) => (doc.splitTextToSize(limpar(x), larguraDia - 2) as string[]).slice(0, maxLinhas));
+      const n = Math.max(t.length, ...a.map((x) => x.length), 1);
+      return { data: dataCurta(data), texto: t, apraz: a, italico, h: Math.min(alturaCorpo, Math.max(hLinha, 2.8 + n * 3.7)) };
+    };
+    const linhasTodas = pr.itens.map((i) => montar(i.data || pr.data, i.texto, i.aprazamento));
+    if (pr.observacoes) linhasTodas.push(montar("", `Observações: ${pr.observacoes}`, [], true));
+    let atual: LinhaTab[] = [];
+    let usado = 0;
+    for (const l of linhasTodas) {
+      if (atual.length && usado + l.h > alturaCorpo) {
+        paginas.push(atual);
+        atual = [];
+        usado = 0;
+      }
+      atual.push(l);
+      usado += l.h;
+    }
+    // completa a última página com linhas em branco (para anotações à mão)
+    while (usado + hLinha <= alturaCorpo + 0.01) {
+      atual.push({ data: "", texto: [], apraz: [], h: hLinha });
+      usado += hLinha;
+    }
+    paginas.push(atual);
+  }
+
+  const desenharPagina = (pagina: number, total: number, linhasPag: LinhaTab[]) => {
     // ---------------------------------------------------------- cabeçalho
     caixa(X0, 8, LARG, 16);
     linha(100, 8, 100, 24);
@@ -130,25 +207,8 @@ export async function montarPrescricaoPdf(d: DadosPrescricao): Promise<{ doc: Js
 
     // ---------------------------------------------------------- dados do paciente (automático)
     let y = 36;
-    const linhas: { x: number; w: number; r: string; v: string; sexo?: boolean }[][] = [
-      [
-        { x: X0, w: 207, r: "NOME:", v: f.nome },
-        { x: 217, w: 70, r: "SEXO:", v: "", sexo: true },
-      ],
-      [
-        { x: X0, w: 62, r: "CNS:", v: f.cns ? formatarCns(f.cns) : "" },
-        { x: 72, w: 70, r: "DATA DO NASCIMENTO:", v: f.data_nascimento ? formatarData(f.data_nascimento) : "" },
-        { x: 142, w: 70, r: "PRONTUÁRIO:", v: f.prontuario },
-        { x: 212, w: 75, r: "EMAD:", v: MODELO.emad },
-      ],
-      [
-        { x: X0, w: 207, r: "HIPÓTESE DIAGNÓSTICA:", v: textoDiagnostico(f) },
-        { x: 217, w: 70, r: "TELEFONE:", v: textoTelefone(f) },
-      ],
-      [{ x: X0, w: LARG, r: "ENDEREÇO:", v: textoEndereco(f) }],
-    ];
-    for (const linhaCelulas of linhas) {
-      const h = Math.max(...linhaCelulas.map((c) => (c.sexo ? 8.2 : medirCelula(c.r, c.v, c.w).h)));
+    for (const [n, linhaCelulas] of linhasCab.entries()) {
+      const h = alturasCab[n];
       for (const c of linhaCelulas) {
         if (c.sexo) {
           caixa(c.x, y, c.w, h);
@@ -175,11 +235,6 @@ export async function montarPrescricaoPdf(d: DadosPrescricao): Promise<{ doc: Js
     }
 
     // ---------------------------------------------------------- tabela de prescrição
-    const topoTabela = y + 3.5;
-    const hCab = 6.4, hMascara = 5.2;
-    const xData = X0, xPresc = 34, xApraz = 197;
-    const larguraDia = (X1 - xApraz) / 5;
-    // cabeçalho
     caixa(xData, topoTabela, xPresc - xData, hCab + hMascara);
     caixa(xPresc, topoTabela, xApraz - xPresc, hCab + hMascara);
     caixa(xApraz, topoTabela, X1 - xApraz, hCab);
@@ -189,17 +244,28 @@ export async function montarPrescricaoPdf(d: DadosPrescricao): Promise<{ doc: Js
     for (let k = 0; k < 5; k++) {
       const xx = xApraz + k * larguraDia;
       caixa(xx, topoTabela + hCab, larguraDia, hMascara);
-      centro("/       /", xx + larguraDia / 2, topoTabela + hCab + 3.7, 8, "normal", CINZA);
+      const dia = pr ? dataCurta(pr.datas_aprazamento[k] ?? "") : "";
+      if (dia) centro(dia, xx + larguraDia / 2, topoTabela + hCab + 3.7, 8.2, "bold");
+      else centro("/       /", xx + larguraDia / 2, topoTabela + hCab + 3.7, 8, "normal", CINZA);
     }
-    // corpo
-    const inicioCorpo = topoTabela + hCab + hMascara;
-    const fimCorpo = 176;
-    const hLinha = (fimCorpo - inicioCorpo) / MODELO.linhasPorPagina;
-    for (let i = 0; i < MODELO.linhasPorPagina; i++) {
-      const yy = inicioCorpo + i * hLinha;
-      caixa(xData, yy, xPresc - xData, hLinha, 0.25);
-      caixa(xPresc, yy, xApraz - xPresc, hLinha, 0.25);
-      for (let k = 0; k < 5; k++) caixa(xApraz + k * larguraDia, yy, larguraDia, hLinha, 0.25);
+    let yy = inicioCorpo;
+    for (const l of linhasPag) {
+      caixa(xData, yy, xPresc - xData, l.h, 0.25);
+      caixa(xPresc, yy, xApraz - xPresc, l.h, 0.25);
+      for (let k = 0; k < 5; k++) caixa(xApraz + k * larguraDia, yy, larguraDia, l.h, 0.25);
+      if (l.data) centro(l.data, (xData + xPresc) / 2, yy + 4.6, 8.6);
+      if (l.texto.length) {
+        fonte(l.italico ? 8.2 : 8.6, l.italico ? "italic" : "normal");
+        ink(PRETO);
+        doc.text(l.texto, xPresc + 1.8, yy + 4.6, { lineHeightFactor: 1.2 });
+      }
+      l.apraz.forEach((cel, k) => {
+        if (!cel.length) return;
+        fonte(7.4, "normal");
+        ink(PRETO);
+        doc.text(cel, xApraz + k * larguraDia + larguraDia / 2, yy + 4.4, { align: "center", lineHeightFactor: 1.2 });
+      });
+      yy += l.h;
     }
 
     // ---------------------------------------------------------- assinaturas e rodapé
@@ -214,12 +280,12 @@ export async function montarPrescricaoPdf(d: DadosPrescricao): Promise<{ doc: Js
     doc.text(limpar(`Dados do paciente preenchidos pelo sistema EMAD 27 em ${d.geradoEm}`), X1, 202, { align: "right" });
   };
 
-  for (let p = 1; p <= MODELO.paginas; p++) {
-    if (p > 1) doc.addPage("a4", "landscape");
-    desenharPagina(p, MODELO.paginas);
-  }
+  paginas.forEach((linhasPag, i) => {
+    if (i > 0) doc.addPage("a4", "landscape");
+    desenharPagina(i + 1, paginas.length, linhasPag);
+  });
 
-  return { doc, nomeArquivo: `prescricao-${slug(f.nome) || "paciente"}-${d.hoje}.pdf` };
+  return { doc, nomeArquivo: `prescricao-${slug(f.nome) || "paciente"}-${d.prescricao?.data ?? d.hoje}.pdf` };
 }
 
 /** Monta o formulário e baixa o arquivo PDF. */

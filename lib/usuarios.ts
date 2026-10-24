@@ -45,7 +45,7 @@ export async function criarUsuario(d: DadosNovoUsuario): Promise<{ erro?: string
   // O banco cria o perfil de consulta automaticamente; aqui garantimos o perfil escolhido.
   const ehAdmin = perfil === "admin";
   const p = await admin.from("perfis").upsert(
-    { user_id: r.data.user.id, nome, ativo: true, admin: ehAdmin, pode_cadastrar: ehAdmin, pode_editar: ehAdmin, pode_exportar: ehAdmin },
+    { user_id: r.data.user.id, nome, ativo: true, admin: ehAdmin, pode_cadastrar: ehAdmin, pode_editar: ehAdmin, pode_exportar: ehAdmin, pode_prescrever: ehAdmin },
     { onConflict: "user_id" },
   );
   if (p.error) {

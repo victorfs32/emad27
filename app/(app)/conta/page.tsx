@@ -5,7 +5,7 @@ export default async function Conta() {
   const u = await exigirUsuario();
   const papel = u.perms.admin
     ? "Administrador: pode cadastrar pacientes, editar tudo, exportar e gerenciar a equipe."
-    : u.perms.cadastrar || u.perms.editar || u.perms.exportar
+    : u.perms.cadastrar || u.perms.editar || u.perms.exportar || u.perms.prescrever
       ? "Acesso personalizado: algumas ações de cadastro, edição ou exportação estão liberadas para você."
       : "Somente visualização: você consulta as fichas e as listas, sem alterar nada.";
 

@@ -13,6 +13,8 @@ import type { DadosForm, ResultadoSalvar } from "@/lib/formulario";
 import { TIPOS_EVOLUCAO, TIPO_VISITA, hojeISO } from "@/lib/opcoes";
 import type { DadosRelatorio } from "@/lib/relatorio-pdf";
 import type { DadosPrescricao } from "@/lib/prescricao-pdf";
+import { gravarPrescricao, obterPrescricao, removerPrescricaoDb } from "@/lib/prescricoes";
+import type { DadosFormPrescricao } from "@/lib/prescricao-tipos";
 
 export type EstadoLogin = { erro?: string };
 
@@ -90,6 +92,7 @@ export async function atualizarPerfil(userId: string, fd: FormData) {
     pode_cadastrar: todos || (!nenhum && marcado("pode_cadastrar")),
     pode_editar: todos || (!nenhum && marcado("pode_editar")),
     pode_exportar: todos || (!nenhum && marcado("pode_exportar")),
+    pode_prescrever: todos || (!nenhum && marcado("pode_prescrever")),
   };
   // Evita o administrador se trancar para fora do sistema: o próprio usuário continua ativo e administrador.
   if (userId === eu.id) {
@@ -98,6 +101,7 @@ export async function atualizarPerfil(userId: string, fd: FormData) {
     p.pode_cadastrar = true;
     p.pode_editar = true;
     p.pode_exportar = true;
+    p.pode_prescrever = true;
   }
   await salvarPerfil(userId, p);
   revalidatePath("/equipe");
@@ -242,6 +246,52 @@ export async function dadosPrescricao(pacienteId: number): Promise<{ erro?: stri
       geradoPor: eu.nome,
       hoje: hojeISO(),
       geradoEm: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }),
+    },
+  };
+}
+
+/** Salva (nova ou existente) a prescrição digitada. Só quem tem a permissão "Prescrever". */
+export async function salvarPrescricao(
+  id: number | null, pacienteId: number, dados: DadosFormPrescricao,
+): Promise<{ erro: string } | never> {
+  await exigirPermissao("prescrever");
+  if (!Number.isSafeInteger(pacienteId) || (id !== null && !Number.isSafeInteger(id))) return { erro: "Prescrição inválida." };
+  const r = await gravarPrescricao(id, pacienteId, dados);
+  if (r.erro) return { erro: r.erro };
+  revalidatePath("/", "layout");
+  redirect(`/pacientes/${pacienteId}?aba=prescricoes`);
+}
+
+export async function excluirPrescricao(id: number): Promise<{ erro?: string }> {
+  await exigirPermissao("prescrever");
+  if (!Number.isSafeInteger(id)) return { erro: "Prescrição inválida." };
+  const r = await removerPrescricaoDb(id);
+  if (!r.erro) revalidatePath("/", "layout");
+  return r;
+}
+
+/** Dados para imprimir uma prescrição digitada já preenchida no formulário. */
+export async function dadosPrescricaoSalva(prescricaoId: number): Promise<{ erro?: string; dados?: DadosPrescricao }> {
+  const eu = await exigirPermissao("exportar");
+  if (!Number.isSafeInteger(prescricaoId)) return { erro: "Prescrição inválida." };
+  const presc = await obterPrescricao(prescricaoId);
+  if (!presc) return { erro: "Prescrição não encontrada." };
+  const ficha = await obterFicha(presc.paciente_id);
+  if (!ficha) return { erro: "Paciente não encontrado." };
+  await registrarDocumentoGerado(presc.paciente_id, "prescricao_impressa");
+  return {
+    dados: {
+      ficha,
+      geradoPor: eu.nome,
+      hoje: hojeISO(),
+      geradoEm: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }),
+      prescricao: {
+        data: presc.data,
+        datas_aprazamento: presc.datas_aprazamento,
+        itens: presc.itens,
+        observacoes: presc.observacoes ?? "",
+        autor: presc.autor,
+      },
     },
   };
 }

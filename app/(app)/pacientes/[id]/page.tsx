@@ -11,13 +11,15 @@ import { formatarCep, formatarCns, formatarCpf, formatarTelefone } from "@/lib/v
 import { nomeDoCampo, valorLegivel } from "@/lib/rotulos";
 import { agendarVisita, novaAdmissao, registrarEvolucao } from "../../../actions";
 import { IconeCalendario } from "../../icones";
+import { listarPrescricoes } from "@/lib/prescricoes";
 import { BotaoPrescricao } from "./botao-prescricao";
+import { AcoesPrescricao } from "./prescricoes/acoes-prescricao";
 import { BotaoRelatorio } from "./botao-relatorio";
 import { SeloStatus } from "../../selo-status";
 
 const ABAS = [
   ["identificacao", "Identificação"], ["contatos", "Contatos e endereço"], ["cuidador", "Cuidadores"],
-  ["acompanhamento", "Acompanhamento"], ["clinico", "Clínico"], ["procedimentos", "Procedimentos"], ["historico", "Histórico"],
+  ["acompanhamento", "Acompanhamento"], ["clinico", "Clínico"], ["procedimentos", "Procedimentos"], ["prescricoes", "Prescrições"], ["historico", "Histórico"],
 ] as const;
 
 function Dado({ rotulo: r, valor, largo }: { rotulo: string; valor: string; largo?: boolean }) {
@@ -72,6 +74,11 @@ export default async function Ficha({ params, searchParams }: PageProps<"/pacien
         </div>
         <div className="flex flex-wrap items-start gap-2">
           {usuario.perms.exportar && <BotaoPrescricao pacienteId={ficha.id} />}
+          {usuario.perms.prescrever && (
+            <Link href={`/pacientes/${ficha.id}/prescricoes/nova`} className="inline-flex min-h-11 items-center rounded-2xl border border-white/35 px-5 text-sm font-semibold text-white hover:bg-white/10">
+              Nova prescrição
+            </Link>
+          )}
           {usuario.perms.exportar && <BotaoRelatorio pacienteId={ficha.id} />}
           {editar && (
             <Link href={`/pacientes/${ficha.id}/editar`} className="inline-flex min-h-11 items-center rounded-2xl border border-white/35 px-5 text-sm font-semibold text-white hover:bg-white/10">
@@ -100,6 +107,7 @@ export default async function Ficha({ params, searchParams }: PageProps<"/pacien
       {aba === "acompanhamento" && <Acompanhamento f={ficha} editar={editar} arquivado={arquivado} />}
       {aba === "clinico" && <Clinico f={ficha} />}
       {aba === "procedimentos" && <ProcedimentosDoPaciente id={ficha.id} />}
+      {aba === "prescricoes" && <Prescricoes id={ficha.id} usuarioId={usuario.id} perms={usuario.perms} />}
       {aba === "historico" && <Historico id={ficha.id} />}
     </div>
   );
@@ -402,7 +410,7 @@ function Clinico({ f }: { f: Ficha }) {
 }
 
 const TIPOS_HISTORICO: Record<string, string> = {
-  cadastro: "Cadastro", alteracao: "Alteração", situacao: "Situação", lista: "Lista", admissao: "Admissão", dispositivo: "Dispositivo", procedimento: "Procedimento", evolucao: "Acompanhamento", relatorio: "Relatório", documento: "Documento",
+  cadastro: "Cadastro", alteracao: "Alteração", situacao: "Situação", lista: "Lista", admissao: "Admissão", dispositivo: "Dispositivo", procedimento: "Procedimento", evolucao: "Acompanhamento", relatorio: "Relatório", documento: "Documento", prescricao: "Prescrição",
 };
 
 async function Historico({ id }: { id: number }) {
@@ -476,6 +484,38 @@ async function ProcedimentosDoPaciente({ id }: { id: number }) {
               <strong className="text-heading">{formatarData(p.data)}</strong> · <span className="font-semibold text-heading">{p.tipo}</span>
               <span className="text-muted"> · {p.autor}</span>
               {p.obs && <p className="mb-0 mt-1 text-muted">{p.obs}</p>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </Secao>
+  );
+}
+
+async function Prescricoes({ id, usuarioId, perms }: { id: number; usuarioId: string; perms: { admin: boolean; exportar: boolean; prescrever: boolean } }) {
+  const lista = await listarPrescricoes(id);
+  return (
+    <Secao titulo="Prescrições médicas">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <p className="m-0 max-w-xl text-sm text-muted">
+          Prescrições digitadas ficam salvas no prontuário e saem no formulário do programa, já preenchidas, para assinatura e carimbo.
+        </p>
+        {perms.prescrever && <Link href={`/pacientes/${id}/prescricoes/nova`} className="btn-primario">Nova prescrição</Link>}
+      </div>
+      {lista.length === 0 ? <Vazio>Nenhuma prescrição digitada para este paciente.</Vazio> : (
+        <ul className="m-0 grid list-none gap-3 p-0">
+          {lista.map((p) => (
+            <li key={p.id} className="grid gap-3 rounded-2xl bg-detail p-4">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <strong className="text-heading">{formatarData(p.data)}</strong>
+                <span className="text-sm text-muted">{p.autor} · {p.itens.length} {p.itens.length === 1 ? "item" : "itens"}</span>
+              </div>
+              <ol className="m-0 grid gap-1 pl-5 text-sm text-heading">
+                {p.itens.slice(0, 6).map((it, i) => <li key={i} className="whitespace-pre-wrap break-words">{it.texto}</li>)}
+              </ol>
+              {p.itens.length > 6 && <p className="m-0 text-xs text-muted">+ {p.itens.length - 6} itens no formulário</p>}
+              {p.observacoes && <p className="m-0 whitespace-pre-wrap text-sm italic text-muted">Obs.: {p.observacoes}</p>}
+              <AcoesPrescricao pacienteId={id} id={p.id} podeImprimir={perms.exportar} podePrescrever={perms.prescrever} podeAlterar={perms.admin || p.usuario_id === usuarioId} />
             </li>
           ))}
         </ul>

@@ -8,12 +8,13 @@ import { FormNovoUsuario } from "./form-novo-usuario";
 const PERSONALIZADAS = [
   ["pode_cadastrar", "Cadastrar", "Criar novos pacientes"],
   ["pode_editar", "Editar", "Corrigir dados, registrar visitas, procedimentos e trocas"],
-  ["pode_exportar", "Exportar", "Baixar listas em CSV e gerar relatórios em PDF"],
+  ["pode_exportar", "Exportar", "Baixar listas em CSV e gerar relatórios e formulários em PDF"],
+  ["pode_prescrever", "Prescrever", "Digitar prescrições médicas (para médicos)"],
 ] as const;
 
 function perfilAtual(p: Perfil) {
   if (p.admin) return "admin";
-  if (!p.pode_cadastrar && !p.pode_editar && !p.pode_exportar) return "visualizacao";
+  if (!p.pode_cadastrar && !p.pode_editar && !p.pode_exportar && !p.pode_prescrever) return "visualizacao";
   return "personalizado";
 }
 

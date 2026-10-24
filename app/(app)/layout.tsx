@@ -28,7 +28,7 @@ async function Casca({ children }: { children: React.ReactNode }) {
         papel={
           usuario.perms.admin
             ? "Administrador"
-            : usuario.perms.cadastrar || usuario.perms.editar || usuario.perms.exportar
+            : usuario.perms.cadastrar || usuario.perms.editar || usuario.perms.exportar || usuario.perms.prescrever
               ? "Acesso personalizado"
               : "Somente visualização"
         }
