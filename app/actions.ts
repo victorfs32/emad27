@@ -14,6 +14,7 @@ import { TIPOS_EVOLUCAO, TIPO_VISITA, hojeISO } from "@/lib/opcoes";
 import type { DadosRelatorio } from "@/lib/relatorio-pdf";
 import type { DadosPrescricao } from "@/lib/prescricao-pdf";
 import { gravarPrescricao, obterPrescricao, removerPrescricaoDb } from "@/lib/prescricoes";
+import type { FichaParaDocumento } from "@/lib/documento-util";
 import { formatarCep, formatarCns } from "@/lib/validacao";
 import type { DadosDietaEnteral } from "@/lib/dieta-enteral-pdf";
 import { VIAS_DIETA, calcularIdade } from "@/lib/opcoes";
@@ -349,4 +350,23 @@ export async function dadosCadastroDocumento(
       idade: idade === null ? "" : `${idade} anos`, diagnostico, mae: f.nome_mae ?? "", endereco, hoje: hojeISO(),
     },
   };
+}
+
+const TIPOS_DOC_FICHA = {
+  controle_especial: "doc_receituario_controle_especial",
+  medicamentos_especiais: "doc_medicamentos_especiais",
+  elegibilidade_admissao: "doc_elegibilidade_admissao",
+} as const;
+
+/** Ficha completa do paciente para formulários que o médico completa na tela. Exige "Prescrever". */
+export async function fichaParaDocumento(
+  tipo: keyof typeof TIPOS_DOC_FICHA, pacienteId: number,
+): Promise<{ erro?: string; dados?: FichaParaDocumento }> {
+  const eu = await exigirPermissao("prescrever");
+  if (!(tipo in TIPOS_DOC_FICHA)) return { erro: "Documento inválido." };
+  if (!Number.isSafeInteger(pacienteId)) return { erro: "Paciente inválido." };
+  const ficha = await obterFicha(pacienteId);
+  if (!ficha) return { erro: "Paciente não encontrado." };
+  await registrarDocumentoGerado(pacienteId, TIPOS_DOC_FICHA[tipo]);
+  return { dados: { ficha, medico: eu.nome, hoje: hojeISO() } };
 }

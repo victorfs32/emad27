@@ -4,8 +4,11 @@ import { listarPacientesBasico } from "@/lib/pacientes";
 import { hojeISO } from "@/lib/opcoes";
 import { FormAntimicrobiano } from "./form-antimicrobiano";
 import { FormAutomatico } from "./form-automatico";
+import { FormControleEspecial } from "./form-controle-especial";
+import { FormElegibilidade } from "./form-elegibilidade";
 import { FormExames } from "./form-exames";
 import { FormFraldas } from "./form-fraldas";
+import { FormMedicamentosEspeciais } from "./form-medicamentos-especiais";
 import { FormReceituario } from "./form-receituario";
 
 export default async function Documentos() {
@@ -69,6 +72,39 @@ export default async function Documentos() {
         </div>
         {usuario.perms.prescrever ? (
           <FormExames pacientes={pacientes} hoje={hojeISO()} />
+        ) : (
+          <p className="m-0 text-sm text-muted">Somente quem tem a permissão “Prescrever” gera este documento. Peça à coordenação, em Equipe.</p>
+        )}
+      </section>
+      <section className="cartao grid gap-4">
+        <div>
+          <h2 className="m-0 text-base font-bold text-heading">Receituário de controle especial</h2>
+          <p className="mb-0 mt-1 text-sm text-muted">Paciente e endereço vêm do cadastro; você escreve a prescrição. Sai em duas vias (farmácia e paciente), com CNPJ do programa.</p>
+        </div>
+        {usuario.perms.prescrever ? (
+          <FormControleEspecial pacientes={pacientes} hoje={hojeISO()} />
+        ) : (
+          <p className="m-0 text-sm text-muted">Somente quem tem a permissão “Prescrever” gera este documento. Peça à coordenação, em Equipe.</p>
+        )}
+      </section>
+      <section className="cartao grid gap-4">
+        <div>
+          <h2 className="m-0 text-base font-bold text-heading">Solicitação de medicamentos especiais</h2>
+          <p className="mb-0 mt-1 text-sm text-muted">Laudo do Componente Especializado da Assistência Farmacêutica: paciente, mãe, CID, diagnóstico, telefone e documento vêm do cadastro.</p>
+        </div>
+        {usuario.perms.prescrever ? (
+          <FormMedicamentosEspeciais pacientes={pacientes} hoje={hojeISO()} />
+        ) : (
+          <p className="m-0 text-sm text-muted">Somente quem tem a permissão “Prescrever” gera este documento. Peça à coordenação, em Equipe.</p>
+        )}
+      </section>
+      <section className="cartao grid gap-4">
+        <div>
+          <h2 className="m-0 text-base font-bold text-heading">Avaliação de elegibilidade e admissão</h2>
+          <p className="mb-0 mt-1 text-sm text-muted">Ficha e-SUS AB (SAD): identificação, endereço, telefones, CIDs, cuidador e condições conhecidas vêm do cadastro.</p>
+        </div>
+        {usuario.perms.prescrever ? (
+          <FormElegibilidade pacientes={pacientes} hoje={hojeISO()} />
         ) : (
           <p className="m-0 text-sm text-muted">Somente quem tem a permissão “Prescrever” gera este documento. Peça à coordenação, em Equipe.</p>
         )}

@@ -51,7 +51,7 @@ export async function montarReceituarioPdf(d: DadosReceituario): Promise<{ doc: 
     const meio = x0 + larg / 2;
     // endereço do programa (esquerda) e identificação da Prefeitura (direita)
     fonte(7.4, "bold");
-    doc.text(["PROGRAMA MELHOR EM CASA", "Av. Washington Soares, 7700 Messejana,", "CEP - 60844-150 FORTALEZA - CEARÁ"].map(limpar), x0, 14, { lineHeightFactor: 1.35 });
+    doc.text(["61.699.567/0093-00", "PROGRAMA MELHOR EM CASA", "Av. Washington Soares, 7700 Messejana,", "CEP - 60844-150 FORTALEZA - CEARÁ"].map(limpar), x0, 11, { lineHeightFactor: 1.35 });
     fonte(9.5, "normal", CINZA);
     doc.text("Prefeitura de", x1, 13, { align: "right" });
     fonte(17, "bold", AZUL);
