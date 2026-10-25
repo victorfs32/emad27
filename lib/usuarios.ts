@@ -2,10 +2,11 @@ import "server-only";
 import { exigirUsuario } from "./auth";
 import { supabaseServidor } from "./supabase/servidor";
 import { supabaseAdmin } from "./supabase/admin";
-import { emailValido, problemaNaSenha } from "./validacao";
+import { emailValido, problemaNaSenha, soDigitos } from "./validacao";
+import { problemaNaIdentificacao, type IdentificacaoProfissional } from "./profissional";
 
 export type PerfilNovo = "visualizacao" | "admin";
-export type DadosNovoUsuario = { nome: string; email: string; senha: string; perfil: string };
+export type DadosNovoUsuario = { nome: string; email: string; senha: string; perfil: string } & Partial<IdentificacaoProfissional>;
 
 /** Cadastra um novo usuário (login) e o perfil de acesso. Só administradores. */
 export async function criarUsuario(d: DadosNovoUsuario): Promise<{ erro?: string }> {
@@ -18,6 +19,8 @@ export async function criarUsuario(d: DadosNovoUsuario): Promise<{ erro?: string
   if (!emailValido(email)) return { erro: "Informe um e-mail válido." };
   const problema = problemaNaSenha(d.senha);
   if (problema) return { erro: problema };
+  const problemaId = problemaNaIdentificacao(d);
+  if (problemaId) return { erro: problemaId };
   const perfil: PerfilNovo = d.perfil === "admin" ? "admin" : "visualizacao";
 
   const admin = supabaseAdmin();
@@ -45,7 +48,7 @@ export async function criarUsuario(d: DadosNovoUsuario): Promise<{ erro?: string
   // O banco cria o perfil de consulta automaticamente; aqui garantimos o perfil escolhido.
   const ehAdmin = perfil === "admin";
   const p = await admin.from("perfis").upsert(
-    { user_id: r.data.user.id, nome, ativo: true, admin: ehAdmin, pode_cadastrar: ehAdmin, pode_editar: ehAdmin, pode_exportar: ehAdmin, pode_prescrever: ehAdmin },
+    { user_id: r.data.user.id, nome, ativo: true, admin: ehAdmin, pode_cadastrar: ehAdmin, pode_editar: ehAdmin, pode_exportar: ehAdmin, pode_prescrever: ehAdmin, cpf: soDigitos(d.cpf ?? "") || null, cns: soDigitos(d.cns ?? "") || null, cbo: soDigitos(d.cbo ?? "") || null, cnes: soDigitos(d.cnes ?? "") || null, ine: soDigitos(d.ine ?? "") || null },
     { onConflict: "user_id" },
   );
   if (p.error) {

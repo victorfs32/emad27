@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { cadastrarUsuario } from "../../actions";
-import { problemaNaSenha } from "@/lib/validacao";
+import { problemaNaSenha, soDigitos } from "@/lib/validacao";
+import { CAMPOS_PROFISSIONAL, problemaNaIdentificacao, type IdentificacaoProfissional } from "@/lib/profissional";
 
 // Sem caracteres que se confundem (0/O, 1/l/I) para facilitar passar a senha por mensagem.
 const ALFABETO = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -23,6 +24,7 @@ export function FormNovoUsuario() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [perfil, setPerfil] = useState("visualizacao");
+  const [ident, setIdent] = useState<IdentificacaoProfissional>({ cpf: "", cns: "", cbo: "", cnes: "", ine: "" });
   const [mostrar, setMostrar] = useState(false);
   const [erro, setErro] = useState("");
   const [criado, setCriado] = useState<Criado | null>(null);
@@ -33,13 +35,13 @@ export function FormNovoUsuario() {
     setErro("");
     setCriado(null);
     setCopiado(false);
-    const problema = problemaNaSenha(senha);
+    const problema = problemaNaSenha(senha) ?? problemaNaIdentificacao(ident);
     if (problema) {
       setErro(problema);
       return;
     }
     iniciar(async () => {
-      const r = await cadastrarUsuario({ nome, email, senha, perfil });
+      const r = await cadastrarUsuario({ nome, email, senha, perfil, ...ident });
       if (r.erro) {
         setErro(r.erro);
         return;
@@ -49,6 +51,7 @@ export function FormNovoUsuario() {
       setEmail("");
       setSenha("");
       setPerfil("visualizacao");
+      setIdent({ cpf: "", cns: "", cbo: "", cnes: "", ine: "" });
       setMostrar(false);
     });
   }
@@ -128,7 +131,18 @@ export function FormNovoUsuario() {
                 : "Só consulta as fichas e as listas. Não cadastra nem altera nada (perfil recomendado)."}
             </p>
           </div>
+          {CAMPOS_PROFISSIONAL.map((c) => (
+            <div key={c.chave}>
+              <label htmlFor={`nu-${c.chave}`} className="rotulo">{c.rotulo} <span className="text-xs font-normal text-muted">({c.digitos} dígitos, opcional)</span></label>
+              <input
+                id={`nu-${c.chave}`} inputMode="numeric" autoComplete="off" value={ident[c.chave]}
+                onChange={(e) => setIdent((x) => ({ ...x, [c.chave]: soDigitos(e.target.value).slice(0, c.digitos) }))}
+                className="campo"
+              />
+            </div>
+          ))}
         </div>
+        <p className="m-0 text-xs text-muted">Quem entrar sem esses dados vê um aviso para completar o cadastro em “Minha conta”.</p>
 
         {erro && <p role="alert" className="m-0 rounded-2xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm font-semibold text-danger-strong">{erro}</p>}
 

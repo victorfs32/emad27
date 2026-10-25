@@ -8,7 +8,8 @@ import {
   adicionarEvolucao, buscarCid, listarEvolucoes, listarProcedimentos, registrarDocumentoGerado, gravarProcedimento, registrarVisita as gravarVisita, removerProcedimentoDb, removerRegistro, gravarDispositivo, removerDispositivo, trocarDispositivo, definirProximaVisita, gravarPaciente, obterFicha, reAdmitir, salvarPerfil,
   type Perfil,
 } from "@/lib/pacientes";
-import { criarUsuario, trocarSenhaPropria } from "@/lib/usuarios";
+import { criarUsuario, trocarSenhaPropria, type DadosNovoUsuario } from "@/lib/usuarios";
+import { problemaNaIdentificacao, type IdentificacaoProfissional } from "@/lib/profissional";
 import type { DadosForm, ResultadoSalvar } from "@/lib/formulario";
 import { TIPOS_EVOLUCAO, TIPO_VISITA, hojeISO } from "@/lib/opcoes";
 import type { DadosRelatorio } from "@/lib/relatorio-pdf";
@@ -115,7 +116,7 @@ export type ResultadoNovoUsuario = { erro?: string; ok?: boolean };
 
 /** Cadastra um novo login (só administradores). Por padrão o usuário só consulta. */
 export async function cadastrarUsuario(
-  dados: { nome: string; email: string; senha: string; perfil: string },
+  dados: DadosNovoUsuario,
 ): Promise<ResultadoNovoUsuario> {
   await exigirPermissao("admin");
   const r = await criarUsuario(dados);
@@ -392,6 +393,22 @@ export async function salvarCarimbo(cargo: string, registro: string, especialist
   if (r.error) {
     console.error("[salvarCarimbo]", r.error.code ?? r.error.message);
     return { erro: "Não foi possível salvar. Confira o tamanho dos textos e tente novamente." };
+  }
+  revalidatePath("/", "layout");
+  return {};
+}
+
+/** Atualiza o próprio nome e a identificação profissional (CPF, CNS, CBO, CNES, INE). */
+export async function salvarMeuCadastro(nome: string, ident: IdentificacaoProfissional): Promise<{ erro?: string }> {
+  await exigirUsuario();
+  const problema = problemaNaIdentificacao(ident);
+  if (problema) return { erro: problema };
+  if (nome.trim().length < 2) return { erro: "Informe o seu nome." };
+  const sb = await supabaseServidor();
+  const r = await sb.rpc("atualizar_meu_cadastro", { p_nome: nome, p_cpf: ident.cpf, p_cns: ident.cns, p_cbo: ident.cbo, p_cnes: ident.cnes, p_ine: ident.ine });
+  if (r.error) {
+    console.error("[salvarMeuCadastro]", r.error.code ?? r.error.message);
+    return { erro: "Não foi possível salvar. Confira os números e tente novamente." };
   }
   revalidatePath("/", "layout");
   return {};

@@ -10,7 +10,7 @@ import { cuidadorPrincipal, diagnosticosOrdenados } from "@/lib/documento-util";
 import { formatarCep, formatarTelefone } from "@/lib/validacao";
 import type { Ficha } from "@/lib/pacientes";
 
-type Props = { pacientes: { id: number; nome: string; prontuario: string }[]; hoje: string };
+type Props = { pacientes: { id: number; nome: string; prontuario: string }[]; hoje: string; profissional?: { cns: string; cbo: string; cnes: string; ine: string } };
 
 const botao = (ativo: boolean) =>
   `min-h-11 rounded-xl border px-4 text-sm font-semibold transition ${ativo ? "border-accent bg-accent text-white" : "border-border bg-surface text-muted hover:bg-secondary"}`;
@@ -45,13 +45,13 @@ function condicoesDoCadastro(f: Ficha): string[] {
 }
 
 /** Avaliação de elegibilidade e admissão (e-SUS AB): cadastro entra sozinho; o médico marca procedência, condições e conclusão. */
-export function FormElegibilidade({ pacientes, hoje }: Props) {
+export function FormElegibilidade({ pacientes, hoje, profissional }: Props) {
   const [paciente, setPaciente] = useState("");
   const [data, setData] = useState(hoje);
-  const [cnsProf, setCnsProf] = useState("");
-  const [cbo, setCbo] = useState("");
-  const [cnes, setCnes] = useState("");
-  const [ine, setIne] = useState("");
+  const [cnsProf, setCnsProf] = useState(profissional?.cns ?? "");
+  const [cbo, setCbo] = useState(profissional?.cbo ?? "");
+  const [cnes, setCnes] = useState(profissional?.cnes ?? "");
+  const [ine, setIne] = useState(profissional?.ine ?? "");
   const [turno, setTurno] = useState<"M" | "T" | "N" | "">("");
   const [proc, setProc] = useState("");
   const [cond, setCond] = useState<string[]>([]);

@@ -6,16 +6,16 @@ import { LINHAS_MEDICAMENTOS, MESES_QUANTIDADE, PREENCHIDO_POR, RACAS, type Medi
 import { cuidadorPrincipal, diagnosticosOrdenados, telefoneDe } from "@/lib/documento-util";
 import { formatarCns, formatarCpf } from "@/lib/validacao";
 
-type Props = { pacientes: { id: number; nome: string; prontuario: string }[]; hoje: string; carimbo?: string[] };
+type Props = { pacientes: { id: number; nome: string; prontuario: string }[]; hoje: string; carimbo?: string[]; profissional?: { cns: string; cnes: string } };
 
 const vazio = (): MedicamentoSolicitado => ({ nome: "", quantidades: Array.from({ length: MESES_QUANTIDADE }, () => "") });
 const botao = (ativo: boolean) =>
   `min-h-11 rounded-xl border px-4 text-sm font-semibold transition ${ativo ? "border-accent bg-accent text-white" : "border-border bg-surface text-muted hover:bg-secondary"}`;
 
 /** Laudo de medicamentos especiais: o cadastro entra sozinho; o médico escreve os medicamentos, a anamnese e os atestados. */
-export function FormMedicamentosEspeciais({ pacientes, hoje, carimbo }: Props) {
+export function FormMedicamentosEspeciais({ pacientes, hoje, carimbo, profissional }: Props) {
   const [paciente, setPaciente] = useState("");
-  const [cnes, setCnes] = useState("");
+  const [cnes, setCnes] = useState(profissional?.cnes ?? "");
   const [estab, setEstab] = useState("PROGRAMA MELHOR EM CASA - EMAD 27");
   const [peso, setPeso] = useState("");
   const [altura, setAltura] = useState("");
@@ -24,7 +24,7 @@ export function FormMedicamentosEspeciais({ pacientes, hoje, carimbo }: Props) {
   const [previo, setPrevio] = useState<"sim" | "nao" | "">("");
   const [relato, setRelato] = useState("");
   const [incapaz, setIncapaz] = useState<"sim" | "nao" | "">("");
-  const [cnsMedico, setCnsMedico] = useState("");
+  const [cnsMedico, setCnsMedico] = useState(profissional?.cns ?? "");
   const [data, setData] = useState(hoje);
   const [por, setPor] = useState<string>("Médico solicitante");
   const [outroNome, setOutroNome] = useState("");

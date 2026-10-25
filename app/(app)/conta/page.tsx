@@ -1,4 +1,5 @@
 import { exigirUsuario } from "@/lib/auth";
+import { FormCadastro } from "./form-cadastro";
 import { FormCarimbo } from "./form-carimbo";
 import { FormSenha } from "./form-senha";
 
@@ -24,6 +25,14 @@ export default async function Conta() {
           <div><dt className="text-[11.5px] font-bold uppercase tracking-[0.08em] text-muted">E-mail (login)</dt><dd className="m-0 mt-1 break-all text-heading">{u.email}</dd></div>
           <div className="sm:col-span-2"><dt className="text-[11.5px] font-bold uppercase tracking-[0.08em] text-muted">Perfil</dt><dd className="m-0 mt-1 text-heading">{papel}</dd></div>
         </dl>
+      </section>
+
+      <section className="cartao grid gap-4">
+        <div>
+          <h2 className="m-0 text-base font-bold text-heading">Meu cadastro profissional</h2>
+          <p className="mb-0 mt-1 text-sm text-muted">Seu nome e a identificação que sai preenchida nos documentos e fichas (CPF, CNS, CBO, CNES e INE).</p>
+        </div>
+        <FormCadastro nome={u.nome} inicial={{ cpf: u.cpf, cns: u.cns, cbo: u.cbo, cnes: u.cnes, ine: u.ine }} />
       </section>
 
       <section className="cartao grid gap-4">

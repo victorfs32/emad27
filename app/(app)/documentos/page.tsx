@@ -95,7 +95,7 @@ export default async function Documentos() {
           <p className="mb-0 mt-1 text-sm text-muted">Laudo do Componente Especializado da Assistência Farmacêutica: paciente, mãe, CID, diagnóstico, telefone e documento vêm do cadastro.</p>
         </div>
         {usuario.perms.prescrever ? (
-          <FormMedicamentosEspeciais carimbo={usuario.carimbo} pacientes={pacientes} hoje={hojeISO()} />
+          <FormMedicamentosEspeciais profissional={usuario} carimbo={usuario.carimbo} pacientes={pacientes} hoje={hojeISO()} />
         ) : (
           <p className="m-0 text-sm text-muted">Somente quem tem a permissão “Prescrever” gera este documento. Peça à coordenação, em Equipe.</p>
         )}
@@ -106,7 +106,7 @@ export default async function Documentos() {
           <p className="mb-0 mt-1 text-sm text-muted">Ficha e-SUS AB (SAD): identificação, endereço, telefones, CIDs, cuidador e condições conhecidas vêm do cadastro.</p>
         </div>
         {usuario.perms.prescrever ? (
-          <FormElegibilidade pacientes={pacientes} hoje={hojeISO()} />
+          <FormElegibilidade profissional={usuario} pacientes={pacientes} hoje={hojeISO()} />
         ) : (
           <p className="m-0 text-sm text-muted">Somente quem tem a permissão “Prescrever” gera este documento. Peça à coordenação, em Equipe.</p>
         )}

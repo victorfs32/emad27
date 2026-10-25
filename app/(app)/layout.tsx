@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { exigirUsuario } from "@/lib/auth";
 import { resumoPainel } from "@/lib/pacientes";
 import { Migalhas } from "./migalhas";
+import { AvisoCadastro } from "./aviso-cadastro";
 import { Navegacao } from "./navegacao";
 
 export default function AppLayout({ children }: LayoutProps<"/">) {
@@ -34,6 +35,7 @@ async function Casca({ children }: { children: React.ReactNode }) {
         }
         arquivados={resumo.arquivados}
       />
+      <AvisoCadastro faltando={usuario.cadastroPendente} />
       <div className="min-w-0 flex-1">
         <Migalhas />
         <main className="mx-auto w-full max-w-[1100px] px-4 py-5 lg:px-8 lg:py-6">{children}</main>
