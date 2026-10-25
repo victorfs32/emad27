@@ -4,6 +4,15 @@ import { useState, useTransition } from "react";
 import { salvarCarimbo } from "../../actions";
 import { linhasCarimbo } from "@/lib/carimbo";
 
+const CARGOS = ["Médico", "Enfermeiro", "Técnico de Enfermagem", "Fisioterapeuta", "Fonoaudiólogo"];
+const CONSELHO: Record<string, string> = {
+  "Médico": "Ex.: CRM-CE 12345",
+  "Enfermeiro": "Ex.: COREN - CE: 570127",
+  "Técnico de Enfermagem": "Ex.: COREN - CE: 570127",
+  "Fisioterapeuta": "Ex.: CREFITO-6: 12345-F",
+  "Fonoaudiólogo": "Ex.: CREFONO-4: 12345",
+};
+
 type Props = { nome: string; cargo: string; registro: string; especialista: string };
 
 /** Carimbo do próprio usuário: sai impresso acima da assinatura nos documentos. */
@@ -33,11 +42,15 @@ export function FormCarimbo({ nome, cargo: cargo0, registro: registro0, especial
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="car-cargo" className="rotulo">Cargo</label>
-          <input id="car-cargo" value={cargo} maxLength={60} onChange={(e) => setCargo(e.target.value)} placeholder="Ex.: Enfermeiro, Médica" className="campo" />
+          <select id="car-cargo" value={cargo} onChange={(e) => setCargo(e.target.value)} className="campo">
+            <option value="">Selecione o cargo</option>
+            {cargo && !CARGOS.includes(cargo) && <option value={cargo}>{cargo}</option>}
+            {CARGOS.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
         </div>
         <div>
           <label htmlFor="car-reg" className="rotulo">Conselho e número</label>
-          <input id="car-reg" value={registro} maxLength={80} onChange={(e) => setRegistro(e.target.value)} placeholder="Ex.: COREN - CE: 570127 ou CRM-CE 12345" className="campo" />
+          <input id="car-reg" value={registro} maxLength={80} onChange={(e) => setRegistro(e.target.value)} placeholder={CONSELHO[cargo] ?? "Ex.: COREN - CE: 570127"} className="campo" />
         </div>
         <div className="sm:col-span-2">
           <label htmlFor="car-esp" className="rotulo">Registro de especialista (opcional)</label>
