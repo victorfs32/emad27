@@ -3,10 +3,10 @@
 import { useState, useTransition } from "react";
 import { dadosReceituario } from "../../actions";
 
-type Props = { pacientes: { id: number; nome: string; prontuario: string }[]; hoje: string };
+type Props = { pacientes: { id: number; nome: string; prontuario: string }[]; hoje: string; carimbo?: string[] };
 
 /** Receituário médico: escolhe o paciente, escreve o medicamento e baixa o PDF (duas vias). */
-export function FormReceituario({ pacientes, hoje }: Props) {
+export function FormReceituario({ pacientes, hoje, carimbo }: Props) {
   const [paciente, setPaciente] = useState("");
   const [medicamento, setMedicamento] = useState("");
   const [data, setData] = useState(hoje);
@@ -26,7 +26,7 @@ export function FormReceituario({ pacientes, hoje }: Props) {
           return;
         }
         const { gerarReceituarioPdf } = await import("@/lib/receituario-pdf");
-        await gerarReceituarioPdf({ nome: r.nome, medicamento: medicamento.trim(), data });
+        await gerarReceituarioPdf({ nome: r.nome, medicamento: medicamento.trim(), data, carimbo });
         setOk(`Receituário de ${r.nome} gerado.`);
       } catch (err) {
         console.error(err);

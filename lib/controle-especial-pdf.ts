@@ -1,6 +1,7 @@
 // Receituário de controle especial (1ª via farmácia / 2ª via paciente) do Programa Melhor em Casa.
 // Folha A4 com duas vias lado a lado. Roda no navegador (a biblioteca de PDF é carregada só no clique).
 import type { jsPDF as JsPDF } from "jspdf";
+import { desenharCarimbo } from "./carimbo";
 import { dataPorExtenso } from "./receituario-pdf";
 
 export const CNPJ_PROGRAMA = "61.699.567/0093-00";
@@ -13,6 +14,7 @@ export type DadosControleEspecial = {
   prescricao: string;
   /** yyyy-mm-dd */
   data: string;
+  carimbo?: string[];
 };
 
 const limpar = (t: string) => t.replace(/[‘’]/g, "'").replace(/[^\x09\x0A\x0D\x20-\x7E -ÿ–—•…“”]/g, "");
@@ -74,6 +76,7 @@ export async function montarControleEspecialPdf(d: DadosControleEspecial): Promi
     doc.text(["PROGRAMA MELHOR EM CASA", "Av. Washington Soares, 7700", "Messejana, CEP - 60844-150", "FORTALEZA - CEARÁ"].map(limpar), x0 + 37, 48.2, { align: "center", lineHeightFactor: 1.3 });
     fonte(8.6, "bold");
     t(CNPJ_PROGRAMA, x0 + 37, 43.2, { align: "center" });
+    desenharCarimbo(doc, d.carimbo, x0 + 78 + (x1 - x0 - 78) / 2, 56, x1 - x0 - 80);
     linha(x0 + 78, 56, x1, 56);
     fonte(7.4);
     doc.text(["Carimbo e assinatura", "Médico / Cirurgião dentista"], x0 + 78 + (x1 - x0 - 78) / 2, 60, { align: "center", lineHeightFactor: 1.3 });

@@ -2,12 +2,15 @@
 // Roda no navegador (a biblioteca de PDF é carregada só quando o botão é clicado).
 import type { jsPDF as JsPDF } from "jspdf";
 
+import { desenharCarimbo } from "./carimbo";
+
 export type DadosReceituario = {
   nome: string;
   /** Texto do(s) medicamento(s): posologia, via, quantidade… */
   medicamento: string;
   /** Data da receita (yyyy-mm-dd). */
   data: string;
+  carimbo?: string[];
 };
 
 const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
@@ -74,11 +77,12 @@ export async function montarReceituarioPdf(d: DadosReceituario): Promise<{ doc: 
     // medicamento(s)
     fonte(11, "normal");
     const texto = doc.splitTextToSize(limpar(d.medicamento), larg - 2) as string[];
-    doc.text(texto.slice(0, 22), x0 + 1, 62, { lineHeightFactor: 1.5 });
+    doc.text(texto.slice(0, 15), x0 + 1, 62, { lineHeightFactor: 1.5 });
 
     // data e assinatura
     fonte(9.5, "normal");
-    doc.text(`Fortaleza, ${dataPorExtenso(d.data)}`, x0, 168);
+    doc.text(`Fortaleza, ${dataPorExtenso(d.data)}`, x0, 160);
+    desenharCarimbo(doc, d.carimbo, meio, 182, larg - 16);
     linha(x0 + 8, 182, x1 - 8, 182);
     fonte(9.5, "normal");
     doc.text("Assinatura do(a) Médico(a)/CRM", meio, 187, { align: "center" });

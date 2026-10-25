@@ -2,6 +2,7 @@
 // Roda no navegador (a biblioteca de PDF é carregada só quando o botão é clicado).
 import type { jsPDF as JsPDF } from "jspdf";
 import type { Ficha } from "./pacientes";
+import { desenharCarimbo } from "./carimbo";
 import { formatarData } from "./opcoes";
 import type { ItemPrescricao } from "./prescricao-tipos";
 import { formatarCep, formatarCns, formatarTelefone } from "./validacao";
@@ -11,6 +12,8 @@ export type DadosPrescricao = {
   geradoEm: string;
   geradoPor: string;
   hoje: string;
+  /** Carimbo de quem imprime; sai no campo do enfermeiro se o cargo for de enfermagem, senão no do médico. */
+  carimbo?: { linhas: string[]; enfermagem: boolean };
   /** Prescrição digitada; sem ela sai o formulário em branco para preencher à mão. */
   prescricao?: {
     data: string;
@@ -271,6 +274,7 @@ export async function montarPrescricaoPdf(d: DadosPrescricao): Promise<{ doc: Js
     // ---------------------------------------------------------- assinaturas e rodapé
     linha(32, 188, 127, 188, 0.3);
     linha(170, 188, 265, 188, 0.3);
+    if (d.carimbo) desenharCarimbo(doc, d.carimbo.linhas, d.carimbo.enfermagem ? 217.5 : 79.5, 188, 90);
     centro("Assinatura/Carimbo do Médico (a)", 79.5, 192.2, 8.5);
     centro("Assinatura/Carimbo do Enfermeiro (a)", 217.5, 192.2, 8.5);
     fonte(6.6, "bold");

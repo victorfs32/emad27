@@ -5,10 +5,10 @@ import { fichaParaDocumento } from "../../actions";
 import { LINHAS_PRESCRICAO } from "@/lib/controle-especial-pdf";
 import { enderecoDe } from "@/lib/documento-util";
 
-type Props = { pacientes: { id: number; nome: string; prontuario: string }[]; hoje: string };
+type Props = { pacientes: { id: number; nome: string; prontuario: string }[]; hoje: string; carimbo?: string[] };
 
 /** Receituário de controle especial: paciente e endereço entram sozinhos; o médico escreve a prescrição. */
-export function FormControleEspecial({ pacientes, hoje }: Props) {
+export function FormControleEspecial({ pacientes, hoje, carimbo }: Props) {
   const [paciente, setPaciente] = useState("");
   const [prescricao, setPrescricao] = useState("");
   const [data, setData] = useState(hoje);
@@ -29,7 +29,7 @@ export function FormControleEspecial({ pacientes, hoje }: Props) {
         }
         const f = r.dados.ficha;
         const { gerarControleEspecialPdf } = await import("@/lib/controle-especial-pdf");
-        await gerarControleEspecialPdf({ nome: f.nome, endereco: enderecoDe(f), prescricao: prescricao.trim(), data });
+        await gerarControleEspecialPdf({ nome: f.nome, endereco: enderecoDe(f), prescricao: prescricao.trim(), data, carimbo });
         setOk(`Receituário de ${f.nome} gerado.`);
       } catch (err) {
         console.error(err);

@@ -248,6 +248,7 @@ export async function dadosPrescricao(pacienteId: number): Promise<{ erro?: stri
     dados: {
       ficha,
       geradoPor: eu.nome,
+      carimbo: { linhas: eu.carimbo, enfermagem: /enferm/i.test(eu.cargo) },
       hoje: hojeISO(),
       geradoEm: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }),
     },
@@ -287,6 +288,7 @@ export async function dadosPrescricaoSalva(prescricaoId: number): Promise<{ erro
     dados: {
       ficha,
       geradoPor: eu.nome,
+      carimbo: { linhas: eu.carimbo, enfermagem: /enferm/i.test(eu.cargo) },
       hoje: hojeISO(),
       geradoEm: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }),
       prescricao: {
@@ -380,4 +382,17 @@ export async function dadosAtestado(pacienteId: number): Promise<{ erro?: string
   if (!ficha) return { erro: "Paciente não encontrado." };
   await registrarDocumentoGerado(pacienteId, "doc_atestado");
   return { nome: ficha.nome };
+}
+
+/** Salva o carimbo (cargo, conselho e registro de especialista) do próprio usuário. */
+export async function salvarCarimbo(cargo: string, registro: string, especialista: string): Promise<{ erro?: string }> {
+  await exigirUsuario();
+  const sb = await supabaseServidor();
+  const r = await sb.rpc("atualizar_meu_carimbo", { p_cargo: cargo, p_registro: registro, p_especialista: especialista });
+  if (r.error) {
+    console.error("[salvarCarimbo]", r.error.code ?? r.error.message);
+    return { erro: "Não foi possível salvar. Confira o tamanho dos textos e tente novamente." };
+  }
+  revalidatePath("/", "layout");
+  return {};
 }

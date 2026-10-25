@@ -3,10 +3,10 @@
 import { useState, useTransition } from "react";
 import { dadosAtestado } from "../../actions";
 
-type Props = { pacientes: { id: number; nome: string; prontuario: string }[]; hoje: string };
+type Props = { pacientes: { id: number; nome: string; prontuario: string }[]; hoje: string; carimbo?: string[] };
 
 /** Atestado médico: escolhe o paciente, escreve o texto e baixa o PDF. */
-export function FormAtestado({ pacientes, hoje }: Props) {
+export function FormAtestado({ pacientes, hoje, carimbo }: Props) {
   const [paciente, setPaciente] = useState("");
   const [texto, setTexto] = useState("");
   const [data, setData] = useState(hoje);
@@ -26,7 +26,7 @@ export function FormAtestado({ pacientes, hoje }: Props) {
           return;
         }
         const { gerarAtestadoPdf } = await import("@/lib/atestado-pdf");
-        await gerarAtestadoPdf({ nome: r.nome, texto: texto.trim(), data });
+        await gerarAtestadoPdf({ nome: r.nome, texto: texto.trim(), data, carimbo });
         setOk(`Atestado de ${r.nome} gerado.`);
       } catch (err) {
         console.error(err);

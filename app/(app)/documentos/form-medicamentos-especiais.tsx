@@ -6,14 +6,14 @@ import { LINHAS_MEDICAMENTOS, MESES_QUANTIDADE, PREENCHIDO_POR, RACAS, type Medi
 import { cuidadorPrincipal, diagnosticosOrdenados, telefoneDe } from "@/lib/documento-util";
 import { formatarCns, formatarCpf } from "@/lib/validacao";
 
-type Props = { pacientes: { id: number; nome: string; prontuario: string }[]; hoje: string };
+type Props = { pacientes: { id: number; nome: string; prontuario: string }[]; hoje: string; carimbo?: string[] };
 
 const vazio = (): MedicamentoSolicitado => ({ nome: "", quantidades: Array.from({ length: MESES_QUANTIDADE }, () => "") });
 const botao = (ativo: boolean) =>
   `min-h-11 rounded-xl border px-4 text-sm font-semibold transition ${ativo ? "border-accent bg-accent text-white" : "border-border bg-surface text-muted hover:bg-secondary"}`;
 
 /** Laudo de medicamentos especiais: o cadastro entra sozinho; o médico escreve os medicamentos, a anamnese e os atestados. */
-export function FormMedicamentosEspeciais({ pacientes, hoje }: Props) {
+export function FormMedicamentosEspeciais({ pacientes, hoje, carimbo }: Props) {
   const [paciente, setPaciente] = useState("");
   const [cnes, setCnes] = useState("");
   const [estab, setEstab] = useState("PROGRAMA MELHOR EM CASA - EMAD 27");
@@ -68,7 +68,7 @@ export function FormMedicamentosEspeciais({ pacientes, hoje }: Props) {
           anamnese: anamnese.trim(), tratamentoPrevio: previo, relato: relato.trim(),
           incapaz, responsavel: incapaz === "sim" ? (cuidadorPrincipal(f)?.nome ?? "") : "",
           medico, cnsMedico, data, preenchidoPor: por, outroNome: outroNome.trim(), outroCpf,
-          raca, etnia: etnia.trim(), documento: f.cpf ? "cpf" : f.cns ? "cns" : "", email: email.trim(),
+          raca, etnia: etnia.trim(), documento: f.cpf ? "cpf" : f.cns ? "cns" : "", email: email.trim(), carimbo,
         });
         setOk(`Laudo de ${f.nome} gerado.`);
       } catch (err) {

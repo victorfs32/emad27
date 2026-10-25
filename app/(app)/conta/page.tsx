@@ -1,4 +1,5 @@
 import { exigirUsuario } from "@/lib/auth";
+import { FormCarimbo } from "./form-carimbo";
 import { FormSenha } from "./form-senha";
 
 export default async function Conta() {
@@ -23,6 +24,14 @@ export default async function Conta() {
           <div><dt className="text-[11.5px] font-bold uppercase tracking-[0.08em] text-muted">E-mail (login)</dt><dd className="m-0 mt-1 break-all text-heading">{u.email}</dd></div>
           <div className="sm:col-span-2"><dt className="text-[11.5px] font-bold uppercase tracking-[0.08em] text-muted">Perfil</dt><dd className="m-0 mt-1 text-heading">{papel}</dd></div>
         </dl>
+      </section>
+
+      <section className="cartao grid gap-4">
+        <div>
+          <h2 className="m-0 text-base font-bold text-heading">Meu carimbo</h2>
+          <p className="mb-0 mt-1 text-sm text-muted">Cargo e registro profissional. Saem impressos acima da assinatura nos documentos que você gerar, como no carimbo de papel.</p>
+        </div>
+        <FormCarimbo nome={u.nome} cargo={u.cargo} registro={u.registro} especialista={u.registroEspecialista} />
       </section>
 
       <section className="cartao grid gap-4">

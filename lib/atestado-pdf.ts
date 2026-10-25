@@ -1,6 +1,7 @@
 // Atestado médico do Programa Melhor em Casa (A4 retrato, uma via).
 // Roda no navegador (a biblioteca de PDF é carregada só quando o botão é clicado).
 import type { jsPDF as JsPDF } from "jspdf";
+import { desenharCarimbo } from "./carimbo";
 import { dataPorExtenso } from "./receituario-pdf";
 
 export type DadosAtestado = {
@@ -9,6 +10,7 @@ export type DadosAtestado = {
   texto: string;
   /** yyyy-mm-dd */
   data: string;
+  carimbo?: string[];
 };
 
 const limpar = (t: string) => t.replace(/[‘’]/g, "'").replace(/[^\x09\x0A\x0D\x20-\x7E -ÿ–—•…“”]/g, "");
@@ -60,12 +62,13 @@ export async function montarAtestadoPdf(d: DadosAtestado): Promise<{ doc: JsPDF;
 
   // texto do atestado
   fonte(12);
-  const corpo = (doc.splitTextToSize(limpar(d.texto), X1 - X0) as string[]).slice(0, 26);
+  const corpo = (doc.splitTextToSize(limpar(d.texto), X1 - X0) as string[]).slice(0, 22);
   doc.text(corpo, X0, 102, { lineHeightFactor: 1.7 });
 
   // data e assinatura
   fonte(11);
-  doc.text(`Fortaleza, ${dataPorExtenso(d.data)}`, X0, 228);
+  doc.text(`Fortaleza, ${dataPorExtenso(d.data)}`, X0, 224);
+  desenharCarimbo(doc, d.carimbo, MEIO, 247, 90);
   linha(60, 247, 150, 247);
   doc.text("Assinatura do(a) Médico(a)/CRM", MEIO, 253, { align: "center" });
 

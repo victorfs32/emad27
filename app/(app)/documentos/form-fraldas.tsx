@@ -3,10 +3,10 @@
 import { useState, useTransition } from "react";
 import { dadosCadastroDocumento } from "../../actions";
 
-type Props = { pacientes: { id: number; nome: string; prontuario: string }[]; hoje: string };
+type Props = { pacientes: { id: number; nome: string; prontuario: string }[]; hoje: string; carimbo?: string[] };
 
 /** Requerimento de fraldas: o cadastro entra sozinho; o médico informa tipo, marca, tamanho e quantidade. */
-export function FormFraldas({ pacientes, hoje }: Props) {
+export function FormFraldas({ pacientes, hoje, carimbo }: Props) {
   const [paciente, setPaciente] = useState("");
   const [tipo, setTipo] = useState<"geriatrica" | "infantil" | "">("geriatrica");
   const [marca, setMarca] = useState<"sim" | "nao" | "">("nao");
@@ -32,7 +32,7 @@ export function FormFraldas({ pacientes, hoje }: Props) {
         const { gerarFraldasPdf } = await import("@/lib/fraldas-pdf");
         await gerarFraldasPdf({
           nome: r.dados.nome, cns: r.dados.cns, nascimento: r.dados.nascimento, diagnostico: r.dados.diagnostico,
-          tipo, marcaDefinida: marca, marcaMotivo: marca === "sim" ? motivo.trim() : "", tamanho: tamanho.trim(), porDia: porDia.trim(), data,
+          tipo, marcaDefinida: marca, marcaMotivo: marca === "sim" ? motivo.trim() : "", tamanho: tamanho.trim(), porDia: porDia.trim(), data, carimbo,
         });
         setOk(`Requerimento de ${r.dados.nome} gerado.`);
       } catch (err) {

@@ -4,10 +4,10 @@ import { useState, useTransition } from "react";
 import { dadosCadastroDocumento } from "../../actions";
 import { EXAMES_COLUNAS, MAX_OUTROS } from "@/lib/exames-pdf";
 
-type Props = { pacientes: { id: number; nome: string; prontuario: string }[]; hoje: string };
+type Props = { pacientes: { id: number; nome: string; prontuario: string }[]; hoje: string; carimbo?: string[] };
 
 /** Solicitação de exames: o cadastro entra sozinho; o médico marca os exames (e escreve outros, se precisar). */
-export function FormExames({ pacientes, hoje }: Props) {
+export function FormExames({ pacientes, hoje, carimbo }: Props) {
   const [paciente, setPaciente] = useState("");
   const [marcados, setMarcados] = useState<string[]>([]);
   const [outros, setOutros] = useState("");
@@ -41,7 +41,7 @@ export function FormExames({ pacientes, hoje }: Props) {
         const { gerarExamesPdf } = await import("@/lib/exames-pdf");
         await gerarExamesPdf({
           nome: r.dados.nome, nascimento: r.dados.nascimento, cns: r.dados.cns, mae: r.dados.mae, endereco: r.dados.endereco,
-          marcados, outros: linhasOutros, dataColeta: coleta, hoje,
+          marcados, outros: linhasOutros, dataColeta: coleta, hoje, carimbo,
         });
         setOk(`Solicitação de ${r.dados.nome} gerada.`);
       } catch (err) {

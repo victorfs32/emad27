@@ -1,6 +1,7 @@
 // Requerimento para solicitação de dieta enteral (Programa Melhor em Casa), todo preenchido pelo cadastro.
 // Roda no navegador (a biblioteca de PDF é carregada só quando o botão é clicado).
 import type { jsPDF as JsPDF } from "jspdf";
+import { desenharCarimbo } from "./carimbo";
 import { dataPorExtenso } from "./receituario-pdf";
 import { formatarData } from "./opcoes";
 
@@ -14,6 +15,7 @@ export type DadosDietaEnteral = {
   via: string;
   /** Data do requerimento (yyyy-mm-dd) */
   data: string;
+  carimbo?: string[];
 };
 
 const limpar = (t: string) => t.replace(/[‘’]/g, "'").replace(/[^\x09\x0A\x0D\x20-\x7E -ÿ–—•…“”]/g, "");
@@ -105,6 +107,7 @@ export async function montarDietaEnteralPdf(d: DadosDietaEnteral): Promise<{ doc
   doc.text("Atenciosamente,", X0, y + 6);
 
   // assinatura e rodapé
+  desenharCarimbo(doc, d.carimbo, MEIO, 262, 90);
   traco(60, 262, 150, 0.3);
   fonte(11);
   doc.text("Médico do Programa Melhor em Casa", MEIO, 268, { align: "center" });

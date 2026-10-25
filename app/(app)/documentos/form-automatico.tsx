@@ -3,10 +3,10 @@
 import { useState, useTransition } from "react";
 import { dadosDietaEnteral } from "../../actions";
 
-type Props = { tipo: "dieta_enteral"; pacientes: { id: number; nome: string; prontuario: string }[]; botao: string };
+type Props = { tipo: "dieta_enteral"; pacientes: { id: number; nome: string; prontuario: string }[]; botao: string; carimbo?: string[] };
 
 /** Documento sem digitação: escolhe o paciente e o PDF sai todo preenchido pelo cadastro. */
-export function FormAutomatico({ tipo, pacientes, botao }: Props) {
+export function FormAutomatico({ tipo, pacientes, botao, carimbo }: Props) {
   const [paciente, setPaciente] = useState("");
   const [erro, setErro] = useState("");
   const [ok, setOk] = useState("");
@@ -25,7 +25,7 @@ export function FormAutomatico({ tipo, pacientes, botao }: Props) {
             return;
           }
           const { gerarDietaEnteralPdf } = await import("@/lib/dieta-enteral-pdf");
-          await gerarDietaEnteralPdf(r.dados);
+          await gerarDietaEnteralPdf({ ...r.dados, carimbo });
           setOk(`Documento de ${r.dados.nome} gerado.`);
         }
       } catch (err) {

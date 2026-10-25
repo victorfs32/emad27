@@ -1,6 +1,7 @@
 // Solicitação de exames (EMAD) do Programa Melhor em Casa: folha A4 com duas vias lado a lado.
 // Roda no navegador (a biblioteca de PDF é carregada só quando o botão é clicado).
 import type { jsPDF as JsPDF } from "jspdf";
+import { desenharCarimbo } from "./carimbo";
 import { formatarData } from "./opcoes";
 
 /** Exames impressos no modelo, na ordem das colunas (15 por coluna; a terceira tem só 3 e o resto é "outros"). */
@@ -26,6 +27,7 @@ export type DadosExames = {
   dataColeta: string;
   /** Data da emissão (só para o nome do arquivo). */
   hoje: string;
+  carimbo?: string[];
 };
 
 const limpar = (t: string) => t.replace(/[‘’]/g, "'").replace(/[^\x09\x0A\x0D\x20-\x7E -ÿ–—•…“”]/g, "");
@@ -126,6 +128,7 @@ export async function montarExamesPdf(d: DadosExames): Promise<{ doc: JsPDF; nom
       doc.text("____/____/____", xd, yb);
     }
     doc.setFont("helvetica", "bold");
+    desenharCarimbo(doc, d.carimbo, x0 + larg * 0.66, yb + 11.9, 62);
     doc.text("Médico(a) /CRM:", x0, yb + 11);
     linha(x0 + doc.getTextWidth("Médico(a) /CRM:") + 2, yb + 11.9, x1, yb + 11.9);
   };

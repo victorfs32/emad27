@@ -29,7 +29,7 @@ export default async function Documentos() {
       <section className="cartao grid gap-4">
         <h2 className="m-0 text-base font-bold text-heading">Receituário médico</h2>
         {usuario.perms.prescrever ? (
-          <FormReceituario pacientes={pacientes} hoje={hojeISO()} />
+          <FormReceituario carimbo={usuario.carimbo} pacientes={pacientes} hoje={hojeISO()} />
         ) : (
           <p className="m-0 text-sm text-muted">Somente quem tem a permissão “Prescrever” gera receituários. Peça à coordenação, em Equipe.</p>
         )}
@@ -40,7 +40,7 @@ export default async function Documentos() {
           <p className="mb-0 mt-1 text-sm text-muted">Sai pronto: nome, nascimento, CNS, diagnósticos e via de alimentação vêm do cadastro; a data é a de hoje.</p>
         </div>
         {usuario.perms.exportar ? (
-          <FormAutomatico tipo="dieta_enteral" pacientes={pacientes} botao="Gerar requerimento em PDF" />
+          <FormAutomatico carimbo={usuario.carimbo} tipo="dieta_enteral" pacientes={pacientes} botao="Gerar requerimento em PDF" />
         ) : (
           <p className="m-0 text-sm text-muted">Você não tem permissão para gerar documentos. Peça à coordenação, em Equipe.</p>
         )}
@@ -51,7 +51,7 @@ export default async function Documentos() {
           <p className="mb-0 mt-1 text-sm text-muted">Identificação do paciente vem do cadastro; você marca o foco, a origem e escreve a prescrição.</p>
         </div>
         {usuario.perms.prescrever ? (
-          <FormAntimicrobiano pacientes={pacientes} hoje={hojeISO()} />
+          <FormAntimicrobiano carimbo={usuario.carimbo} pacientes={pacientes} hoje={hojeISO()} />
         ) : (
           <p className="m-0 text-sm text-muted">Somente quem tem a permissão “Prescrever” gera este documento. Peça à coordenação, em Equipe.</p>
         )}
@@ -62,7 +62,7 @@ export default async function Documentos() {
           <p className="mb-0 mt-1 text-sm text-muted">Nome, CNS, nascimento e diagnósticos vêm do cadastro; você informa tipo, marca, tamanho e quantidade.</p>
         </div>
         {usuario.perms.prescrever ? (
-          <FormFraldas pacientes={pacientes} hoje={hojeISO()} />
+          <FormFraldas carimbo={usuario.carimbo} pacientes={pacientes} hoje={hojeISO()} />
         ) : (
           <p className="m-0 text-sm text-muted">Somente quem tem a permissão “Prescrever” gera este documento. Peça à coordenação, em Equipe.</p>
         )}
@@ -73,7 +73,7 @@ export default async function Documentos() {
           <p className="mb-0 mt-1 text-sm text-muted">Dados do paciente, mãe e endereço vêm do cadastro; você marca os exames. Sai em duas vias.</p>
         </div>
         {usuario.perms.prescrever ? (
-          <FormExames pacientes={pacientes} hoje={hojeISO()} />
+          <FormExames carimbo={usuario.carimbo} pacientes={pacientes} hoje={hojeISO()} />
         ) : (
           <p className="m-0 text-sm text-muted">Somente quem tem a permissão “Prescrever” gera este documento. Peça à coordenação, em Equipe.</p>
         )}
@@ -84,7 +84,7 @@ export default async function Documentos() {
           <p className="mb-0 mt-1 text-sm text-muted">Paciente e endereço vêm do cadastro; você escreve a prescrição. Sai em duas vias (farmácia e paciente), com CNPJ do programa.</p>
         </div>
         {usuario.perms.prescrever ? (
-          <FormControleEspecial pacientes={pacientes} hoje={hojeISO()} />
+          <FormControleEspecial carimbo={usuario.carimbo} pacientes={pacientes} hoje={hojeISO()} />
         ) : (
           <p className="m-0 text-sm text-muted">Somente quem tem a permissão “Prescrever” gera este documento. Peça à coordenação, em Equipe.</p>
         )}
@@ -95,7 +95,7 @@ export default async function Documentos() {
           <p className="mb-0 mt-1 text-sm text-muted">Laudo do Componente Especializado da Assistência Farmacêutica: paciente, mãe, CID, diagnóstico, telefone e documento vêm do cadastro.</p>
         </div>
         {usuario.perms.prescrever ? (
-          <FormMedicamentosEspeciais pacientes={pacientes} hoje={hojeISO()} />
+          <FormMedicamentosEspeciais carimbo={usuario.carimbo} pacientes={pacientes} hoje={hojeISO()} />
         ) : (
           <p className="m-0 text-sm text-muted">Somente quem tem a permissão “Prescrever” gera este documento. Peça à coordenação, em Equipe.</p>
         )}
@@ -125,7 +125,7 @@ export default async function Documentos() {
       <section className="cartao grid gap-4">
         <h2 className="m-0 text-base font-bold text-heading">Atestado médico</h2>
         {usuario.perms.prescrever ? (
-          <FormAtestado pacientes={pacientes} hoje={hojeISO()} />
+          <FormAtestado carimbo={usuario.carimbo} pacientes={pacientes} hoje={hojeISO()} />
         ) : (
           <p className="m-0 text-sm text-muted">Somente quem tem a permissão “Prescrever” gera atestados. Peça à coordenação, em Equipe.</p>
         )}

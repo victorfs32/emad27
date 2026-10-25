@@ -4,12 +4,12 @@ import { useState, useTransition } from "react";
 import { dadosCadastroDocumento } from "../../actions";
 import { FOCOS_INFECCAO, LINHAS_ANTIBIOTICO, ORIGENS, TIPOS_TRATAMENTO, type ItemAntibiotico } from "@/lib/antimicrobiano-pdf";
 
-type Props = { pacientes: { id: number; nome: string; prontuario: string }[]; hoje: string };
+type Props = { pacientes: { id: number; nome: string; prontuario: string }[]; hoje: string; carimbo?: string[] };
 
 const vazio = (): ItemAntibiotico => ({ nome: "", dose: "", via: "", duracao: "" });
 
 /** Ficha de antimicrobiano: o cadastro entra sozinho; o médico marca o foco, a origem e escreve a prescrição. */
-export function FormAntimicrobiano({ pacientes, hoje }: Props) {
+export function FormAntimicrobiano({ pacientes, hoje, carimbo }: Props) {
   const [paciente, setPaciente] = useState("");
   const [focos, setFocos] = useState<string[]>([]);
   const [focoOutra, setFocoOutra] = useState("");
@@ -46,7 +46,7 @@ export function FormAntimicrobiano({ pacientes, hoje }: Props) {
           focos, focoOutra: focoOutra.trim(), origem, guiadaCultura: cultura,
           dataColeta: cultura === "sim" ? coleta : "", microorganismo: cultura === "sim" ? micro.trim() : "",
           antibioticos: itens.filter((i) => i.nome.trim() || i.dose.trim() || i.via.trim() || i.duracao.trim()),
-          dataInicio: inicio, tipo, justificativa: justificativa.trim(), data,
+          dataInicio: inicio, tipo, justificativa: justificativa.trim(), data, carimbo,
         });
         setOk(`Ficha de ${r.dados.nome} gerada.`);
       } catch (err) {

@@ -1,6 +1,7 @@
 // Ficha de Antimicrobiano (GER.FOR.CE-0008) do Programa Melhor em Casa.
 // Roda no navegador (a biblioteca de PDF é carregada só quando o botão é clicado).
 import type { jsPDF as JsPDF } from "jspdf";
+import { desenharCarimbo } from "./carimbo";
 import { formatarData } from "./opcoes";
 
 export const FOCOS_INFECCAO = ["TGI", "IVAS", "Pulmonar", "TGU", "Corrente sanguínea", "Tegumentar"] as const;
@@ -29,6 +30,7 @@ export type DadosAntimicrobiano = {
   tipo: string;
   justificativa: string;
   data: string;
+  carimbo?: string[];
 };
 
 const limpar = (t: string) => t.replace(/[‘’]/g, "'").replace(/[^\x09\x0A\x0D\x20-\x7E -ÿ–—•…“”]/g, "");
@@ -219,6 +221,7 @@ export async function montarAntimicrobianoPdf(d: DadosAntimicrobiano): Promise<{
   fonte(9.8, "bold");
   texto("Data:", X0 + 2, 244);
   campo(dataCampo(d.data), 24, 244, 62);
+  desenharCarimbo(doc, d.carimbo, 115, 262, 90);
   linha(70, 262, 160, 262);
   fonte(9);
   texto("Assinatura e carimbo do Médico(a)", 115, 267, { align: "center" });

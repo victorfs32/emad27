@@ -1,6 +1,7 @@
 // Laudo de solicitação de medicamento(s) do Componente Especializado da Assistência Farmacêutica.
 // Roda no navegador (a biblioteca de PDF é carregada só quando o botão é clicado).
 import type { jsPDF as JsPDF } from "jspdf";
+import { desenharCarimbo } from "./carimbo";
 import { formatarData } from "./opcoes";
 
 export const LINHAS_MEDICAMENTOS = 6;
@@ -40,6 +41,7 @@ export type DadosMedicamentosEspeciais = {
   etnia: string;
   documento: "cpf" | "cns" | "";
   email: string;
+  carimbo?: string[];
 };
 
 const limpar = (t: string) => t.replace(/[‘’]/g, "'").replace(/[^\x09\x0A\x0D\x20-\x7E -ÿ–—•…“”]/g, "");
@@ -245,6 +247,7 @@ export async function montarMedicamentosEspeciaisPdf(d: DadosMedicamentosEspecia
   valor(d.medico, X0 + 2, y + 8, 114, 8.6);
   caixa(X0 + 120, y, X1 - X0 - 120, 19.5, 2);
   rotulo("17- Assinatura e carimbo do médico*", X0 + 122, y + 3.6);
+  desenharCarimbo(doc, d.carimbo, X0 + 120 + (X1 - X0 - 120) / 2, y + 19, X1 - X0 - 124);
   caixa(X0, y + 10.5, 80, 9, 2);
   const w15 = rotulo("15- Número do CNS do médico solicitante*", X0 + 2, y + 13.8);
   celulas(d.cnsMedico, 15, X0 + 2, y + 14.8, 5.1, 4.2);

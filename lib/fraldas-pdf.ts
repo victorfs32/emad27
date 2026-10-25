@@ -1,6 +1,7 @@
 // Requerimento para fraldas descartáveis (Programa Melhor em Casa).
 // Roda no navegador (a biblioteca de PDF é carregada só quando o botão é clicado).
 import type { jsPDF as JsPDF } from "jspdf";
+import { desenharCarimbo } from "./carimbo";
 import { dataPorExtenso } from "./receituario-pdf";
 import { formatarData } from "./opcoes";
 
@@ -17,6 +18,7 @@ export type DadosFraldas = {
   tamanho: string;
   porDia: string;
   data: string;
+  carimbo?: string[];
 };
 
 const limpar = (t: string) => t.replace(/[‘’]/g, "'").replace(/[^\x09\x0A\x0D\x20-\x7E -ÿ–—•…“”]/g, "");
@@ -150,6 +152,7 @@ export async function montarFraldasPdf(d: DadosFraldas): Promise<{ doc: JsPDF; n
   doc.text("FRALDAS/MÊS).", xm + 19, y);
 
   // assinatura e rodapé
+  desenharCarimbo(doc, d.carimbo, MEIO, 252, 90);
   traco(60, 252, 150, 0.3);
   fonte(11);
   doc.text("Médico do Programa Melhor em Casa – EMAD", MEIO, 258, { align: "center" });
