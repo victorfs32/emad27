@@ -40,8 +40,8 @@ export async function montarFraldasPdf(d: DadosFraldas): Promise<{ doc: JsPDF; n
     doc.setFontSize(tam);
     doc.setTextColor(cor[0], cor[1], cor[2]);
   };
-  const traco = (x1: number, y: number, x2: number, esp = 0.3) => {
-    doc.setDrawColor(20, 20, 20);
+  const traco = (x1: number, y: number, x2: number, esp = 0.22) => {
+    doc.setDrawColor(75, 85, 85);
     doc.setLineWidth(esp);
     doc.line(x1, y, x2, y);
   };
@@ -66,7 +66,7 @@ export async function montarFraldasPdf(d: DadosFraldas): Promise<{ doc: JsPDF; n
   fonte(11, "bold");
   doc.text(titulo, MEIO, 68, { align: "center" });
   const tw = doc.getTextWidth(titulo);
-  traco(MEIO - tw / 2, 69.2, MEIO + tw / 2, 0.4);
+  traco(MEIO - tw / 2, 69.2, MEIO + tw / 2, 0.22);
 
   const campo = (rotulo: string, valor: string, x: number, y: number, xFim: number) => {
     fonte(11);
@@ -74,7 +74,7 @@ export async function montarFraldasPdf(d: DadosFraldas): Promise<{ doc: JsPDF; n
     const xv = x + doc.getTextWidth(rotulo) + 1.5;
     fonte(11, "bold");
     doc.text(limpar(valor), xv + 1, y - 0.4);
-    traco(xv, y + 0.8, xFim, 0.25);
+    traco(xv, y + 0.8, xFim, 0.18);
   };
   campo("Paciente:", d.nome, X0, 80, X1);
   campo("CNS:", d.cns, X0, 89, 100);
@@ -84,7 +84,7 @@ export async function montarFraldasPdf(d: DadosFraldas): Promise<{ doc: JsPDF; n
   fonte(11, "bold");
   const diag = (doc.splitTextToSize(limpar(d.diagnostico || " "), LARG) as string[]).slice(0, 3);
   doc.text(diag, X0, 105.5, { lineHeightFactor: 1.55 });
-  for (let i = 0; i < Math.max(diag.length, 2); i++) traco(X0, 106.8 + i * 7.6, X1, 0.25);
+  for (let i = 0; i < Math.max(diag.length, 2); i++) traco(X0, 106.8 + i * 7.6, X1, 0.18);
 
   fonte(11);
   const par = (texto: string, y: number) => {
@@ -140,7 +140,7 @@ export async function montarFraldasPdf(d: DadosFraldas): Promise<{ doc: JsPDF; n
   const xq = X0 + doc.getTextWidth("Quantidade de") + 2;
   fonte(11, "bold");
   doc.text(d.porDia, xq + 8, y - 0.4, { align: "center" });
-  traco(xq, y + 0.8, xq + 16, 0.25);
+  traco(xq, y + 0.8, xq + 16, 0.18);
   doc.text("FRALDAS/DIA", xq + 19, y);
   const mes = Number(d.porDia) > 0 ? String(Math.round(Number(d.porDia) * 30)) : "";
   const xm = xq + 19 + doc.getTextWidth("FRALDAS/DIA") + 4;
@@ -148,12 +148,12 @@ export async function montarFraldasPdf(d: DadosFraldas): Promise<{ doc: JsPDF; n
   doc.text("(", xm, y);
   fonte(11, "bold");
   doc.text(mes, xm + 10, y - 0.4, { align: "center" });
-  traco(xm + 3, y + 0.8, xm + 17, 0.25);
+  traco(xm + 3, y + 0.8, xm + 17, 0.18);
   doc.text("FRALDAS/MÊS).", xm + 19, y);
 
   // assinatura e rodapé
   desenharCarimbo(doc, d.carimbo, MEIO, 252, 90);
-  traco(60, 252, 150, 0.3);
+  traco(60, 252, 150, 0.22);
   fonte(11);
   doc.text("Médico do Programa Melhor em Casa – EMAD", MEIO, 258, { align: "center" });
   fonte(8);

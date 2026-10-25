@@ -40,13 +40,13 @@ export async function montarControleEspecialPdf(d: DadosControleEspecial): Promi
     doc.setFontSize(tam);
     doc.setTextColor(cor[0], cor[1], cor[2]);
   };
-  const linha = (x1: number, y1: number, x2: number, y2: number, esp = 0.25) => {
-    doc.setDrawColor(PRETO[0], PRETO[1], PRETO[2]);
+  const linha = (x1: number, y1: number, x2: number, y2: number, esp = 0.18) => {
+    doc.setDrawColor(75, 85, 85);
     doc.setLineWidth(esp);
     doc.line(x1, y1, x2, y2);
   };
-  const caixa = (x: number, y: number, w: number, h: number, esp = 0.3) => {
-    doc.setDrawColor(PRETO[0], PRETO[1], PRETO[2]);
+  const caixa = (x: number, y: number, w: number, h: number, esp = 0.22) => {
+    doc.setDrawColor(75, 85, 85);
     doc.setLineWidth(esp);
     doc.rect(x, y, w, h);
   };
@@ -113,6 +113,8 @@ export async function montarControleEspecialPdf(d: DadosControleEspecial): Promi
 
     // comprador e fornecedor
     const yB = 164, hB = 40, wC = 78;
+    doc.setFillColor(233, 239, 238);
+    doc.rect(x0, yB, larg, 5.5, "F");
     caixa(x0, yB, wC, hB);
     fonte(6.6, "normal");
     t("IDENTIFICAÇÃO DO COMPRADOR", x0 + wC / 2, yB + 4, { align: "center" });

@@ -41,6 +41,8 @@ const slug = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCa
 
 type Cor = [number, number, number];
 const PRETO: Cor = [20, 20, 20];
+const LINHA: Cor = [75, 85, 85];
+const ROTULO: Cor = [70, 85, 85];
 const CINZA: Cor = [110, 110, 110];
 const AZUL: Cor = [18, 70, 140];
 const VERDE: Cor = [0, 150, 70];
@@ -74,7 +76,7 @@ export async function montarPrescricaoPdf(d: DadosPrescricao): Promise<{ doc: Js
 
   const X0 = 10, X1 = 287, LARG = X1 - X0;
   const ink = (c: Cor) => doc.setTextColor(c[0], c[1], c[2]);
-  const traco = (c: Cor = PRETO, esp = 0.3) => {
+  const traco = (c: Cor = LINHA, esp = 0.22) => {
     doc.setDrawColor(c[0], c[1], c[2]);
     doc.setLineWidth(esp);
   };
@@ -82,11 +84,11 @@ export async function montarPrescricaoPdf(d: DadosPrescricao): Promise<{ doc: Js
     doc.setFont("helvetica", estilo);
     doc.setFontSize(tam);
   };
-  const caixa = (x: number, y: number, w: number, h: number, esp = 0.3) => {
-    traco(PRETO, esp);
+  const caixa = (x: number, y: number, w: number, h: number, esp = 0.22) => {
+    traco(LINHA, esp);
     doc.rect(x, y, w, h);
   };
-  const linha = (x1: number, y1: number, x2: number, y2: number, esp = 0.3, cor: Cor = PRETO) => {
+  const linha = (x1: number, y1: number, x2: number, y2: number, esp = 0.22, cor: Cor = LINHA) => {
     traco(cor, esp);
     doc.line(x1, y1, x2, y2);
   };
@@ -109,7 +111,7 @@ export async function montarPrescricaoPdf(d: DadosPrescricao): Promise<{ doc: Js
     const m = medirCelula(rotuloTxt, valor, w);
     caixa(x, y, w, h);
     fonte(7.2, "bold");
-    ink(PRETO);
+    ink(ROTULO);
     doc.text(limpar(rotuloTxt), x + 1.8, y + 5.1);
     fonte(8.8, "normal");
     doc.text(m.linhas, x + 1.8 + m.lw, y + 5.1, { lineHeightFactor: 1.2 });
@@ -198,6 +200,8 @@ export async function montarPrescricaoPdf(d: DadosPrescricao): Promise<{ doc: Js
     centro("FORTALEZA", 242, 15.6, 15, "bold", [60, 60, 60]);
     centro("PREFEITURA", 242, 19.6, 6.4, "normal", CINZA, { charSpace: 2 });
     // título e código do formulário
+    doc.setFillColor(233, 239, 238);
+    doc.rect(X0, 24, 207, 12, "F");
     caixa(X0, 24, LARG, 12);
     linha(217, 24, 217, 36);
     centro("Formulário", 113.5, 28.4, 8.5);
@@ -238,6 +242,9 @@ export async function montarPrescricaoPdf(d: DadosPrescricao): Promise<{ doc: Js
     }
 
     // ---------------------------------------------------------- tabela de prescrição
+    doc.setFillColor(233, 239, 238);
+    doc.rect(xData, topoTabela, xApraz - xData, hCab + hMascara, "F");
+    doc.rect(xApraz, topoTabela, X1 - xApraz, hCab, "F");
     caixa(xData, topoTabela, xPresc - xData, hCab + hMascara);
     caixa(xPresc, topoTabela, xApraz - xPresc, hCab + hMascara);
     caixa(xApraz, topoTabela, X1 - xApraz, hCab);
@@ -253,9 +260,9 @@ export async function montarPrescricaoPdf(d: DadosPrescricao): Promise<{ doc: Js
     }
     let yy = inicioCorpo;
     for (const l of linhasPag) {
-      caixa(xData, yy, xPresc - xData, l.h, 0.25);
-      caixa(xPresc, yy, xApraz - xPresc, l.h, 0.25);
-      for (let k = 0; k < 5; k++) caixa(xApraz + k * larguraDia, yy, larguraDia, l.h, 0.25);
+      caixa(xData, yy, xPresc - xData, l.h, 0.18);
+      caixa(xPresc, yy, xApraz - xPresc, l.h, 0.18);
+      for (let k = 0; k < 5; k++) caixa(xApraz + k * larguraDia, yy, larguraDia, l.h, 0.18);
       if (l.data) centro(l.data, (xData + xPresc) / 2, yy + 4.6, 8.6);
       if (l.texto.length) {
         fonte(l.italico ? 8.2 : 8.6, l.italico ? "italic" : "normal");
@@ -272,8 +279,8 @@ export async function montarPrescricaoPdf(d: DadosPrescricao): Promise<{ doc: Js
     }
 
     // ---------------------------------------------------------- assinaturas e rodapé
-    linha(32, 188, 127, 188, 0.3);
-    linha(170, 188, 265, 188, 0.3);
+    linha(32, 188, 127, 188, 0.22);
+    linha(170, 188, 265, 188, 0.22);
     if (d.carimbo) desenharCarimbo(doc, d.carimbo.linhas, d.carimbo.enfermagem ? 217.5 : 79.5, 188, 90);
     centro("Assinatura/Carimbo do Médico (a)", 79.5, 192.2, 8.5);
     centro("Assinatura/Carimbo do Enfermeiro (a)", 217.5, 192.2, 8.5);

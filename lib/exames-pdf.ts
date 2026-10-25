@@ -48,8 +48,8 @@ export async function montarExamesPdf(d: DadosExames): Promise<{ doc: JsPDF; nom
     doc.setFontSize(tam);
     doc.setTextColor(cor[0], cor[1], cor[2]);
   };
-  const linha = (x1: number, y1: number, x2: number, y2: number, esp = 0.25) => {
-    doc.setDrawColor(20, 20, 20);
+  const linha = (x1: number, y1: number, x2: number, y2: number, esp = 0.18) => {
+    doc.setDrawColor(75, 85, 85);
     doc.setLineWidth(esp);
     doc.line(x1, y1, x2, y2);
   };
@@ -96,10 +96,11 @@ export async function montarExamesPdf(d: DadosExames): Promise<{ doc: JsPDF; nom
       const xg = x0 + g * (wNome + wMarca);
       for (let r = 0; r < LINHAS_TABELA; r++) {
         const y = yT + r * hL;
-        doc.setDrawColor(20, 20, 20);
-        doc.setLineWidth(0.25);
+        doc.setDrawColor(75, 85, 85);
+        doc.setLineWidth(0.18);
         doc.rect(xg, y, wNome, hL);
-        doc.rect(xg + wNome, y, wMarca, hL);
+        doc.setFillColor(238, 243, 242);
+        doc.rect(xg + wNome, y, wMarca, hL, "FD");
         const nome = g < 2 || r < EXAMES_COLUNAS[2].length ? EXAMES_COLUNAS[g][r] : undefined;
         const outro = g === 2 && r >= EXAMES_COLUNAS[2].length ? d.outros[r - EXAMES_COLUNAS[2].length] : undefined;
         const texto = nome ?? outro;

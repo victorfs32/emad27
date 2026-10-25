@@ -37,8 +37,8 @@ export async function montarDietaEnteralPdf(d: DadosDietaEnteral): Promise<{ doc
     doc.setFontSize(tam);
     doc.setTextColor(cor[0], cor[1], cor[2]);
   };
-  const traco = (x1: number, y: number, x2: number, esp = 0.3) => {
-    doc.setDrawColor(20, 20, 20);
+  const traco = (x1: number, y: number, x2: number, esp = 0.22) => {
+    doc.setDrawColor(75, 85, 85);
     doc.setLineWidth(esp);
     doc.line(x1, y, x2, y);
   };
@@ -60,7 +60,7 @@ export async function montarDietaEnteralPdf(d: DadosDietaEnteral): Promise<{ doc
   fonte(11, "bold");
   doc.text(titulo, MEIO, 56, { align: "center" });
   const tw = doc.getTextWidth(titulo);
-  traco(MEIO - tw / 2, 57.2, MEIO + tw / 2, 0.4);
+  traco(MEIO - tw / 2, 57.2, MEIO + tw / 2, 0.22);
 
   fonte(11);
   doc.text(`Fortaleza, ${dataPorExtenso(d.data)}`, X1, 70, { align: "right" });
@@ -72,7 +72,7 @@ export async function montarDietaEnteralPdf(d: DadosDietaEnteral): Promise<{ doc
     const xv = x + doc.getTextWidth(rotulo) + 1.5;
     fonte(11, "bold");
     doc.text(limpar(valor), xv + 1, y - 0.4);
-    traco(xv, y + 0.8, xFim, 0.25);
+    traco(xv, y + 0.8, xFim, 0.18);
   };
   campo("Paciente:", d.nome, X0, 82, X1);
   campo("data de nascimento:", d.nascimento ? formatarData(d.nascimento) : "", X0, 91, 105);
@@ -83,7 +83,7 @@ export async function montarDietaEnteralPdf(d: DadosDietaEnteral): Promise<{ doc
   fonte(11, "bold");
   const diag = (doc.splitTextToSize(limpar(d.diagnostico || " "), LARG) as string[]).slice(0, 3);
   doc.text(diag, X0, 107.5, { lineHeightFactor: 1.55 });
-  for (let i = 0; i < Math.max(diag.length, 2); i++) traco(X0, 108.8 + i * 7.6, X1, 0.25);
+  for (let i = 0; i < Math.max(diag.length, 2); i++) traco(X0, 108.8 + i * 7.6, X1, 0.18);
 
   // texto do requerimento
   const y0 = 130;
@@ -108,7 +108,7 @@ export async function montarDietaEnteralPdf(d: DadosDietaEnteral): Promise<{ doc
 
   // assinatura e rodapé
   desenharCarimbo(doc, d.carimbo, MEIO, 262, 90);
-  traco(60, 262, 150, 0.3);
+  traco(60, 262, 150, 0.22);
   fonte(11);
   doc.text("Médico do Programa Melhor em Casa", MEIO, 268, { align: "center" });
   fonte(8);

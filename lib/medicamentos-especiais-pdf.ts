@@ -68,11 +68,11 @@ export async function montarMedicamentosEspeciaisPdf(d: DadosMedicamentosEspecia
     doc.setFontSize(tam);
     doc.setTextColor(cor[0], cor[1], cor[2]);
   };
-  const traco = (esp = 0.3) => {
-    doc.setDrawColor(PRETO[0], PRETO[1], PRETO[2]);
+  const traco = (esp = 0.22) => {
+    doc.setDrawColor(75, 85, 85);
     doc.setLineWidth(esp);
   };
-  const caixa = (x: number, y: number, w: number, h: number, r = 0, esp = 0.3) => {
+  const caixa = (x: number, y: number, w: number, h: number, r = 0, esp = 0.22) => {
     traco(esp);
     if (r) doc.roundedRect(x, y, w, h, r, r);
     else doc.rect(x, y, w, h);
@@ -86,7 +86,7 @@ export async function montarMedicamentosEspeciaisPdf(d: DadosMedicamentosEspecia
   /** Uma letra por casinha (campos de código). */
   const celulas = (valor: string, n: number, x: number, y: number, w: number, h: number) => {
     const v = soAlfanum(valor).slice(0, n);
-    traco(0.25);
+    traco(0.18);
     for (let i = 0; i < n; i++) {
       doc.rect(x + i * w, y, w, h);
       if (v[i]) {
@@ -96,7 +96,7 @@ export async function montarMedicamentosEspeciaisPdf(d: DadosMedicamentosEspecia
     }
   };
   const marca = (x: number, y: number, ativo: boolean, texto: string, tam = 7.6) => {
-    traco(0.3);
+    traco(0.22);
     doc.rect(x, y - 2.7, 3, 3);
     if (ativo) {
       fonte(8, "bold");
@@ -234,7 +234,7 @@ export async function montarMedicamentosEspeciaisPdf(d: DadosMedicamentosEspecia
   fonte(7.6, "normal");
   t("poderá realizar a solicitação do medicamento", xi + 4.2, y + 22);
   const xr = xi + wi + 3;
-  traco(0.25);
+  traco(0.18);
   doc.line(xr, y + 18, X1 - 3, y + 18);
   if (d.incapaz === "sim") valor(d.responsavel, xr + 1, y + 17.2, X1 - xr - 6, 8);
   fonte(6.8, "normal");
@@ -258,7 +258,7 @@ export async function montarMedicamentosEspeciaisPdf(d: DadosMedicamentosEspecia
 
   // ------------------------------------------------------------ 18 preenchido por
   y += 22;
-  caixa(X0, y, X1 - X0, 14, 2, 0.5);
+  caixa(X0, y, X1 - X0, 14, 2, 0.34);
   fonte(7.8, "bold");
   t("18- CAMPOS ABAIXO PREENCHIDOS POR*:", X0 + 2, y + 5);
   let xc = X0 + 2 + doc.getTextWidth("18- CAMPOS ABAIXO PREENCHIDOS POR*:") + 3;
@@ -267,7 +267,7 @@ export async function montarMedicamentosEspeciaisPdf(d: DadosMedicamentosEspecia
   }
   const wo = marca(X0 + 3, y + 11, d.preenchidoPor === "Outro", "Outro, informar nome:");
   const xon = X0 + 3 + wo + 2;
-  traco(0.25);
+  traco(0.18);
   doc.line(xon, y + 11.4, 150, y + 11.4);
   if (d.preenchidoPor === "Outro") valor(d.outroNome, xon + 1, y + 10.6, 150 - xon, 8);
   fonte(7.6, "bold");

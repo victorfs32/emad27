@@ -68,15 +68,15 @@ export async function montarElegibilidadePdf(d: DadosElegibilidade): Promise<{ d
     doc.setFontSize(tam);
     doc.setTextColor(cor[0], cor[1], cor[2]);
   };
-  const traco = (esp = 0.3) => {
-    doc.setDrawColor(PRETO[0], PRETO[1], PRETO[2]);
+  const traco = (esp = 0.22) => {
+    doc.setDrawColor(75, 85, 85);
     doc.setLineWidth(esp);
   };
-  const caixa = (x: number, y: number, w: number, h: number, r = 2, esp = 0.35) => {
+  const caixa = (x: number, y: number, w: number, h: number, r = 2, esp = 0.26) => {
     traco(esp);
     doc.roundedRect(x, y, w, h, r, r);
   };
-  const linha = (x1: number, y1: number, x2: number, y2: number, esp = 0.25) => {
+  const linha = (x1: number, y1: number, x2: number, y2: number, esp = 0.18) => {
     traco(esp);
     doc.line(x1, y1, x2, y2);
   };
@@ -93,7 +93,7 @@ export async function montarElegibilidadePdf(d: DadosElegibilidade): Promise<{ d
   };
   const celulas = (v0: string, n: number, x: number, y: number, w: number, h = 4.2) => {
     const v = soAlfanum(v0).slice(0, n);
-    traco(0.2);
+    traco(0.16);
     for (let i = 0; i < n; i++) {
       doc.rect(x + i * w, y, w, h);
       if (v[i]) {
@@ -103,7 +103,7 @@ export async function montarElegibilidadePdf(d: DadosElegibilidade): Promise<{ d
     }
   };
   const quadrado = (x: number, y: number, ativo: boolean, texto: string, tam = 6.6) => {
-    traco(0.3);
+    traco(0.22);
     doc.rect(x, y - 2.4, 2.8, 2.8);
     if (ativo) {
       fonte(7, "bold");
@@ -114,7 +114,7 @@ export async function montarElegibilidadePdf(d: DadosElegibilidade): Promise<{ d
     return 4 + doc.getTextWidth(limpar(texto));
   };
   const circulo = (x: number, y: number, ativo: boolean, texto: string, tam = 6.6) => {
-    traco(0.3);
+    traco(0.22);
     doc.circle(x + 1.3, y - 1, 1.3);
     if (ativo) {
       fonte(7, "bold");
@@ -165,7 +165,7 @@ export async function montarElegibilidadePdf(d: DadosElegibilidade): Promise<{ d
   celulas("", 10, 138, 49.6, 3.5, 3.6);
   rot("TURNO*", 176, 50.6);
   (["M", "T", "N"] as const).forEach((tu, i) => {
-    traco(0.3);
+    traco(0.22);
     doc.circle(190 + i * 4.6, 49.6, 1.7);
     fonte(6, "bold");
     t(d.turno === tu ? "X" : tu, 190 + i * 4.6, 50.4, { align: "center" });

@@ -32,15 +32,15 @@ export async function montarAtestadoPdf(d: DadosAtestado): Promise<{ doc: JsPDF;
     doc.setFontSize(tam);
     doc.setTextColor(cor[0], cor[1], cor[2]);
   };
-  const linha = (x1: number, y1: number, x2: number, y2: number, esp = 0.3) => {
-    doc.setDrawColor(20, 20, 20);
+  const linha = (x1: number, y1: number, x2: number, y2: number, esp = 0.22) => {
+    doc.setDrawColor(75, 85, 85);
     doc.setLineWidth(esp);
     doc.line(x1, y1, x2, y2);
   };
 
   // moldura da folha
-  doc.setDrawColor(20, 20, 20);
-  doc.setLineWidth(0.3);
+  doc.setDrawColor(75, 85, 85);
+  doc.setLineWidth(0.22);
   doc.rect(12, 14, 186, 258);
 
   // identificação da Prefeitura (logotipo em texto provisório)

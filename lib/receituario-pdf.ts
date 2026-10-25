@@ -43,8 +43,8 @@ export async function montarReceituarioPdf(d: DadosReceituario): Promise<{ doc: 
     doc.setFontSize(tam);
     doc.setTextColor(cor[0], cor[1], cor[2]);
   };
-  const linha = (x1: number, y1: number, x2: number, y2: number, esp = 0.3) => {
-    doc.setDrawColor(PRETO[0], PRETO[1], PRETO[2]);
+  const linha = (x1: number, y1: number, x2: number, y2: number, esp = 0.22) => {
+    doc.setDrawColor(75, 85, 85);
     doc.setLineWidth(esp);
     doc.line(x1, y1, x2, y2);
   };

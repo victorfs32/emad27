@@ -107,8 +107,8 @@ export async function montarIaecPdf(d: DadosIaec): Promise<{ doc: JsPDF; nomeArq
     doc.setFontSize(tam);
     doc.setTextColor(cor[0], cor[1], cor[2]);
   };
-  const caixa = (x: number, y: number, w: number, h: number, esp = 0.25) => {
-    doc.setDrawColor(20, 20, 20);
+  const caixa = (x: number, y: number, w: number, h: number, esp = 0.18) => {
+    doc.setDrawColor(75, 85, 85);
     doc.setLineWidth(esp);
     doc.rect(x, y, w, h);
   };

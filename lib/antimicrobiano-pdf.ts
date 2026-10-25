@@ -58,13 +58,13 @@ export async function montarAntimicrobianoPdf(d: DadosAntimicrobiano): Promise<{
     doc.setFontSize(tam);
     doc.setTextColor(cor[0], cor[1], cor[2]);
   };
-  const linha = (x1: number, y1: number, x2: number, y2: number, esp = 0.3) => {
-    doc.setDrawColor(PRETO[0], PRETO[1], PRETO[2]);
+  const linha = (x1: number, y1: number, x2: number, y2: number, esp = 0.22) => {
+    doc.setDrawColor(75, 85, 85);
     doc.setLineWidth(esp);
     doc.line(x1, y1, x2, y2);
   };
-  const caixa = (x: number, y: number, w: number, h: number, esp = 0.3) => {
-    doc.setDrawColor(PRETO[0], PRETO[1], PRETO[2]);
+  const caixa = (x: number, y: number, w: number, h: number, esp = 0.22) => {
+    doc.setDrawColor(75, 85, 85);
     doc.setLineWidth(esp);
     doc.rect(x, y, w, h);
   };
@@ -84,7 +84,7 @@ export async function montarAntimicrobianoPdf(d: DadosAntimicrobiano): Promise<{
   };
   /** Valor escrito sobre uma linha (campo em branco com valor opcional). */
   const campo = (valor: string, x: number, y: number, xFim: number) => {
-    linha(x, y + 1, xFim, y + 1, 0.25);
+    linha(x, y + 1, xFim, y + 1, 0.18);
     if (valor) {
       fonte(9.5, "bold");
       texto(valor, x + 1, y - 0.3);
@@ -122,6 +122,8 @@ export async function montarAntimicrobianoPdf(d: DadosAntimicrobiano): Promise<{
 
   // ------------------------------------------------------------ identificação
   caixa(X0, 46, LARG, 22);
+  doc.setFillColor(233, 239, 238);
+  doc.rect(X0, 46, X1 - X0, 5.5, "F");
   linha(X0, 51.5, X1, 51.5);
   fonte(8.6, "bold");
   texto("IDENTIFICAÇÃO DO PACIENTE", (X0 + X1) / 2, 50.2, { align: "center" });
@@ -215,7 +217,7 @@ export async function montarAntimicrobianoPdf(d: DadosAntimicrobiano): Promise<{
   const just = (doc.splitTextToSize(limpar(d.justificativa), LARG - 6) as string[]).slice(0, 4);
   fonte(9.5);
   doc.text(just, X0 + 2, yJ - 0.8, { lineHeightFactor: 1.9 });
-  for (let i = 0; i < 3; i++) linha(X0 + 2, yJ + i * 6.6 + 1, X1 - 2, yJ + i * 6.6 + 1, 0.25);
+  for (let i = 0; i < 3; i++) linha(X0 + 2, yJ + i * 6.6 + 1, X1 - 2, yJ + i * 6.6 + 1, 0.18);
 
   // ------------------------------------------------------------ data, assinatura e rodapé
   fonte(9.8, "bold");
