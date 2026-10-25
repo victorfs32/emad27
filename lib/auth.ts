@@ -16,19 +16,26 @@ export const exigirUsuario = cache(async (): Promise<Usuario> => {
 
   const { data: perfil } = await supabase
     .from("perfis")
-    .select("nome, ativo, admin, pode_cadastrar, pode_editar, pode_exportar, pode_prescrever, cargo, registro, registro_especialista")
+    .select("nome, ativo, admin, pode_cadastrar, pode_editar, pode_exportar, pode_prescrever")
     .eq("user_id", u.id)
     .maybeSingle();
   if (!perfil || !perfil.ativo) redirect("/sem-acesso");
+
+  // O carimbo vem em consulta à parte: se as colunas ainda não existirem, o login continua funcionando.
+  const { data: extra } = await supabase
+    .from("perfis")
+    .select("cargo, registro, registro_especialista")
+    .eq("user_id", u.id)
+    .maybeSingle();
 
   return {
     id: u.id,
     email: u.email ?? "",
     nome: perfil.nome,
-    cargo: perfil.cargo ?? "",
-    registro: perfil.registro ?? "",
-    registroEspecialista: perfil.registro_especialista ?? "",
-    carimbo: linhasCarimbo(perfil),
+    cargo: extra?.cargo ?? "",
+    registro: extra?.registro ?? "",
+    registroEspecialista: extra?.registro_especialista ?? "",
+    carimbo: linhasCarimbo({ nome: perfil.nome, ...extra }),
     perms: {
       admin: perfil.admin,
       cadastrar: perfil.admin || perfil.pode_cadastrar,
