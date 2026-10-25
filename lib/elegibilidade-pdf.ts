@@ -82,12 +82,12 @@ export async function montarElegibilidadePdf(d: DadosElegibilidade): Promise<{ d
   };
   const t = (s: string, x: number, y: number, o: { align?: "left" | "center" | "right" } = {}) => doc.text(limpar(s), x, y, o);
   const rot = (s: string, x: number, y: number, bold = true) => {
-    fonte(6.6, bold ? "bold" : "normal");
+    fonte(6.6, bold ? "bold" : "normal", [70, 85, 85]);
     t(s, x, y);
     return doc.getTextWidth(limpar(s));
   };
   const valor = (s: string, x: number, y: number, larg: number, tam = 8.2) => {
-    fonte(tam, "bold");
+    fonte(tam);
     const l = (doc.splitTextToSize(limpar(s), larg) as string[])[0] ?? "";
     t(l, x, y);
   };

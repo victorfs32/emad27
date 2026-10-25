@@ -54,9 +54,9 @@ export async function montarAtestadoPdf(d: DadosAtestado): Promise<{ doc: JsPDF;
   fonte(13);
   doc.text("ATESTADO MÉDICO", MEIO, 68, { align: "center" });
 
-  fonte(11);
+  fonte(10, "bold", [70, 85, 85]);
   doc.text("NOME:", X0, 86);
-  fonte(12, "bold");
+  fonte(12);
   doc.text(limpar(d.nome), X0 + 17, 85.4);
   linha(X0 + 15, 87, X1, 87);
 

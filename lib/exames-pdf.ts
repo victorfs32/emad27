@@ -65,10 +65,10 @@ export async function montarExamesPdf(d: DadosExames): Promise<{ doc: JsPDF; nom
 
     // identificação do paciente
     const campo = (rotulo: string, valor: string, x: number, y: number, xFim: number, tam = 9) => {
-      fonte(8.2, "bold");
+      fonte(7.8, "bold", [70, 85, 85]);
       doc.text(rotulo, x, y);
       const xv = x + doc.getTextWidth(rotulo) + 1;
-      fonte(tam, "bold");
+      fonte(tam);
       doc.text(limpar(valor), xv + 0.8, y - 0.4);
       linha(xv, y + 0.9, xFim, y + 0.9);
     };
@@ -76,10 +76,10 @@ export async function montarExamesPdf(d: DadosExames): Promise<{ doc: JsPDF; nom
     campo("DATA DE NASC.:", d.nascimento ? formatarData(d.nascimento) : "", x0, 35, x0 + 62);
     campo("CNS:", d.cns, x0 + 68, 35, x1);
     campo("NOME DA MÃE:", d.mae, x0, 42, x1);
-    fonte(8.2, "bold");
+    fonte(7.8, "bold", [70, 85, 85]);
     doc.text("ENDEREÇO:", x0, 49);
     const xe = x0 + doc.getTextWidth("ENDEREÇO:") + 1.8;
-    fonte(8.4, "bold");
+    fonte(8.6);
     const end = (doc.splitTextToSize(limpar(d.endereco || " "), x1 - xe) as string[]).slice(0, 2);
     doc.text(end, xe, 48.6, { lineHeightFactor: 1.2 });
     linha(xe - 0.8, 49.9, x1, 49.9);
@@ -118,18 +118,20 @@ export async function montarExamesPdf(d: DadosExames): Promise<{ doc: JsPDF; nom
 
     // data da coleta e médico
     const yb = yT + LINHAS_TABELA * hL + 11;
-    fonte(8.6, "bold");
+    fonte(7.8, "bold", [70, 85, 85]);
     doc.text("Data da coleta:", x0, yb);
     const xd = x0 + doc.getTextWidth("Data da coleta:") + 2;
     if (d.dataColeta) {
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(20, 20, 20);
       doc.text(formatarData(d.dataColeta), xd + 1, yb - 0.4);
       linha(xd, yb + 0.9, xd + 30, yb + 0.9);
     } else {
       doc.setFont("helvetica", "normal");
       doc.text("____/____/____", xd, yb);
     }
-    doc.setFont("helvetica", "bold");
     desenharCarimbo(doc, d.carimbo, x0 + larg * 0.66, yb + 11.9, 62);
+    fonte(7.8, "bold", [70, 85, 85]);
     doc.text("Médico(a) /CRM:", x0, yb + 11);
     linha(x0 + doc.getTextWidth("Médico(a) /CRM:") + 2, yb + 11.9, x1, yb + 11.9);
   };

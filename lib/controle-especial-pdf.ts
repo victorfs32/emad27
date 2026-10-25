@@ -83,10 +83,10 @@ export async function montarControleEspecialPdf(d: DadosControleEspecial): Promi
 
     // paciente, endereço e prescrição
     const campo = (rotulo: string, valor: string, y: number) => {
-      fonte(8, "normal", CINZA);
+      fonte(7.8, "bold", [70, 85, 85]);
       t(rotulo, x0, y);
       const xv = x0 + doc.getTextWidth(rotulo) + 1.5;
-      fonte(9.5, "bold");
+      fonte(9.5);
       const l = (doc.splitTextToSize(limpar(valor), x1 - xv) as string[])[0] ?? "";
       doc.text(l, xv + 0.8, y - 0.4);
       linha(xv, y + 1, x1, y + 1);

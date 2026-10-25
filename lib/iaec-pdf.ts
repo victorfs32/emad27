@@ -125,9 +125,12 @@ export async function montarIaecPdf(d: DadosIaec): Promise<{ doc: JsPDF; nomeArq
   t("SAES", 168, 15);
   fonte(5, "normal", [110, 110, 110]);
   doc.text(["Secretaria de", "Atenção Especializada à Saúde"].map(limpar), 180, 13.5, { lineHeightFactor: 1.3 });
-  fonte(8.2, "bold");
-  t(`Paciente: ${d.nome}`, X0, 25.2);
+  fonte(7.8, "bold", [70, 85, 85]);
+  t("Paciente:", X0, 25.2);
+  const xn = X0 + doc.getTextWidth("Paciente:") + 1.5;
   t(`Data: ${formatarData(d.data)}`, X1, 25.2, { align: "right" });
+  fonte(9);
+  t(d.nome, xn, 25.2);
 
   let y = 28;
   const faixa = (titulo: string, rotuloPontos = "") => {

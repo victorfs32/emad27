@@ -86,7 +86,7 @@ export async function montarAntimicrobianoPdf(d: DadosAntimicrobiano): Promise<{
   const campo = (valor: string, x: number, y: number, xFim: number) => {
     linha(x, y + 1, xFim, y + 1, 0.18);
     if (valor) {
-      fonte(9.5, "bold");
+      fonte(9.5);
       texto(valor, x + 1, y - 0.3);
     }
   };
@@ -128,15 +128,20 @@ export async function montarAntimicrobianoPdf(d: DadosAntimicrobiano): Promise<{
   fonte(8.6, "bold");
   texto("IDENTIFICAÇÃO DO PACIENTE", (X0 + X1) / 2, 50.2, { align: "center" });
   fonte(8.6);
+  fonte(7.4, "bold", [70, 85, 85]);
   texto("NOME:", X0 + 2, 57);
   campo(d.nome, X0 + 14, 57, 140);
+  fonte(7.4, "bold", [70, 85, 85]);
   texto("IDADE:", 144, 57);
   campo(d.idade, 156, 57, X1 - 2);
+  fonte(7.4, "bold", [70, 85, 85]);
   texto("DATA DE NASCIMENTO:", X0 + 2, 63);
   campo(dataCampo(d.nascimento), X0 + 41, 63, 100);
+  fonte(7.4, "bold", [70, 85, 85]);
   texto("SEXO:", 104, 63);
   marca(115, 63, d.sexo === "M", "Masculino");
   marca(152, 63, d.sexo === "F", "Feminino");
+  fonte(7.4, "bold", [70, 85, 85]);
   texto("CNS:", X0 + 2, 67.3);
   campo(d.cns, X0 + 11, 67.3, X1 - 2);
 

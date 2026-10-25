@@ -66,10 +66,10 @@ export async function montarReceituarioPdf(d: DadosReceituario): Promise<{ doc: 
     doc.text("RECEITUÁRIO MÉDICO", meio, 36, { align: "center" });
 
     // nome do paciente
-    fonte(9, "normal");
+    fonte(8.4, "bold", [70, 85, 85]);
     doc.text("NOME:", x0, 47);
     const larguraNome = larg - 15;
-    fonte(10.5, "bold");
+    fonte(10.5);
     const nome = (doc.splitTextToSize(limpar(d.nome), larguraNome) as string[]).slice(0, 2);
     doc.text(nome, x0 + 14, 46.4, { lineHeightFactor: 1.2 });
     linha(x0 + 13, 48 + (nome.length - 1) * 4.6, x1, 48 + (nome.length - 1) * 4.6);

@@ -67,10 +67,10 @@ export async function montarDietaEnteralPdf(d: DadosDietaEnteral): Promise<{ doc
 
   // dados do paciente
   const campo = (rotulo: string, valor: string, x: number, y: number, xFim: number) => {
-    fonte(11);
+    fonte(10, "bold", [70, 85, 85]);
     doc.text(rotulo, x, y);
     const xv = x + doc.getTextWidth(rotulo) + 1.5;
-    fonte(11, "bold");
+    fonte(11);
     doc.text(limpar(valor), xv + 1, y - 0.4);
     traco(xv, y + 0.8, xFim, 0.18);
   };
@@ -80,7 +80,7 @@ export async function montarDietaEnteralPdf(d: DadosDietaEnteral): Promise<{ doc
 
   fonte(11);
   doc.text("admitido no Programa Melhor em Casa com diagnóstico de:", X0, 100);
-  fonte(11, "bold");
+  fonte(11);
   const diag = (doc.splitTextToSize(limpar(d.diagnostico || " "), LARG) as string[]).slice(0, 3);
   doc.text(diag, X0, 107.5, { lineHeightFactor: 1.55 });
   for (let i = 0; i < Math.max(diag.length, 2); i++) traco(X0, 108.8 + i * 7.6, X1, 0.18);

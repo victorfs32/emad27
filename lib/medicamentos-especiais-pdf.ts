@@ -79,7 +79,7 @@ export async function montarMedicamentosEspeciaisPdf(d: DadosMedicamentosEspecia
   };
   const t = (s: string, x: number, y: number, o: { align?: "left" | "center" | "right" } = {}) => doc.text(limpar(s), x, y, o);
   const rotulo = (s: string, x: number, y: number) => {
-    fonte(6.8, "normal");
+    fonte(6.8, "bold", [70, 85, 85]);
     t(s, x, y);
     return doc.getTextWidth(limpar(s));
   };
@@ -107,7 +107,7 @@ export async function montarMedicamentosEspeciaisPdf(d: DadosMedicamentosEspecia
     return 4.2 + doc.getTextWidth(limpar(texto));
   };
   const valor = (s: string, x: number, y: number, larg: number, tam = 9) => {
-    fonte(tam, "bold");
+    fonte(tam);
     const l = (doc.splitTextToSize(limpar(s), larg) as string[])[0] ?? "";
     t(l, x, y);
   };

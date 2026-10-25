@@ -69,10 +69,10 @@ export async function montarFraldasPdf(d: DadosFraldas): Promise<{ doc: JsPDF; n
   traco(MEIO - tw / 2, 69.2, MEIO + tw / 2, 0.22);
 
   const campo = (rotulo: string, valor: string, x: number, y: number, xFim: number) => {
-    fonte(11);
+    fonte(10, "bold", [70, 85, 85]);
     doc.text(rotulo, x, y);
     const xv = x + doc.getTextWidth(rotulo) + 1.5;
-    fonte(11, "bold");
+    fonte(11);
     doc.text(limpar(valor), xv + 1, y - 0.4);
     traco(xv, y + 0.8, xFim, 0.18);
   };
@@ -81,7 +81,7 @@ export async function montarFraldasPdf(d: DadosFraldas): Promise<{ doc: JsPDF; n
   campo("nascido(a) em:", d.nascimento ? formatarData(d.nascimento) : "", 106, 89, X1);
   fonte(11);
   doc.text("apresenta quadro de saúde compatível com diagnóstico de:", X0, 98);
-  fonte(11, "bold");
+  fonte(11);
   const diag = (doc.splitTextToSize(limpar(d.diagnostico || " "), LARG) as string[]).slice(0, 3);
   doc.text(diag, X0, 105.5, { lineHeightFactor: 1.55 });
   for (let i = 0; i < Math.max(diag.length, 2); i++) traco(X0, 106.8 + i * 7.6, X1, 0.18);
@@ -138,7 +138,7 @@ export async function montarFraldasPdf(d: DadosFraldas): Promise<{ doc: JsPDF; n
   fonte(11);
   doc.text("Quantidade de", X0, y);
   const xq = X0 + doc.getTextWidth("Quantidade de") + 2;
-  fonte(11, "bold");
+  fonte(11);
   doc.text(d.porDia, xq + 8, y - 0.4, { align: "center" });
   traco(xq, y + 0.8, xq + 16, 0.18);
   doc.text("FRALDAS/DIA", xq + 19, y);
@@ -146,7 +146,7 @@ export async function montarFraldasPdf(d: DadosFraldas): Promise<{ doc: JsPDF; n
   const xm = xq + 19 + doc.getTextWidth("FRALDAS/DIA") + 4;
   fonte(11);
   doc.text("(", xm, y);
-  fonte(11, "bold");
+  fonte(11);
   doc.text(mes, xm + 10, y - 0.4, { align: "center" });
   traco(xm + 3, y + 0.8, xm + 17, 0.18);
   doc.text("FRALDAS/MÊS).", xm + 19, y);
