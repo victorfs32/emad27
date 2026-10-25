@@ -2,6 +2,7 @@
 // Roda no navegador (a biblioteca de PDF é carregada só quando o botão é clicado).
 import type { jsPDF as JsPDF } from "jspdf";
 import { desenharCarimbo } from "./carimbo";
+import { desenharLogo } from "./logo";
 import { formatarData } from "./opcoes";
 
 export const FOCOS_INFECCAO = ["TGI", "IVAS", "Pulmonar", "TGU", "Corrente sanguínea", "Tegumentar"] as const;
@@ -102,12 +103,7 @@ export async function montarAntimicrobianoPdf(d: DadosAntimicrobiano): Promise<{
   doc.setFillColor(VERDE[0], VERDE[1], VERDE[2]);
   doc.rect(93.7, 14, 2.2, 8, "F");
   doc.rect(90.8, 16.9, 8, 2.2, "F");
-  fonte(15, "bold", [60, 60, 60]);
-  texto("FORTALEZA", 150, 20, { align: "center" });
-  fonte(6, "normal", CINZA);
-  doc.text("PREFEITURA", 150, 24, { align: "center", charSpace: 1.6 });
-  fonte(7, "bold", AZUL);
-  texto("SAÚDE", 182, 21.5, { align: "center" });
+  desenharLogo(doc, 139, 9.5, 32);
 
   caixa(X0, 28, 130, 14);
   caixa(X0 + 130, 28, LARG - 130, 14);

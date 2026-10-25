@@ -3,6 +3,7 @@
 import type { jsPDF as JsPDF } from "jspdf";
 
 import { desenharCarimbo } from "./carimbo";
+import { desenharLogo } from "./logo";
 
 export type DadosReceituario = {
   nome: string;
@@ -20,8 +21,6 @@ const slug = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCa
 
 type Cor = [number, number, number];
 const PRETO: Cor = [20, 20, 20];
-const CINZA: Cor = [110, 110, 110];
-const AZUL: Cor = [18, 70, 140];
 
 export function dataPorExtenso(iso: string) {
   const [a, m, d] = iso.split("-").map(Number);
@@ -55,12 +54,7 @@ export async function montarReceituarioPdf(d: DadosReceituario): Promise<{ doc: 
     // endereço do programa (esquerda) e identificação da Prefeitura (direita)
     fonte(7.4, "bold");
     doc.text(["61.699.567/0093-00", "PROGRAMA MELHOR EM CASA", "Av. Washington Soares, 7700 Messejana,", "CEP - 60844-150 FORTALEZA - CEARÁ"].map(limpar), x0, 11, { lineHeightFactor: 1.35 });
-    fonte(9.5, "normal", CINZA);
-    doc.text("Prefeitura de", x1, 13, { align: "right" });
-    fonte(17, "bold", AZUL);
-    doc.text("Fortaleza", x1, 20, { align: "right" });
-    fonte(5.6, "normal", CINZA);
-    doc.text("Secretaria Municipal da Saúde", x1, 23.5, { align: "right" });
+    desenharLogo(doc, x1 - 34, 6, 34);
 
     fonte(11, "normal");
     doc.text("RECEITUÁRIO MÉDICO", meio, 36, { align: "center" });

@@ -2,6 +2,7 @@
 // Roda no navegador (a biblioteca de PDF é carregada só quando o botão é clicado).
 import type { jsPDF as JsPDF } from "jspdf";
 import { desenharCarimbo } from "./carimbo";
+import { desenharLogo } from "./logo";
 import { dataPorExtenso } from "./receituario-pdf";
 
 export type DadosAtestado = {
@@ -43,13 +44,7 @@ export async function montarAtestadoPdf(d: DadosAtestado): Promise<{ doc: JsPDF;
   doc.setLineWidth(0.22);
   doc.rect(12, 14, 186, 258);
 
-  // identificação da Prefeitura (logotipo em texto provisório)
-  fonte(15, "bold");
-  doc.text("Prefeitura de", X1, 30, { align: "right" });
-  fonte(26, "bold", [18, 70, 140]);
-  doc.text("Fortaleza", X1, 41, { align: "right" });
-  fonte(7, "bold", [18, 70, 140]);
-  doc.text("Secretaria Municipal da Saúde", X1, 46, { align: "right" });
+  desenharLogo(doc, X1 - 56, 18, 56);
 
   fonte(13);
   doc.text("ATESTADO MÉDICO", MEIO, 68, { align: "center" });

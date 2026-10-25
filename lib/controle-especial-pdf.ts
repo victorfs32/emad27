@@ -2,6 +2,7 @@
 // Folha A4 com duas vias lado a lado. Roda no navegador (a biblioteca de PDF é carregada só no clique).
 import type { jsPDF as JsPDF } from "jspdf";
 import { desenharCarimbo } from "./carimbo";
+import { desenharLogo } from "./logo";
 import { dataPorExtenso } from "./receituario-pdf";
 
 export const CNPJ_PROGRAMA = "61.699.567/0093-00";
@@ -23,7 +24,6 @@ const slug = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCa
 type Cor = [number, number, number];
 const PRETO: Cor = [20, 20, 20];
 const CINZA: Cor = [110, 110, 110];
-const AZUL: Cor = [18, 70, 140];
 
 export async function montarControleEspecialPdf(d: DadosControleEspecial): Promise<{ doc: JsPDF; nomeArquivo: string }> {
   const { jsPDF } = await import("jspdf");
@@ -54,13 +54,7 @@ export async function montarControleEspecialPdf(d: DadosControleEspecial): Promi
 
   const via = (x0: number, larg: number) => {
     const x1 = x0 + larg;
-    // identificação da Prefeitura (logotipo em texto provisório)
-    fonte(9, "normal", CINZA);
-    t("Prefeitura de", x1, 11, { align: "right" });
-    fonte(16, "bold", AZUL);
-    t("Fortaleza", x1, 18, { align: "right" });
-    fonte(5.6, "normal", CINZA);
-    t("Secretaria Municipal da Saúde", x1, 21.5, { align: "right" });
+    desenharLogo(doc, x1 - 30, 6, 30);
 
     fonte(11.5, "bold");
     t("RECEITUÁRIO DE CONTROLE ESPECIAL", x0, 30);

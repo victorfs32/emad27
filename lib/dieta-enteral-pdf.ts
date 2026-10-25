@@ -2,6 +2,7 @@
 // Roda no navegador (a biblioteca de PDF é carregada só quando o botão é clicado).
 import type { jsPDF as JsPDF } from "jspdf";
 import { desenharCarimbo } from "./carimbo";
+import { desenharLogo } from "./logo";
 import { dataPorExtenso } from "./receituario-pdf";
 import { formatarData } from "./opcoes";
 
@@ -43,16 +44,12 @@ export async function montarDietaEnteralPdf(d: DadosDietaEnteral): Promise<{ doc
     doc.line(x1, y, x2, y);
   };
 
-  // cabeçalho (logotipo em texto provisório)
+  // cabeçalho
   doc.setDrawColor(150, 150, 150);
   doc.setLineWidth(1.2);
   doc.line(10, 18, 78, 18);
   doc.line(132, 18, 200, 18);
-  fonte(17, "bold", [60, 60, 60]);
-  doc.text("FORTALEZA", MEIO, 20, { align: "center" });
-  fonte(6.4, "normal", [110, 110, 110]);
-  doc.text("PREFEITURA", MEIO, 24, { align: "center", charSpace: 1.8 });
-  doc.text("SAÚDE", MEIO, 27.5, { align: "center" });
+  desenharLogo(doc, MEIO - 22, 4, 44);
 
   fonte(10.5, "bold");
   doc.text("PROGRAMA MELHOR EM CASA", MEIO, 46, { align: "center" });

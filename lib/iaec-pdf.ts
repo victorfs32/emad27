@@ -1,6 +1,7 @@
 // Instrumento de Avaliação da Elegibilidade e Complexidade da Atenção Domiciliar (IAEC-AD, versão set/2023).
 // Roda no navegador (a biblioteca de PDF é carregada só quando o botão é clicado).
 import type { jsPDF as JsPDF } from "jspdf";
+import { desenharLogo } from "./logo";
 import { formatarData } from "./opcoes";
 
 export const INDICACOES = [
@@ -115,10 +116,9 @@ export async function montarIaecPdf(d: DadosIaec): Promise<{ doc: JsPDF; nomeArq
   const t = (s: string, x: number, y: number, op: { align?: "left" | "center" | "right" } = {}) => doc.text(limpar(s), x, y, op);
 
   // ------------------------------------------------------------ cabeçalho
-  fonte(9.6, "bold", [20, 60, 120]);
-  t("Melhor em Casa", 24, 15, { align: "center" });
+  desenharLogo(doc, 8, 7, 27);
   fonte(5.4, "normal", [110, 110, 110]);
-  t("Versão Set 2023", 24, 19);
+  t("Versão Set 2023", 21.5, 23.4, { align: "center" });
   fonte(11, "bold");
   doc.text(["Instrumento de Avaliação da Elegibilidade e Complexidade", "da Atenção Domiciliar (IAEC-AD)"].map(limpar), 105, 13, { align: "center", lineHeightFactor: 1.35 });
   fonte(8.4, "bold", [20, 60, 120]);
@@ -126,13 +126,13 @@ export async function montarIaecPdf(d: DadosIaec): Promise<{ doc: JsPDF; nomeArq
   fonte(5, "normal", [110, 110, 110]);
   doc.text(["Secretaria de", "Atenção Especializada à Saúde"].map(limpar), 180, 13.5, { lineHeightFactor: 1.3 });
   fonte(7.8, "bold", [70, 85, 85]);
-  t("Paciente:", X0, 25.2);
+  t("Paciente:", X0, 28);
   const xn = X0 + doc.getTextWidth("Paciente:") + 1.5;
-  t(`Data: ${formatarData(d.data)}`, X1, 25.2, { align: "right" });
+  t(`Data: ${formatarData(d.data)}`, X1, 28, { align: "right" });
   fonte(9);
-  t(d.nome, xn, 25.2);
+  t(d.nome, xn, 28);
 
-  let y = 28;
+  let y = 30.5;
   const faixa = (titulo: string, rotuloPontos = "") => {
     doc.setFillColor(205, 205, 205);
     doc.rect(X0, y, X1 - X0, 4.8, "FD");

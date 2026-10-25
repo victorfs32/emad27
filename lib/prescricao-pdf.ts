@@ -3,6 +3,7 @@
 import type { jsPDF as JsPDF } from "jspdf";
 import type { Ficha } from "./pacientes";
 import { desenharCarimbo } from "./carimbo";
+import { desenharLogo } from "./logo";
 import { formatarData } from "./opcoes";
 import type { ItemPrescricao } from "./prescricao-tipos";
 import { formatarCep, formatarCns, formatarTelefone } from "./validacao";
@@ -197,8 +198,7 @@ export async function montarPrescricaoPdf(d: DadosPrescricao): Promise<{ doc: Js
     doc.setFillColor(VERDE[0], VERDE[1], VERDE[2]);
     doc.rect(158.8, 11.5, 2.6, 9.6, "F");
     doc.rect(155.3, 15, 9.6, 2.6, "F");
-    centro("FORTALEZA", 242, 15.6, 15, "bold", [60, 60, 60]);
-    centro("PREFEITURA", 242, 19.6, 6.4, "normal", CINZA, { charSpace: 2 });
+    desenharLogo(doc, 242 - 13, 9, 26);
     // título e código do formulário
     doc.setFillColor(233, 239, 238);
     doc.rect(X0, 24, 207, 12, "F");

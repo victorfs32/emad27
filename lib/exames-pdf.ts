@@ -2,6 +2,7 @@
 // Roda no navegador (a biblioteca de PDF é carregada só quando o botão é clicado).
 import type { jsPDF as JsPDF } from "jspdf";
 import { desenharCarimbo } from "./carimbo";
+import { desenharLogo } from "./logo";
 import { formatarData } from "./opcoes";
 
 /** Exames impressos no modelo, na ordem das colunas (15 por coluna; a terceira tem só 3 e o resto é "outros"). */
@@ -58,10 +59,7 @@ export async function montarExamesPdf(d: DadosExames): Promise<{ doc: JsPDF; nom
     const x1 = x0 + larg;
     fonte(6.6, "bold");
     doc.text(["PREFEITURA MUNICIPAL DE FORTALEZA", "SECRETARIA MUNICIPAL DE SAÚDE", "EQUIPE MULTIPROFISSIONAL DE ATENDIMENTO DOMICILIAR - EMAD"].map(limpar), x0, 11, { lineHeightFactor: 1.4 });
-    fonte(9, "bold", [18, 70, 140]);
-    doc.text("Melhor em Casa", x1 - 22, 14, { align: "right" });
-    fonte(10, "bold", [60, 60, 60]);
-    doc.text("Fortaleza", x1, 14, { align: "right" });
+    desenharLogo(doc, x1 - 28, 7, 28);
 
     // identificação do paciente
     const campo = (rotulo: string, valor: string, x: number, y: number, xFim: number, tam = 9) => {
