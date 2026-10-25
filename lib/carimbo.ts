@@ -5,6 +5,8 @@ export type DadosCarimbo = { nome: string; cargo?: string | null; registro?: str
 
 /** Linhas do carimbo, como no carimbo de papel: nome, cargo, conselho e registro de especialista. */
 export function linhasCarimbo(d: DadosCarimbo): string[] {
+  // sem cargo nem registro não há carimbo: a assinatura fica em branco, para assinar à mão
+  if (!d.cargo?.trim() && !d.registro?.trim() && !d.registro_especialista?.trim()) return [];
   const linhas = [d.nome.trim()];
   if (d.cargo?.trim()) linhas.push(d.cargo.trim().toUpperCase());
   if (d.registro?.trim()) linhas.push(d.registro.trim().toUpperCase());
