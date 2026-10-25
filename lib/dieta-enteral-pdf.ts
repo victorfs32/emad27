@@ -3,6 +3,7 @@
 import type { jsPDF as JsPDF } from "jspdf";
 import { desenharCarimbo } from "./carimbo";
 import { desenharLogo } from "./logo";
+import { textoJustificado } from "./justificar";
 import { dataPorExtenso } from "./receituario-pdf";
 import { formatarData } from "./opcoes";
 
@@ -87,9 +88,9 @@ export async function montarDietaEnteralPdf(d: DadosDietaEnteral): Promise<{ doc
   const via = d.via ? limpar(d.via) : "__________________";
   fonte(11);
   const par = (texto: string, y: number) => {
-    const linhas = doc.splitTextToSize(texto, LARG) as string[];
-    doc.text(linhas, X0, y, { lineHeightFactor: 1.65 });
-    return y + linhas.length * 11 * 0.3528 * 1.65 + 4;
+    const passo = 11 * 0.3528 * 1.65;
+    const linhas = textoJustificado(doc, texto, X0, y, LARG, passo);
+    return y + linhas * passo + 4;
   };
   let y = par(
     `Encontra-se restrito (a) ao leito, estando impossibilitado(a) de realizar atividades de vida diária, necessitando de ajuda de terceiros para sua higiene, alimentação e outros cuidados. Alimenta-se exclusivamente via ${via}, com dieta especial de uso contínuo, e necessita, em caráter de URGÊNCIA, do fornecimento de dieta enteral, bem como de insumos necessários para a alimentação, conforme orientação da nutricionista fornecidos em laudo específico, para manter suas necessidades calóricas, proteicas e dos demais nutrientes, em ambiente domiciliar.`,

@@ -4,6 +4,7 @@ import type { jsPDF as JsPDF } from "jspdf";
 
 import { desenharCarimbo } from "./carimbo";
 import { desenharLogo } from "./logo";
+import { textoJustificado } from "./justificar";
 
 export type DadosReceituario = {
   nome: string;
@@ -70,8 +71,7 @@ export async function montarReceituarioPdf(d: DadosReceituario): Promise<{ doc: 
 
     // medicamento(s)
     fonte(11, "normal");
-    const texto = doc.splitTextToSize(limpar(d.medicamento), larg - 2) as string[];
-    doc.text(texto.slice(0, 15), x0 + 1, 62, { lineHeightFactor: 1.5 });
+    textoJustificado(doc, limpar(d.medicamento), x0 + 1, 62, larg - 2, 11 * 0.3528 * 1.5, 15);
 
     // data e assinatura
     fonte(9.5, "normal");

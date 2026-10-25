@@ -3,6 +3,7 @@
 import type { jsPDF as JsPDF } from "jspdf";
 import { desenharCarimbo } from "./carimbo";
 import { desenharLogo } from "./logo";
+import { textoJustificado } from "./justificar";
 import { dataPorExtenso } from "./receituario-pdf";
 
 export type DadosAtestado = {
@@ -57,8 +58,7 @@ export async function montarAtestadoPdf(d: DadosAtestado): Promise<{ doc: JsPDF;
 
   // texto do atestado
   fonte(12);
-  const corpo = (doc.splitTextToSize(limpar(d.texto), X1 - X0) as string[]).slice(0, 22);
-  doc.text(corpo, X0, 102, { lineHeightFactor: 1.7 });
+  textoJustificado(doc, limpar(d.texto), X0, 102, X1 - X0, 12 * 0.3528 * 1.7, 22);
 
   // data e assinatura
   fonte(11);

@@ -2,6 +2,7 @@
 // Roda no navegador (a biblioteca de PDF é carregada só quando o botão é clicado).
 import type { jsPDF as JsPDF } from "jspdf";
 import { desenharCarimbo } from "./carimbo";
+import { textoJustificado } from "./justificar";
 import { formatarData } from "./opcoes";
 
 export const LINHAS_MEDICAMENTOS = 6;
@@ -206,8 +207,7 @@ export async function montarMedicamentosEspeciaisPdf(d: DadosMedicamentosEspecia
   caixa(X0, y, X1 - X0, 22, 2);
   rotulo("11- Anamnese*", X0 + 2, y + 4);
   fonte(8.6, "normal");
-  const an = (doc.splitTextToSize(limpar(d.anamnese), X1 - X0 - 6) as string[]).slice(0, 5);
-  doc.text(an, X0 + 3, y + 9, { lineHeightFactor: 1.4 });
+  textoJustificado(doc, limpar(d.anamnese), X0 + 3, y + 9, X1 - X0 - 6, 8.6 * 0.3528 * 1.4, 5);
 
   // ------------------------------------------------------------ 12 tratamento prévio
   y += 24;

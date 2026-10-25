@@ -3,6 +3,7 @@
 import type { jsPDF as JsPDF } from "jspdf";
 import { desenharCarimbo } from "./carimbo";
 import { desenharLogo } from "./logo";
+import { textoJustificado } from "./justificar";
 import { dataPorExtenso } from "./receituario-pdf";
 import { formatarData } from "./opcoes";
 
@@ -85,9 +86,9 @@ export async function montarFraldasPdf(d: DadosFraldas): Promise<{ doc: JsPDF; n
 
   fonte(11);
   const par = (texto: string, y: number) => {
-    const linhas = doc.splitTextToSize(texto, LARG) as string[];
-    doc.text(linhas, X0, y, { lineHeightFactor: 1.65 });
-    return y + linhas.length * 11 * 0.3528 * 1.65 + 4;
+    const passo = 11 * 0.3528 * 1.65;
+    const linhas = textoJustificado(doc, texto, X0, y, LARG, passo);
+    return y + linhas * passo + 4;
   };
   let y = par(
     "Paciente restrito(a) ao leito, com dificuldade de controle dos esfíncteres, diurese e evacuações em fraldas, dependente de terceiros para sua higiene e atividades básicas de vida diária. Necessita, portanto, de FRALDAS DESCARTÁVEIS, em caráter de URGÊNCIA e POR TEMPO INDETERMINADO.",
