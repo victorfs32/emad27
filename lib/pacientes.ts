@@ -526,7 +526,7 @@ export async function dadosAgenda(mes: string): Promise<{ pacientes: PacienteAge
   const { inicio, fim } = limitesDoMes(mes);
   const desde = new Date(Date.parse(`${inicio}T00:00:00Z`) - 120 * 86400000).toISOString().slice(0, 10);
   const pacientes = ok(
-    await sb.from("pacientes").select("id, nome, prontuario, bairro, rua, numero").eq("situacao", "ativo").order("nome"),
+    await sb.from("pacientes").select("id, nome, prontuario, cns, bairro, rua, numero").eq("situacao", "ativo").order("nome"),
   ) as PacienteAgenda[];
   const ids = new Set(pacientes.map((p) => p.id));
   const visitas: VisitaAgenda[] = [];

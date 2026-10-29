@@ -56,7 +56,7 @@ export async function montarAgendaPdf(
       x.folga ? "Sem atendimento" : limpar(x.bairros.join(" + ") || "—"),
       x.folga && !x.itens.length
         ? "—"
-        : limpar(x.itens.map((p, i) => `${i + 1}. ${p.nome} (pront. ${p.prontuario})${p.endereco ? ` — ${p.endereco}` : ""}${p.realizada ? " [visitado]" : ""}`).join("\n")),
+        : limpar(x.itens.map((p, i) => `${i + 1}. ${p.nome} (pront. ${p.prontuario} · CNS ${p.cns || "não informado"})${p.endereco ? ` — ${p.endereco}` : ""}${p.realizada ? " [visitado]" : ""}`).join("\n")),
       x.folga && !x.itens.length ? "—" : String(x.itens.length),
     ]),
     theme: "grid",
