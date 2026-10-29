@@ -640,6 +640,7 @@ begin
     when 'doc_medicamentos_especiais' then 'Solicitação de medicamentos especiais gerada'
     when 'doc_iaec_d' then 'Instrumento IAEC-D gerado'
     when 'doc_atestado' then 'Atestado médico gerado'
+    when 'doc_capa' then 'Capa do prontuário domiciliar gerada'
     else null end;
   if v_resumo is null then raise exception 'Tipo de documento inválido.'; end if;
   insert into public.historico (paciente_id, usuario_id, autor, tipo, resumo)

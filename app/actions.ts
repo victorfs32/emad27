@@ -16,9 +16,10 @@ import type { DadosRelatorio } from "@/lib/relatorio-pdf";
 import type { DadosPrescricao } from "@/lib/prescricao-pdf";
 import { gravarPrescricao, obterPrescricao, removerPrescricaoDb } from "@/lib/prescricoes";
 import type { FichaParaDocumento } from "@/lib/documento-util";
-import { formatarCep, formatarCns } from "@/lib/validacao";
+import { formatarCep, formatarCns, formatarCpf, formatarTelefone } from "@/lib/validacao";
 import type { DadosDietaEnteral } from "@/lib/dieta-enteral-pdf";
-import { VIAS_DIETA, calcularIdade } from "@/lib/opcoes";
+import { VIAS_DIETA, calcularIdade, formatarData } from "@/lib/opcoes";
+import type { DadosCapa } from "@/lib/capa-pdf";
 import type { DadosFormPrescricao } from "@/lib/prescricao-tipos";
 
 export type EstadoLogin = { erro?: string };
@@ -327,6 +328,50 @@ export async function dadosDietaEnteral(pacienteId: number): Promise<{ erro?: st
     .filter(Boolean).join(" e ");
   await registrarDocumentoGerado(pacienteId, "doc_dieta_enteral");
   return { dados: { nome: f.nome, nascimento: f.data_nascimento ?? "", cns: f.cns ? formatarCns(f.cns) : "", diagnostico, via, data: hojeISO() } };
+}
+
+/** Dados da capa do prontuário domiciliar, todos tirados do cadastro. Exige exportar. */
+export async function dadosCapa(pacienteId: number): Promise<{ erro?: string; dados?: DadosCapa }> {
+  await exigirPermissao("exportar");
+  if (!Number.isSafeInteger(pacienteId)) return { erro: "Paciente inválido." };
+  const f = await obterFicha(pacienteId);
+  if (!f) return { erro: "Paciente não encontrado." };
+  const data = (iso: string | null) => (iso ? formatarData(iso) : "");
+  const idade = calcularIdade(f.data_nascimento);
+  const cuidador = f.cuidadores.find((c) => c.principal) ?? f.cuidadores[0];
+  const doPaciente = f.telefones.filter((t) => t.de_quem === "paciente");
+  const telefonesPaciente = (doPaciente.length ? doPaciente : f.telefones).slice(0, 2).map((t) => formatarTelefone(t.numero));
+  const telefonesCuidador = [cuidador?.telefone ?? "", ...f.telefones.filter((t) => t.de_quem !== "paciente").map((t) => t.numero)]
+    .map((t) => formatarTelefone(t))
+    .filter((t, i, todos) => t && todos.indexOf(t) === i)
+    .slice(0, 2);
+  await registrarDocumentoGerado(pacienteId, "doc_capa");
+  return {
+    dados: {
+      emad: "27",
+      admissao: data(f.admissao),
+      prontuario: f.prontuario,
+      nome: f.nome,
+      cpf: f.cpf ? formatarCpf(f.cpf) : "",
+      rg: f.rg ?? "",
+      mae: f.nome_mae ?? "",
+      pai: f.nome_pai ?? "",
+      cns: f.cns ? formatarCns(f.cns) : "",
+      idade: idade === null ? "" : `${idade} anos`,
+      nascimento: data(f.data_nascimento),
+      bairro: f.bairro ?? "",
+      logradouro: [f.rua, f.complemento].filter(Boolean).join(", "),
+      numero: f.numero ?? "",
+      referencia: f.referencia ?? "",
+      telefones: telefonesPaciente.join(" / "),
+      cuidador: cuidador?.nome ?? "",
+      cuidadorCpf: cuidador?.cpf ? formatarCpf(cuidador.cpf) : "",
+      cuidadorCns: cuidador?.cns ? formatarCns(cuidador.cns) : "",
+      cuidadorTelefones: telefonesCuidador,
+      uaps: f.uaps?.nome ?? "",
+      alta: f.situacao === "alta" ? data(f.situacao_data) : "",
+    },
+  };
 }
 
 export type CadastroDocumento = { nome: string; cns: string; nascimento: string; sexo: string; idade: string; diagnostico: string; mae: string; endereco: string; hoje: string };
