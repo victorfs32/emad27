@@ -498,6 +498,26 @@ export async function listarPacientesBasico(): Promise<{ id: number; nome: strin
   ) as { id: number; nome: string; prontuario: string; uaps: string | null }[];
 }
 
+export type Endereco = {
+  id: number; nome: string; prontuario: string; situacao: string;
+  cep: string | null; municipio: string | null; bairro: string | null; rua: string | null; numero: string | null;
+  complemento: string | null; referencia: string | null;
+  telefones: { numero: string; de_quem: string; whatsapp: Bool }[];
+  cuidadores: { nome: string; principal: boolean; vinculo: string | null; telefone: string | null }[];
+};
+
+/** Endereço e telefones dos pacientes em acompanhamento (ativos e internados), para a equipe chegar ao domicílio. */
+export async function listarEnderecos(): Promise<Endereco[]> {
+  await exigirUsuario();
+  const sb = await supabaseServidor();
+  return ok(
+    await sb.from("pacientes")
+      .select("id, nome, prontuario, situacao, cep, municipio, bairro, rua, numero, complemento, referencia, telefones(numero, de_quem, whatsapp), cuidadores(nome, principal, vinculo, telefone)")
+      .in("situacao", [...SITUACOES_PRINCIPAIS])
+      .order("nome"),
+  ) as Endereco[];
+}
+
 export type DadosDispositivo = {
   tipo: string; numero: string; confeccao: string; troca: string; proxima_troca: string; obs: string;
 };
