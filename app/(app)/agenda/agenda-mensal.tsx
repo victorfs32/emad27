@@ -232,7 +232,7 @@ function CartaoDia({ d, hoje, editar, pendente, alternarFolga, registrar }: {
               <span className="min-w-0 flex-1">
                 <Link href={`/pacientes/${p.id}`} className="block font-semibold leading-snug text-heading hover:underline">{p.nome}</Link>
                 <small className="block truncate text-muted">
-                  {[`Pront. ${p.prontuario}`, d.bairros.length > 1 ? p.bairro : "", p.endereco].filter(Boolean).join(" · ")}
+                  {[`Pront. ${p.prontuario}`, `CNS ${p.cns || "não informado"}`, d.bairros.length > 1 ? p.bairro : "", p.endereco].filter(Boolean).join(" · ")}
                 </small>
               </span>
               {p.realizada ? (

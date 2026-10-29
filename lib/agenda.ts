@@ -8,13 +8,19 @@
 // - É dinâmica: dias que já passaram mostram as visitas realmente registradas; quem já foi visitado no mês vai para o fim
 //   da fila, e o restante da meta é redistribuído pelos próximos dias.
 import { limitesDoMes } from "./opcoes";
+import { formatarCns } from "./validacao";
 
 export type PacienteAgenda = {
-  id: number; nome: string; prontuario: string; bairro: string | null; rua: string | null; numero: string | null;
+  id: number; nome: string; prontuario: string; cns: string | null; bairro: string | null; rua: string | null; numero: string | null;
 };
 export type VisitaAgenda = { paciente_id: number; data: string };
 
-export type ItemAgenda = { id: number; nome: string; prontuario: string; bairro: string; endereco: string; realizada: boolean };
+export type ItemAgenda = {
+  id: number; nome: string; prontuario: string;
+  /** Cartão SUS formatado ("" se não cadastrado). */
+  cns: string;
+  bairro: string; endereco: string; realizada: boolean;
+};
 export type DiaAgenda = {
   iso: string;
   /** 0 = domingo … 6 = sábado */
@@ -46,7 +52,7 @@ const chave = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerC
 
 function item(p: PacienteAgenda, bairro: string, realizada: boolean): ItemAgenda {
   const endereco = p.rua ? [p.rua, p.numero ? `nº ${p.numero}` : "s/n"].join(", ") : "";
-  return { id: p.id, nome: p.nome, prontuario: p.prontuario, bairro, endereco, realizada };
+  return { id: p.id, nome: p.nome, prontuario: p.prontuario, cns: p.cns ? formatarCns(p.cns) : "", bairro, endereco, realizada };
 }
 
 export function gerarAgenda(pacientes: PacienteAgenda[], visitas: VisitaAgenda[], o: OpcoesAgenda): Agenda {
