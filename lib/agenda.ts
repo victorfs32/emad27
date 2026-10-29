@@ -27,13 +27,19 @@ export type DiaAgenda = {
   dow: number;
   /** Dia da semana escolhido para atendimento. */
   util: boolean;
-  /** Marcado como sem atendimento (feriado, folga, reunião). */
+  /** Sem atendimento: feriado ou dia marcado pela equipe (folga, reunião, imprevisto). */
   folga: boolean;
+  /** Nome do feriado, quando o dia é feriado e a equipe não vai atender. */
+  feriado: string | null;
   passado: boolean;
   itens: ItemAgenda[];
   bairros: string[];
 };
-export type OpcoesAgenda = { mes: string; hoje: string; meta: number; maxPorDia: number; diasSemana: number[]; folgas: string[] };
+export type OpcoesAgenda = {
+  mes: string; hoje: string; meta: number; maxPorDia: number; diasSemana: number[]; folgas: string[];
+  /** Feriados em que a equipe não atende: data -> nome. */
+  feriados?: Record<string, string>;
+};
 export type Agenda = {
   dias: DiaAgenda[];
   realizadas: number;
@@ -93,7 +99,8 @@ export function gerarAgenda(pacientes: PacienteAgenda[], visitas: VisitaAgenda[]
     const dow = d.getUTCDay();
     const realizadasDia = doMes.filter((v) => v.data === iso);
     dias.push({
-      iso, dow, util: o.diasSemana.includes(dow), folga: folgas.has(iso), passado: iso < o.hoje,
+      iso, dow, util: o.diasSemana.includes(dow), passado: iso < o.hoje,
+      folga: folgas.has(iso) || Boolean(o.feriados?.[iso]), feriado: o.feriados?.[iso] ?? null,
       itens: realizadasDia.map((v) => item(porId.get(v.paciente_id)!, bairroDe.get(v.paciente_id)!, true)),
       bairros: [],
     });

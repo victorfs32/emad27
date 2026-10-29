@@ -1,5 +1,6 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { exigirPermissao, exigirUsuario } from "@/lib/auth";
@@ -433,6 +434,27 @@ export async function dadosAtestado(pacienteId: number): Promise<{ erro?: string
   if (!ficha) return { erro: "Paciente não encontrado." };
   await registrarDocumentoGerado(pacienteId, "doc_atestado");
   return { nome: ficha.nome };
+}
+
+export type AjustesAgenda = { meta: number; maxPorDia: number; diasSemana: number[]; folgas: string[]; atender: string[] };
+
+/**
+ * Guarda os ajustes da agenda do mês num cookie deste navegador: meta, máximo por dia e dias da semana valem para
+ * todos os meses; dias sem atendimento e feriados em que a equipe vai atender valem só para o mês.
+ */
+export async function salvarAjustesAgenda(mes: string, a: AjustesAgenda): Promise<void> {
+  await exigirUsuario();
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)) return;
+  const datas = (l: unknown) => (Array.isArray(l) ? l : []).filter((d): d is string => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d) && d.startsWith(mes)).slice(0, 31);
+  const inteiro = (v: unknown, min: number, max: number, padrao: number) => (Number.isInteger(v) ? Math.min(max, Math.max(min, v as number)) : padrao);
+  const loja = await cookies();
+  const opcoes = { httpOnly: true, sameSite: "lax" as const, secure: process.env.NODE_ENV === "production", path: "/agenda", maxAge: 60 * 60 * 24 * 400 };
+  loja.set("agenda-config", JSON.stringify({
+    meta: inteiro(a.meta, 0, 600, 120),
+    maxPorDia: inteiro(a.maxPorDia, 1, 20, 6),
+    diasSemana: (Array.isArray(a.diasSemana) ? a.diasSemana : []).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6),
+  }), opcoes);
+  loja.set(`agenda-${mes}`, JSON.stringify({ folgas: datas(a.folgas), atender: datas(a.atender) }), opcoes);
 }
 
 /** Salva o carimbo (cargo, conselho e registro de especialista) do próprio usuário. */
