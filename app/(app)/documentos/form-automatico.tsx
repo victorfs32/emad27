@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { dadosDietaEnteral } from "../../actions";
+import { dadosCapa, dadosDietaEnteral } from "../../actions";
 
-type Props = { tipo: "dieta_enteral"; pacientes: { id: number; nome: string; prontuario: string }[]; botao: string; carimbo?: string[] };
+type Props = { tipo: "dieta_enteral" | "capa"; pacientes: { id: number; nome: string; prontuario: string }[]; botao: string; carimbo?: string[] };
 
 /** Documento sem digitação: escolhe o paciente e o PDF sai todo preenchido pelo cadastro. */
 export function FormAutomatico({ tipo, pacientes, botao, carimbo }: Props) {
@@ -27,6 +27,15 @@ export function FormAutomatico({ tipo, pacientes, botao, carimbo }: Props) {
           const { gerarDietaEnteralPdf } = await import("@/lib/dieta-enteral-pdf");
           await gerarDietaEnteralPdf({ ...r.dados, carimbo });
           setOk(`Documento de ${r.dados.nome} gerado.`);
+        } else {
+          const r = await dadosCapa(Number(paciente));
+          if (r.erro || !r.dados) {
+            setErro(r.erro ?? "Não foi possível gerar o documento.");
+            return;
+          }
+          const { gerarCapaPdf } = await import("@/lib/capa-pdf");
+          await gerarCapaPdf(r.dados);
+          setOk(`Capa de ${r.dados.nome} gerada.`);
         }
       } catch (err) {
         console.error(err);

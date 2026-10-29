@@ -27,6 +27,17 @@ export default async function Documentos() {
       </header>
 
       <section className="cartao grid gap-4">
+        <div>
+          <h2 className="m-0 text-base font-bold text-heading">Capa do prontuário domiciliar</h2>
+          <p className="mb-0 mt-1 text-sm text-muted">Sai pronta em A4: identificação do paciente, do cuidador e UAPS vêm do cadastro; nome social, RG do cuidador e ACS ficam em branco para preencher à mão.</p>
+        </div>
+        {usuario.perms.exportar ? (
+          <FormAutomatico tipo="capa" pacientes={pacientes} botao="Gerar capa em PDF" />
+        ) : (
+          <p className="m-0 text-sm text-muted">Você não tem permissão para gerar documentos. Peça à coordenação, em Equipe.</p>
+        )}
+      </section>
+      <section className="cartao grid gap-4">
         <h2 className="m-0 text-base font-bold text-heading">Receituário médico</h2>
         {usuario.perms.prescrever ? (
           <FormReceituario carimbo={usuario.carimbo} pacientes={pacientes} hoje={hojeISO()} />

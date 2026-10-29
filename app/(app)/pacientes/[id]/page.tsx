@@ -11,6 +11,7 @@ import { formatarCep, formatarCns, formatarCpf, formatarTelefone } from "@/lib/v
 import { nomeDoCampo, valorLegivel } from "@/lib/rotulos";
 import { agendarVisita, novaAdmissao, registrarEvolucao } from "../../../actions";
 import { IconeCalendario } from "../../icones";
+import { BotaoCapa } from "./botao-capa";
 import { BotaoRelatorio } from "./botao-relatorio";
 import { SeloStatus } from "../../selo-status";
 
@@ -71,6 +72,7 @@ export default async function Ficha({ params, searchParams }: PageProps<"/pacien
         </div>
         <div className="flex flex-wrap items-start gap-2">
           {usuario.perms.exportar && <BotaoRelatorio pacienteId={ficha.id} />}
+          {usuario.perms.exportar && <BotaoCapa pacienteId={ficha.id} />}
           {editar && (
             <Link href={`/pacientes/${ficha.id}/editar`} className="inline-flex min-h-11 items-center rounded-2xl border border-white/35 px-5 text-sm font-semibold text-white hover:bg-white/10">
               Editar cadastro
