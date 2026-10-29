@@ -37,15 +37,68 @@ function contatos(p: Endereco) {
   return lista;
 }
 
+const agora = () => new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
+
 export function ListaEnderecos({ pacientes }: { pacientes: Endereco[] }) {
   const [busca, setBusca] = useState("");
   const [aberto, setAberto] = useState<Endereco | null>(null);
+  const [marcados, setMarcados] = useState<Set<number>>(() => new Set());
+  const [gerando, setGerando] = useState(false);
+  const [erro, setErro] = useState("");
 
   const filtrados = useMemo(() => {
     const t = semAcento(busca.trim());
     if (!t) return pacientes;
     return pacientes.filter((p) => semAcento(`${p.nome} ${p.prontuario} ${p.bairro ?? ""} ${p.rua ?? ""}`).includes(t));
   }, [busca, pacientes]);
+
+  const todosMarcados = filtrados.length > 0 && filtrados.every((p) => marcados.has(p.id));
+  const marcar = (id: number) =>
+    setMarcados((m) => {
+      const n = new Set(m);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  const marcarTodos = () =>
+    setMarcados((m) => {
+      const n = new Set(m);
+      for (const p of filtrados) {
+        if (todosMarcados) n.delete(p.id);
+        else n.add(p.id);
+      }
+      return n;
+    });
+
+  /** Um PDF só, em paisagem, com os pacientes marcados, agrupados por bairro para facilitar o roteiro. */
+  async function imprimirMarcados() {
+    setErro("");
+    setGerando(true);
+    try {
+      const escolhidos = pacientes
+        .filter((p) => marcados.has(p.id))
+        .sort((a, b) => (a.bairro ?? "").localeCompare(b.bairro ?? "", "pt-BR") || a.nome.localeCompare(b.nome, "pt-BR"));
+      const { gerarListaEnderecosPdf } = await import("@/lib/enderecos-lista-pdf");
+      await gerarListaEnderecosPdf(
+        escolhidos.map((p) => ({
+          nome: p.nome,
+          prontuario: p.prontuario,
+          internado: p.situacao === "internado",
+          rua: p.rua ? linhaRua(p) : "",
+          bairro: p.bairro ?? "",
+          cidade: [p.municipio, p.cep ? `CEP ${formatarCep(p.cep)}` : ""].filter(Boolean).join(" - "),
+          referencia: p.referencia ?? "",
+          telefones: contatos(p).map((f) => `${formatarTelefone(f.numero)} (${f.quem}${f.whatsapp ? ", WhatsApp" : ""})`),
+        })),
+        agora(),
+      );
+    } catch (e) {
+      console.error(e);
+      setErro("Não foi possível gerar o PDF. Tente novamente.");
+    } finally {
+      setGerando(false);
+    }
+  }
 
   return (
     <>
@@ -61,16 +114,41 @@ export function ListaEnderecos({ pacientes }: { pacientes: Endereco[] }) {
         />
       </div>
 
+      <div className="flex flex-wrap items-center gap-3">
+        <label className="inline-flex min-h-11 cursor-pointer items-center gap-2.5 rounded-2xl border border-border bg-surface px-4 text-sm font-semibold text-heading">
+          <input type="checkbox" checked={todosMarcados} onChange={marcarTodos} disabled={filtrados.length === 0} className="h-5 w-5 accent-accent" />
+          Selecionar todos{busca.trim() ? " da busca" : ""}
+        </label>
+        <button type="button" onClick={imprimirMarcados} disabled={marcados.size === 0 || gerando} className="btn-primario">
+          <IconeBaixar /> {gerando ? "Gerando PDF…" : `Imprimir selecionados (${marcados.size})`}
+        </button>
+        {marcados.size > 0 && (
+          <button type="button" onClick={() => setMarcados(new Set())} className="text-sm font-semibold text-muted underline">
+            Limpar seleção
+          </button>
+        )}
+      </div>
+      {erro && <p role="alert" className="m-0 rounded-xl bg-danger-soft px-4 py-3 text-sm font-semibold text-danger-strong">{erro}</p>}
+
       {filtrados.length === 0 ? (
         <p className="cartao m-0 text-center text-sm text-muted">Nenhum paciente encontrado.</p>
       ) : (
         <ul className="m-0 grid list-none gap-2.5 p-0">
           {filtrados.map((p) => (
-            <li key={p.id}>
+            <li key={p.id} className="flex items-stretch gap-2">
+              <label className="flex w-12 flex-none cursor-pointer items-center justify-center rounded-[18px] border border-border bg-surface shadow-card">
+                <input
+                  type="checkbox"
+                  checked={marcados.has(p.id)}
+                  onChange={() => marcar(p.id)}
+                  aria-label={`Selecionar ${p.nome}`}
+                  className="h-5 w-5 accent-accent"
+                />
+              </label>
               <button
                 type="button"
                 onClick={() => setAberto(p)}
-                className="flex w-full items-center gap-4 rounded-[22px] border border-border bg-surface px-5 py-4 text-left shadow-card transition hover:border-accent-soft-strong"
+                className="flex min-w-0 flex-1 items-center gap-4 rounded-[22px] border border-border bg-surface px-5 py-4 text-left shadow-card transition hover:border-accent-soft-strong"
               >
                 <span className="flex h-11 w-11 flex-none items-center justify-center rounded-2xl bg-accent-soft text-accent">
                   <IconeMapa />
