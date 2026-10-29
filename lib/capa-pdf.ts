@@ -2,6 +2,7 @@
 // Roda no navegador (a biblioteca de PDF é carregada só quando o botão é clicado).
 // Campo sem informação no cadastro sai com a linha em branco, para preencher à mão.
 import type { jsPDF as JsPDF } from "jspdf";
+import { EQUIPE } from "./equipe";
 import { desenharLogo, PROPORCAO_LOGO } from "./logo";
 
 /** Todos os valores já formatados para impressão (datas dd/mm/aaaa); vazio = linha em branco. */
@@ -34,14 +35,6 @@ export type DadosCapa = {
   acs: string;
   alta: string;
 };
-
-/** Profissionais da EMAD 27, impressos no alto da capa (função, nomes). */
-const EQUIPE: [string, string][] = [
-  ["Médico", "Pedro Victor Aguiar"],
-  ["Enfermeiro", "João Paulo de Souza"],
-  ["Fisioterapeuta", "Andreia Dutra"],
-  ["Técnicos", "Clécia, Salva e Marcleane"],
-];
 
 const limpar =(t: string) => t.replace(/[‘’]/g, "'").replace(/[^\x09\x0A\x0D\x20-\x7E -ÿ–—•…“”]/g, "");
 const slug = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");

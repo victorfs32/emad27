@@ -42,6 +42,7 @@ export function Navegacao({ nome, cadastrados, dispositivos, lesoes, visitas, ar
     { href: "/procedimentos", rotulo: "Procedimentos", icone: IconeProcedimento, n: procedimentosMes as number | null, ativo: rota === "/procedimentos" },
     { href: "/prescricoes", rotulo: "Prescrições", icone: IconePrescricao, n: null as number | null, ativo: rota === "/prescricoes" || rota.startsWith("/pacientes/") && rota.includes("/prescricoes") },
     { href: "/documentos", rotulo: "Documentos", icone: IconeArquivo, n: null as number | null, ativo: rota === "/documentos" },
+    { href: "/agenda", rotulo: "Agenda do mês", icone: IconeCalendario, n: null as number | null, ativo: rota === "/agenda" },
     { href: "/enderecos", rotulo: "Endereços", icone: IconeMapa, n: null as number | null, ativo: rota === "/enderecos" },
     { href: "/proximas-visitas", rotulo: "Próximas visitas", icone: IconeCalendario, n: visitas, ativo: rota === "/proximas-visitas" },
     { href: "/arquivados", rotulo: "Arquivados", icone: IconeArquivo, n: arquivados, ativo: rota === "/arquivados" },

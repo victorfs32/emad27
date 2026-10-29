@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { connection } from "next/server";
 import { supabaseServidor } from "./supabase/servidor";
+import type { PacienteAgenda, VisitaAgenda } from "./agenda";
 import { exigirUsuario } from "./auth";
 import {
   CONTINENCIA, DE_QUEM, DIURESE, FISIO, MODALIDADES, SITUACOES, SITUACOES_ARQUIVADAS, SITUACOES_PRINCIPAIS,
@@ -516,6 +517,28 @@ export async function listarEnderecos(): Promise<Endereco[]> {
       .in("situacao", [...SITUACOES_PRINCIPAIS])
       .order("nome"),
   ) as Endereco[];
+}
+
+/** Pacientes ativos e visitas domiciliares (do mês e dos 4 meses anteriores) para montar a agenda mensal. */
+export async function dadosAgenda(mes: string): Promise<{ pacientes: PacienteAgenda[]; visitas: VisitaAgenda[] }> {
+  await exigirUsuario();
+  const sb = await supabaseServidor();
+  const { inicio, fim } = limitesDoMes(mes);
+  const desde = new Date(Date.parse(`${inicio}T00:00:00Z`) - 120 * 86400000).toISOString().slice(0, 10);
+  const pacientes = ok(
+    await sb.from("pacientes").select("id, nome, prontuario, bairro, rua, numero").eq("situacao", "ativo").order("nome"),
+  ) as PacienteAgenda[];
+  const ids = new Set(pacientes.map((p) => p.id));
+  const visitas: VisitaAgenda[] = [];
+  for (let de = 0; ; de += 1000) {
+    const pagina = ok(
+      await sb.from("evolucoes").select("paciente_id, data").eq("tipo", TIPO_VISITA)
+        .gte("data", desde).lt("data", fim).order("data").order("id").range(de, de + 999),
+    ) as VisitaAgenda[];
+    visitas.push(...pagina.filter((v) => ids.has(v.paciente_id)));
+    if (pagina.length < 1000) break;
+  }
+  return { pacientes, visitas };
 }
 
 export type DadosDispositivo = {
