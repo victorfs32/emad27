@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { connection } from "next/server";
 import { exigirUsuario } from "@/lib/auth";
 import { dadosAgenda } from "@/lib/pacientes";
@@ -14,13 +15,29 @@ export default async function Agenda({ searchParams }: PageProps<"/agenda">) {
   const sp = await searchParams;
   const hoje = hojeISO();
   const mes = mesValido(sp.mes) ? (sp.mes as string) : hoje.slice(0, 7);
-  // Ajustes ficam no endereço da página: recarregar ou compartilhar o link mantém a mesma agenda.
-  const meta = numero(sp.meta, 120, 0, 600);
-  const maxPorDia = numero(sp.max, 6, 1, 20);
-  const diasSemana = typeof sp.dias === "string" && /^[0-6]{1,7}$/.test(sp.dias) ? [...new Set(sp.dias.split("").map(Number))] : [1, 2, 3, 4, 5];
-  const folgas = typeof sp.folgas === "string"
-    ? sp.folgas.split(",").filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d) && d.startsWith(mes))
-    : [];
+  // Ajustes: o que vier no endereço da página vale primeiro; senão, o que ficou guardado neste navegador.
+  const loja = await cookies();
+  const ler = (nome: string): Record<string, unknown> => {
+    try {
+      const v = JSON.parse(loja.get(nome)?.value ?? "{}");
+      return v && typeof v === "object" ? v : {};
+    } catch {
+      return {};
+    }
+  };
+  const guardado = ler("agenda-config");
+  const guardadoMes = ler(`agenda-${mes}`);
+  const texto = (k: string, alt: unknown) => (typeof sp[k] === "string" ? sp[k] : alt === undefined ? undefined : String(alt));
+  const meta = numero(texto("meta", guardado.meta), 120, 0, 600);
+  const maxPorDia = numero(texto("max", guardado.maxPorDia), 6, 1, 20);
+  const dias = texto("dias", Array.isArray(guardado.diasSemana) ? guardado.diasSemana.join("") : undefined);
+  const diasSemana = dias && /^[0-6]{1,7}$/.test(dias) ? [...new Set(dias.split("").map(Number))] : [1, 2, 3, 4, 5];
+  const datas = (k: "folgas" | "atender") => {
+    const v = typeof sp[k] === "string" ? (sp[k] as string).split(",") : Array.isArray(guardadoMes[k]) ? (guardadoMes[k] as unknown[]) : [];
+    return v.filter((d): d is string => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d) && d.startsWith(mes));
+  };
+  const folgas = datas("folgas");
+  const atender = datas("atender");
 
   const usuario = await exigirUsuario();
   const { pacientes, visitas } = await dadosAgenda(mes);
@@ -48,7 +65,7 @@ export default async function Agenda({ searchParams }: PageProps<"/agenda">) {
         proximo={deslocarMes(mes, 1)}
         hoje={hoje}
         editar={usuario.perms.editar}
-        inicial={{ meta, maxPorDia, diasSemana, folgas }}
+        inicial={{ meta, maxPorDia, diasSemana, folgas, atender }}
       />
     </div>
   );

@@ -45,7 +45,7 @@ export async function montarAgendaPdf(
     doc.text(limpar(`Equipe — ${EQUIPE.map(([f, n]) => `${f}: ${n}`).join(" · ")}`), X1, 23.5, { align: "right" });
   };
 
-  const linhas = a.dias.filter((x) => (x.util && !x.passado) || x.folga || x.itens.length > 0);
+  const linhas = a.dias.filter((x) => (x.util && !x.passado) || x.itens.length > 0);
   autoTable(doc, {
     startY: topoTabela,
     margin: { left: X0, right: 297 - X1, top: topoTabela, bottom: 14 },
@@ -53,7 +53,7 @@ export async function montarAgendaPdf(
     body: linhas.map((x) => [
       ddmm(x.iso),
       NOMES_DIA[x.dow],
-      x.folga ? "Sem atendimento" : limpar(x.bairros.join(" + ") || "—"),
+      x.folga ? limpar(x.feriado ? `Feriado: ${x.feriado}` : "Sem atendimento") : limpar(x.bairros.join(" + ") || "—"),
       x.folga && !x.itens.length
         ? "—"
         : limpar(x.itens.map((p, i) => `${i + 1}. ${p.nome} (pront. ${p.prontuario} · CNS ${p.cns || "não informado"})${p.endereco ? ` — ${p.endereco}` : ""}${p.realizada ? " [visitado]" : ""}`).join("\n")),

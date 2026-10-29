@@ -2,14 +2,17 @@
 
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
-import { registrarVisitaDia } from "../../actions";
+import { registrarVisitaDia, salvarAjustesAgenda } from "../../actions";
 import { gerarAgenda, type DiaAgenda, type PacienteAgenda, type VisitaAgenda } from "@/lib/agenda";
+import { feriadosDoMes } from "@/lib/feriados";
+import { limitesDoMes } from "@/lib/opcoes";
 import { IconeBaixar } from "../icones";
 
 const NOMES_DIA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 const DIAS_ESCOLHA = [[1, "Seg"], [2, "Ter"], [3, "Qua"], [4, "Qui"], [5, "Sex"], [6, "Sáb"], [0, "Dom"]] as const;
 
-type Config = { meta: number; maxPorDia: number; diasSemana: number[]; folgas: string[] };
+/** folgas: dias marcados sem atendimento; atender: feriados em que a equipe vai atender mesmo assim. */
+type Config = { meta: number; maxPorDia: number; diasSemana: number[]; folgas: string[]; atender: string[] };
 type Props = {
   pacientes: PacienteAgenda[]; visitas: VisitaAgenda[]; mes: string; nomeMes: string; anterior: string; proximo: string;
   hoje: string; editar: boolean; inicial: Config;
@@ -22,6 +25,7 @@ const agora = () => new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_
 function endereco(mes: string, c: Config, comFolgas: boolean) {
   const p = new URLSearchParams({ mes, meta: String(c.meta), max: String(c.maxPorDia), dias: [...c.diasSemana].sort().join("") });
   if (comFolgas && c.folgas.length) p.set("folgas", [...c.folgas].sort().join(","));
+  if (comFolgas && c.atender.length) p.set("atender", [...c.atender].sort().join(","));
   return `/agenda?${p}`;
 }
 
@@ -30,19 +34,52 @@ export function AgendaMensal({ pacientes, visitas, mes, nomeMes, anterior, proxi
   const [pendente, iniciar] = useTransition();
   const [aviso, setAviso] = useState("");
   const [gerandoPdf, setGerandoPdf] = useState(false);
+  const [recalculo, setRecalculo] = useState<{ texto: string; antes: Config } | null>(null);
+  const [outroDia, setOutroDia] = useState("");
 
-  const agenda = useMemo(() => gerarAgenda(pacientes, visitas, { mes, hoje, ...cfg }), [pacientes, visitas, mes, hoje, cfg]);
+  const feriados = useMemo(() => feriadosDoMes(mes), [mes]);
+  const agenda = useMemo(() => {
+    const ativos = Object.fromEntries(Object.entries(feriados).filter(([d]) => !cfg.atender.includes(d)));
+    return gerarAgenda(pacientes, visitas, { mes, hoje, ...cfg, feriados: ativos });
+  }, [pacientes, visitas, mes, hoje, cfg, feriados]);
 
-  /** Guarda os ajustes no endereço da página (sem recarregar), para manter a agenda ao atualizar ou compartilhar. */
+  /** Aplica os ajustes: recalcula na hora, atualiza o endereço da página e guarda neste navegador. */
   function mudar(parcial: Partial<Config>) {
     const novo = { ...cfg, ...parcial };
     setCfg(novo);
     window.history.replaceState(null, "", endereco(mes, novo, true));
+    salvarAjustesAgenda(mes, novo).catch((e) => console.error(e));
   }
   const alternarDia = (dow: number) =>
     mudar({ diasSemana: cfg.diasSemana.includes(dow) ? cfg.diasSemana.filter((d) => d !== dow) : [...cfg.diasSemana, dow] });
+  /** Feriado: alterna entre "não atender" e "atender mesmo assim"; outro dia: alterna "sem atendimento". */
   const alternarFolga = (iso: string) =>
-    mudar({ folgas: cfg.folgas.includes(iso) ? cfg.folgas.filter((d) => d !== iso) : [...cfg.folgas, iso] });
+    feriados[iso]
+      ? mudar({ atender: cfg.atender.includes(iso) ? cfg.atender.filter((d) => d !== iso) : [...cfg.atender, iso] })
+      : mudar({ folgas: cfg.folgas.includes(iso) ? cfg.folgas.filter((d) => d !== iso) : [...cfg.folgas, iso] });
+
+  // Dias de atendimento de hoje até o fim da semana (para "o resto da semana sem visitas").
+  const { inicio, fim } = limitesDoMes(mes);
+  const ultimoDia = new Date(Date.parse(`${fim}T00:00:00Z`) - 86400000).toISOString().slice(0, 10);
+  const mesAtual = hoje >= inicio && hoje < fim;
+  const hojeTemAtendimento = agenda.dias.some((d) => d.iso === hoje && d.util && !d.folga);
+  const tHoje = Date.parse(`${hoje}T00:00:00Z`);
+  const domingo = new Date(tHoje + ((7 - new Date(tHoje).getUTCDay()) % 7) * 86400000).toISOString().slice(0, 10);
+  const restoDaSemana = agenda.dias.filter((d) => d.iso >= hoje && d.iso <= domingo && d.util && !d.folga);
+
+  /** Imprevisto: marca os dias sem atendimento e a agenda redistribui as visitas pelos próximos dias. */
+  function semAtendimento(datas: string[], texto: string) {
+    if (!datas.length) return;
+    setRecalculo({ texto, antes: cfg });
+    const novasFolgas = datas.filter((d) => !feriados[d] && !cfg.folgas.includes(d));
+    const semAtender = cfg.atender.filter((d) => !datas.includes(d));
+    mudar({ folgas: [...cfg.folgas, ...novasFolgas], atender: semAtender });
+  }
+  function desfazer() {
+    if (!recalculo) return;
+    mudar(recalculo.antes);
+    setRecalculo(null);
+  }
 
   function registrar(id: number, nome: string) {
     setAviso("");
@@ -70,7 +107,7 @@ export function AgendaMensal({ pacientes, visitas, mes, nomeMes, anterior, proxi
   const semanas = useMemo(() => {
     const lista: DiaAgenda[][] = [];
     for (const d of agenda.dias) {
-      if (!(d.util || d.folga || d.itens.length)) continue;
+      if (!(d.util || d.itens.length)) continue;
       const ultima = lista[lista.length - 1];
       const anterior = ultima?.[ultima.length - 1];
       const novaSemana = !anterior || d.dow === 1 || Date.parse(d.iso) - Date.parse(anterior.iso) >= 7 * 86400000 || d.dow < anterior.dow;
@@ -89,6 +126,58 @@ export function AgendaMensal({ pacientes, visitas, mes, nomeMes, anterior, proxi
         <span className="min-w-44 text-center text-lg font-bold text-heading">{nomeMes}</span>
         <Link href={endereco(proximo, cfg, false)} className="btn-secundario min-h-11 px-4" aria-label="Próximo mês">›</Link>
       </nav>
+
+      <section className="cartao grid gap-3">
+        <div>
+          <h2 className="m-0 text-base font-bold text-heading">Feriado ou imprevisto?</h2>
+          <p className="m-0 mt-1 text-sm text-muted">
+            Marque o dia sem visitas e a agenda é recalculada na hora: os pacientes daquele dia passam para os próximos dias de atendimento.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-end gap-2">
+          {mesAtual && hojeTemAtendimento && (
+            <button type="button" onClick={() => semAtendimento([hoje], `hoje (${ddmm(hoje)}) sem visitas`)} className="btn-primario">
+              Hoje não vai ter visita
+            </button>
+          )}
+          {mesAtual && restoDaSemana.length > 1 && (
+            <button
+              type="button" className="btn-secundario"
+              onClick={() => semAtendimento(restoDaSemana.map((d) => d.iso), `semana sem visitas (${ddmm(restoDaSemana[0].iso)} a ${ddmm(restoDaSemana[restoDaSemana.length - 1].iso)})`)}
+            >
+              Resto da semana sem visitas
+            </button>
+          )}
+          <div className="flex items-end gap-2">
+            <div>
+              <label htmlFor="ag-outro" className="rotulo">Outro dia</label>
+              <input id="ag-outro" type="date" min={hoje > inicio ? hoje : inicio} max={ultimoDia} value={outroDia} onChange={(e) => setOutroDia(e.target.value)} className="campo" />
+            </div>
+            <button
+              type="button" className="btn-secundario" disabled={!outroDia || !outroDia.startsWith(mes)}
+              onClick={() => { semAtendimento([outroDia], `${ddmm(outroDia)} sem visitas`); setOutroDia(""); }}
+            >
+              Sem visitas neste dia
+            </button>
+          </div>
+        </div>
+        {Object.keys(feriados).length > 0 && (
+          <p className="m-0 text-sm text-muted">
+            <strong className="text-heading">Feriados de {nomeMes.split(" ")[0].toLowerCase()} já marcados:</strong>{" "}
+            {Object.entries(feriados).map(([d, nome]) => `${ddmm(d)} ${nome}${cfg.atender.includes(d) ? " (vai atender)" : ""}`).join(" · ")}
+          </p>
+        )}
+      </section>
+
+      {recalculo && (
+        <div role="status" className="flex flex-wrap items-center gap-3 rounded-2xl bg-success-soft px-4 py-3 text-sm font-semibold text-success-strong">
+          <span className="min-w-0 flex-1">Agenda recalculada: {recalculo.texto}. As visitas foram passadas para os próximos dias.</span>
+          <button type="button" onClick={baixarPdf} disabled={gerandoPdf} className="btn-primario min-h-11">
+            <IconeBaixar /> {gerandoPdf ? "Gerando PDF…" : "Baixar nova agenda em PDF"}
+          </button>
+          <button type="button" onClick={desfazer} className="underline">Desfazer</button>
+        </div>
+      )}
 
       <section className="cartao grid gap-4">
         <div className="grid gap-4 sm:grid-cols-[repeat(2,minmax(0,12rem))_1fr]">
@@ -125,9 +214,6 @@ export function AgendaMensal({ pacientes, visitas, mes, nomeMes, anterior, proxi
             </div>
           </fieldset>
         </div>
-        <p className="m-0 text-sm text-muted">
-          Feriado, folga ou reunião? Toque em <strong>“Sem atendimento”</strong> no dia: os pacientes dele passam para os dias seguintes.
-        </p>
       </section>
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-5">
@@ -175,7 +261,10 @@ export function AgendaMensal({ pacientes, visitas, mes, nomeMes, anterior, proxi
           const cartoes = (
             <div className="grid grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-2">
               {dias.map((d) => (
-                <CartaoDia key={d.iso} d={d} hoje={hoje} editar={editar} pendente={pendente} alternarFolga={alternarFolga} registrar={registrar} />
+                <CartaoDia
+                  key={d.iso} d={d} hoje={hoje} editar={editar} pendente={pendente} ehFeriado={Boolean(feriados[d.iso])}
+                  alternarFolga={alternarFolga} registrar={registrar}
+                />
               ))}
             </div>
           );
@@ -197,8 +286,8 @@ export function AgendaMensal({ pacientes, visitas, mes, nomeMes, anterior, proxi
   );
 }
 
-function CartaoDia({ d, hoje, editar, pendente, alternarFolga, registrar }: {
-  d: DiaAgenda; hoje: string; editar: boolean; pendente: boolean;
+function CartaoDia({ d, hoje, editar, pendente, ehFeriado, alternarFolga, registrar }: {
+  d: DiaAgenda; hoje: string; editar: boolean; pendente: boolean; ehFeriado: boolean;
   alternarFolga: (iso: string) => void; registrar: (id: number, nome: string) => void;
 }) {
   const eHoje = d.iso === hoje;
@@ -214,13 +303,13 @@ function CartaoDia({ d, hoje, editar, pendente, alternarFolga, registrar }: {
             <p className="m-0 mt-0.5 text-[15px] font-extrabold text-accent">{d.bairros.join(" + ")}</p>
           ) : (
             <p className="m-0 mt-0.5 text-sm font-semibold text-muted">
-              {d.folga ? "Sem atendimento" : d.passado ? "Nenhuma visita registrada" : "Nada planejado"}
+              {d.folga ? (d.feriado ? `Feriado: ${d.feriado}` : "Sem atendimento") : d.passado ? "Nenhuma visita registrada" : "Nada planejado"}
             </p>
           )}
         </div>
-        {!d.passado && (d.util || d.folga) && (
+        {!d.passado && d.util && (
           <button type="button" onClick={() => alternarFolga(d.iso)} className="text-sm font-semibold text-muted underline">
-            {d.folga ? "Voltar a atender" : "Sem atendimento"}
+            {ehFeriado ? (d.folga ? "Atender mesmo assim" : "Não atender (feriado)") : d.folga ? "Voltar a atender" : "Sem atendimento"}
           </button>
         )}
       </header>
