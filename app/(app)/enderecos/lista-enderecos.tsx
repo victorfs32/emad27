@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Endereco } from "@/lib/pacientes";
 import { formatarCep, formatarTelefone, soDigitos } from "@/lib/validacao";
-import { IconeBusca, IconeFechar, IconeMapa, IconeTelefone } from "../icones";
+import { IconeBaixar, IconeBusca, IconeFechar, IconeMapa, IconeTelefone } from "../icones";
 
 const DE_QUEM: Record<string, string> = { paciente: "Paciente", cuidador: "Cuidador", familiar: "Familiar" };
 
@@ -17,6 +17,8 @@ function enderecoCompleto(p: Endereco) {
   const local = [p.bairro, p.municipio || "Fortaleza"].filter(Boolean).join(", ");
   return [p.rua ? linhaRua(p) : "", local, p.cep ? `CEP ${formatarCep(p.cep)}` : ""].filter(Boolean).join(" - ");
 }
+
+const linkMapa = (endereco: string) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco)}`;
 
 /** Telefones do paciente e dos cuidadores, sem repetir número. */
 function contatos(p: Endereco) {
@@ -95,6 +97,8 @@ export function ListaEnderecos({ pacientes }: { pacientes: Endereco[] }) {
 
 function JanelaEndereco({ p, fechar }: { p: Endereco; fechar: () => void }) {
   const [copiado, setCopiado] = useState(false);
+  const [gerando, setGerando] = useState(false);
+  const [erroPdf, setErroPdf] = useState("");
   const endereco = enderecoCompleto(p);
   const fones = contatos(p);
   const temEndereco = Boolean(p.rua || p.bairro || p.cep);
@@ -118,6 +122,30 @@ function JanelaEndereco({ p, fechar }: { p: Endereco; fechar: () => void }) {
       setTimeout(() => setCopiado(false), 2000);
     } catch {
       setCopiado(false);
+    }
+  }
+
+  async function imprimir() {
+    setErroPdf("");
+    setGerando(true);
+    try {
+      const { gerarEnderecoPdf } = await import("@/lib/endereco-pdf");
+      await gerarEnderecoPdf({
+        nome: p.nome,
+        prontuario: p.prontuario,
+        rua: p.rua ? linhaRua(p) : "",
+        local: [p.bairro, p.municipio].filter(Boolean).join(" - "),
+        cep: p.cep ? formatarCep(p.cep) : "",
+        referencia: p.referencia ?? "",
+        contatos: fones.map((f) => ({ numero: formatarTelefone(f.numero), quem: f.quem, whatsapp: f.whatsapp })),
+        mapa: temEndereco ? linkMapa(endereco) : "",
+        geradoEm: new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }),
+      });
+    } catch (e) {
+      console.error(e);
+      setErroPdf("Não foi possível gerar o PDF. Tente novamente.");
+    } finally {
+      setGerando(false);
     }
   }
 
@@ -159,7 +187,7 @@ function JanelaEndereco({ p, fechar }: { p: Endereco; fechar: () => void }) {
         {temEndereco && (
           <div className="grid gap-2 sm:grid-cols-2">
             <a
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco)}`}
+              href={linkMapa(endereco)}
               target="_blank"
               rel="noopener noreferrer"
               className="btn-primario"
@@ -200,6 +228,11 @@ function JanelaEndereco({ p, fechar }: { p: Endereco; fechar: () => void }) {
             ))
           )}
         </section>
+
+        <button type="button" onClick={imprimir} disabled={gerando} className="btn-secundario">
+          <IconeBaixar /> {gerando ? "Gerando PDF…" : "Imprimir PDF do endereço"}
+        </button>
+        {erroPdf && <p role="alert" className="m-0 rounded-xl bg-danger-soft px-4 py-3 text-sm font-semibold text-danger-strong">{erroPdf}</p>}
       </div>
     </div>
   );
