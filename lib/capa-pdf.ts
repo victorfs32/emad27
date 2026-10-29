@@ -30,7 +30,15 @@ export type DadosCapa = {
   alta: string;
 };
 
-const limpar = (t: string) => t.replace(/[‘’]/g, "'").replace(/[^\x09\x0A\x0D\x20-\x7E -ÿ–—•…“”]/g, "");
+/** Profissionais da EMAD 27, impressos no alto da capa (função, nomes). */
+const EQUIPE: [string, string][] = [
+  ["Médico", "Pedro Victor Aguiar"],
+  ["Enfermeiro", "João Paulo de Souza"],
+  ["Fisioterapeuta", "Andreia Dutra"],
+  ["Técnicos", "Clécia, Salva e Marcleane"],
+];
+
+const limpar =(t: string) => t.replace(/[‘’]/g, "'").replace(/[^\x09\x0A\x0D\x20-\x7E -ÿ–—•…“”]/g, "");
 const slug = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 export async function montarCapaPdf(d: DadosCapa): Promise<{ doc: JsPDF; nomeArquivo: string }> {
@@ -73,19 +81,31 @@ export async function montarCapaPdf(d: DadosCapa): Promise<{ doc: JsPDF; nomeArq
     doc.text(v, inicio + 1, y - 0.4);
   };
 
+  // equipe, no canto superior esquerdo
+  fonte(10, "bold");
+  doc.text("Equipe", X0 - 4, 12);
+  EQUIPE.forEach(([funcao, nomes], i) => {
+    const yl = 16.6 + i * 4.4;
+    fonte(9, "bold", [70, 85, 85]);
+    doc.text(`${funcao}:`, X0 - 4, yl);
+    const x = X0 - 4 + doc.getTextWidth(`${funcao}:`) + 1.5;
+    fonte(9);
+    doc.text(nomes, x, yl);
+  });
+
   // título
   fonte(20, "bold");
-  doc.text("PRONTUÁRIO DOMICILIAR", MEIO, 24, { align: "center" });
+  doc.text("PRONTUÁRIO DOMICILIAR", MEIO, 38, { align: "center" });
   fonte(16, "bold");
-  doc.text("EMAD:", MEIO - 2, 34, { align: "right" });
+  doc.text("EMAD:", MEIO - 2, 47, { align: "right" });
   fonte(16);
-  doc.text(limpar(d.emad), MEIO + 2, 34);
-  traco(MEIO, 35.2, MEIO + 26, 35.2, 0.4);
+  doc.text(limpar(d.emad), MEIO + 2, 47);
+  traco(MEIO, 48.2, MEIO + 26, 48.2, 0.4);
 
   // logotipo
-  const larguraLogo = 96;
-  desenharLogo(doc, MEIO - larguraLogo / 2, 40, larguraLogo);
-  const fimLogo = 40 + larguraLogo * PROPORCAO_LOGO;
+  const larguraLogo = 84;
+  desenharLogo(doc, MEIO - larguraLogo / 2, 51, larguraLogo);
+  const fimLogo = 51 + larguraLogo * PROPORCAO_LOGO;
 
   // quadro de identificação
   const topo = fimLogo + 3;
