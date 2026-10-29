@@ -11,6 +11,7 @@ import {
 } from "@/lib/pacientes";
 import { criarUsuario, trocarSenhaPropria, type DadosNovoUsuario } from "@/lib/usuarios";
 import { problemaNaIdentificacao, type IdentificacaoProfissional } from "@/lib/profissional";
+import { consultarCep, procurarCepPorRua, type EnderecoCep, type ResultadoCep } from "@/lib/cep";
 import type { DadosForm, ResultadoSalvar } from "@/lib/formulario";
 import { TIPOS_EVOLUCAO, TIPO_VISITA, hojeISO } from "@/lib/opcoes";
 import type { DadosRelatorio } from "@/lib/relatorio-pdf";
@@ -434,6 +435,23 @@ export async function dadosAtestado(pacienteId: number): Promise<{ erro?: string
   if (!ficha) return { erro: "Paciente não encontrado." };
   await registrarDocumentoGerado(pacienteId, "doc_atestado");
   return { nome: ficha.nome };
+}
+
+/** Endereço de um CEP, para preencher o cadastro (rua, bairro, município). */
+export async function buscarEnderecoPorCep(cep: string): Promise<ResultadoCep> {
+  await exigirUsuario();
+  return consultarCep(String(cep ?? ""));
+}
+
+/** CEPs de uma rua (UF CE e Fortaleza quando não informados); os do mesmo bairro vêm primeiro. Até 12 opções. */
+export async function buscarCepDaRua(rua: string, municipio: string, bairro: string): Promise<{ erro?: string; lista?: EnderecoCep[] }> {
+  await exigirUsuario();
+  const r = await procurarCepPorRua("CE", String(municipio ?? "").trim() || "Fortaleza", String(rua ?? "").slice(0, 120));
+  if (!r.ok) return { erro: "Não foi possível consultar os Correios agora. Tente de novo em instantes." };
+  const chave = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  const b = chave(String(bairro ?? ""));
+  const lista = [...r.lista].sort((x, y) => Number(chave(y.bairro) === b) - Number(chave(x.bairro) === b));
+  return { lista: lista.slice(0, 12) };
 }
 
 export type AjustesAgenda = { meta: number; maxPorDia: number; diasSemana: number[]; folgas: string[]; atender: string[] };

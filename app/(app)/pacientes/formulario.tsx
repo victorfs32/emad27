@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { pesquisarCid, salvarPaciente } from "../../actions";
+import { buscarCepDaRua, buscarEnderecoPorCep, pesquisarCid, salvarPaciente } from "../../actions";
+import type { EnderecoCep } from "@/lib/cep";
 import {
   CONTINENCIA, DE_QUEM, DIURESE, FISIO, MODALIDADES, SEXOS, SITUACOES, VIAS_DIETA, calcularIdade,
 } from "@/lib/opcoes";
-import { formatarCep, formatarCns, formatarCpf, formatarTelefone } from "@/lib/validacao";
+import { formatarCep, formatarCns, formatarCpf, formatarTelefone, soDigitos } from "@/lib/validacao";
 import type { DadosForm, Duplicado, TriEstado } from "@/lib/formulario";
 import { IconeFechar, IconeMais } from "../icones";
 
@@ -156,6 +157,92 @@ export function FormularioPaciente({ id, inicial, uapss, bairros }: Props) {
     setD((p) => ({ ...p, [k]: (p[k] as object[]).map((x, j) => (j === i ? { ...x, ...patch } : x)) }));
   const remover = (k: ChaveLista, i: number) => setD((p) => ({ ...p, [k]: (p[k] as object[]).filter((_, j) => j !== i) }));
 
+  // ---- CEP automático: ao completar o CEP, preenche rua, bairro e município; sem CEP, descobre pela rua.
+  const [cepAviso, setCepAviso] = useState<{ tom: "ok" | "erro" | "info"; texto: string } | null>(null);
+  const [opcoesCep, setOpcoesCep] = useState<EnderecoCep[]>([]);
+  const [buscandoCep, setBuscandoCep] = useState(false);
+  const ultimoCep = useRef(soDigitos(inicial.cep));
+  /** Usa a grafia de bairro que já existe no sistema (para a agenda juntar os pacientes do mesmo bairro). */
+  const bairroConhecido = (b: string) => {
+    const k = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+    return bairros.find((x) => k(x) === k(b)) ?? b;
+  };
+
+  async function preencherPorCep(dig: string) {
+    setOpcoesCep([]);
+    setBuscandoCep(true);
+    setCepAviso({ tom: "info", texto: "Buscando o endereço do CEP…" });
+    try {
+      const r = await buscarEnderecoPorCep(dig);
+      if (ultimoCep.current !== dig) return; // o CEP mudou enquanto buscava
+      if (!r.ok) {
+        setCepAviso(r.motivo === "nao_encontrado"
+          ? { tom: "erro", texto: "CEP não encontrado. Confira os números ou preencha o endereço à mão." }
+          : { tom: "erro", texto: "Não foi possível consultar o CEP agora. Preencha o endereço à mão ou tente de novo." });
+        return;
+      }
+      const e = r.endereco;
+      setD((p) => ({
+        ...p,
+        rua: e.rua || p.rua,
+        bairro: e.bairro ? bairroConhecido(e.bairro) : p.bairro,
+        municipio: e.municipio || p.municipio,
+      }));
+      setCepAviso(e.rua
+        ? { tom: "ok", texto: `Endereço preenchido pelo CEP: ${[e.rua, e.bairro, e.municipio && `${e.municipio}/${e.uf}`].filter(Boolean).join(" — ")}. Confira e informe o número.` }
+        : { tom: "info", texto: `CEP geral de ${e.municipio}/${e.uf}: informe a rua e o bairro.` });
+    } catch (e) {
+      console.error(e);
+      setCepAviso({ tom: "erro", texto: "Não foi possível consultar o CEP agora. Preencha o endereço à mão ou tente de novo." });
+    } finally {
+      setBuscandoCep(false);
+    }
+  }
+
+  function mudarCep(valor: string) {
+    const v = formatarCep(valor);
+    set("cep", v);
+    const dig = soDigitos(v);
+    if (dig.length === 8 && dig !== ultimoCep.current) {
+      ultimoCep.current = dig;
+      preencherPorCep(dig);
+    } else if (dig.length < 8) {
+      ultimoCep.current = dig;
+      setCepAviso(null);
+    }
+  }
+
+  function escolherCep(e: EnderecoCep) {
+    ultimoCep.current = e.cep;
+    setOpcoesCep([]);
+    setD((p) => ({ ...p, cep: formatarCep(e.cep), bairro: p.bairro || (e.bairro ? bairroConhecido(e.bairro) : ""), municipio: p.municipio || e.municipio }));
+    setCepAviso({ tom: "ok", texto: `CEP ${formatarCep(e.cep)} preenchido${e.complemento ? ` (${e.complemento})` : ""}.` });
+  }
+
+  async function descobrirCep() {
+    setOpcoesCep([]);
+    setBuscandoCep(true);
+    setCepAviso({ tom: "info", texto: "Procurando o CEP da rua…" });
+    try {
+      const r = await buscarCepDaRua(d.rua, d.municipio, d.bairro);
+      if (r.erro || !r.lista) {
+        setCepAviso({ tom: "erro", texto: r.erro ?? "Não foi possível procurar o CEP." });
+      } else if (r.lista.length === 0) {
+        setCepAviso({ tom: "erro", texto: `Não achei CEP para “${d.rua.trim()}” em ${d.municipio.trim() || "Fortaleza"}. Confira o nome da rua (sem o número).` });
+      } else if (r.lista.length === 1) {
+        escolherCep(r.lista[0]);
+      } else {
+        setOpcoesCep(r.lista);
+        setCepAviso({ tom: "info", texto: "Essa rua tem mais de um CEP (muda conforme o trecho ou o lado). Escolha o certo:" });
+      }
+    } catch (e) {
+      console.error(e);
+      setCepAviso({ tom: "erro", texto: "Não foi possível procurar o CEP agora." });
+    } finally {
+      setBuscandoCep(false);
+    }
+  }
+
   function enviar(confirmar: boolean) {
     setErro("");
     iniciar(async () => {
@@ -286,15 +373,42 @@ export function FormularioPaciente({ id, inicial, uapss, bairros }: Props) {
           <div><BotaoAdicionar onClick={() => set("telefones", [...d.telefones, { numero: "", de_quem: "paciente", whatsapp: "" }])}>Adicionar telefone</BotaoAdicionar></div>
         </div>
 
-        <Campo rotulo="CEP">
-          <input value={d.cep} onChange={(e) => set("cep", formatarCep(e.target.value))} inputMode="numeric" placeholder="00000-000" className="campo" />
+        <Campo rotulo="CEP" dica="Digite o CEP e a rua, o bairro e o município são preenchidos sozinhos.">
+          <input value={d.cep} onChange={(e) => mudarCep(e.target.value)} inputMode="numeric" placeholder="00000-000" className="campo" />
         </Campo>
         <Campo rotulo="Município">{texto("municipio")}</Campo>
         <Campo rotulo="Bairro" dica="Usado para filtrar e organizar as visitas.">
           <input value={d.bairro} onChange={(e) => set("bairro", e.target.value)} list="lista-bairros" className="campo" autoComplete="off" />
           <datalist id="lista-bairros">{bairros.map((b) => <option key={b} value={b} />)}</datalist>
         </Campo>
-        <Campo rotulo="Rua">{texto("rua")}</Campo>
+        <Campo rotulo="Rua">
+          {texto("rua")}
+          {soDigitos(d.cep).length < 8 && d.rua.trim().length >= 3 && (
+            <button type="button" onClick={descobrirCep} disabled={buscandoCep} className="mt-2 text-sm font-semibold text-accent underline disabled:opacity-60">
+              {buscandoCep ? "Procurando…" : "Não sabe o CEP? Descobrir pela rua"}
+            </button>
+          )}
+        </Campo>
+        {(cepAviso || opcoesCep.length > 0) && (
+          <div className="grid gap-2 sm:col-span-2" aria-live="polite">
+            {cepAviso && (
+              <p className={`m-0 rounded-xl px-4 py-3 text-sm font-semibold ${
+                cepAviso.tom === "ok" ? "bg-success-soft text-success-strong" : cepAviso.tom === "erro" ? "bg-danger-soft text-danger-strong" : "bg-detail text-heading"
+              }`}>
+                {cepAviso.texto}
+              </p>
+            )}
+            {opcoesCep.map((e) => (
+              <button
+                key={`${e.cep}-${e.complemento}`} type="button" onClick={() => escolherCep(e)}
+                className="rounded-xl border border-border bg-surface px-4 py-2.5 text-left text-sm hover:border-accent"
+              >
+                <strong className="text-heading">{formatarCep(e.cep)}</strong>
+                <span className="text-muted"> — {[e.rua, e.complemento, e.bairro].filter(Boolean).join(" · ")}</span>
+              </button>
+            ))}
+          </div>
+        )}
         <Campo rotulo="Número">{texto("numero", { maxLength: 15 })}</Campo>
         <Campo rotulo="Complemento">{texto("complemento")}</Campo>
         <Campo rotulo="Ponto de referência" largo>{texto("referencia")}</Campo>
