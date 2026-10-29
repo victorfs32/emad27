@@ -102,6 +102,7 @@ function paragrafosResumo(d: DadosRelatorio): string[] {
   if (sondas.length) usa.push(`alimentação por ${junta(sondas)}`);
   if (f.diurese === "svd" || f.diurese === "cistostomia") usa.push(`urina por ${rotulo(DIURESE, f.diurese)?.toLowerCase()}`);
   if (f.usa_cama_pmec) usa.push("cama do PMEC");
+  if (f.usa_aspirador_pmec) usa.push("aspirador do PMEC");
   if (usa.length) p.push(`Cuidados e recursos em uso: ${junta(usa)}.`);
 
   const visitas =
@@ -142,6 +143,7 @@ function pontosDeAtencao(d: DadosRelatorio): Atencao[] {
   if (f.o2 === null) pendentes.push("oxigênio");
   if (f.colostomia === null) pendentes.push("colostomia");
   if (f.usa_cama_pmec === null) pendentes.push("cama do PMEC");
+  if (f.usa_aspirador_pmec === null) pendentes.push("aspirador do PMEC");
   if (f.diagnosticos.length === 0) pendentes.push("diagnóstico (CID)");
   if (f.cuidadores.length === 0) pendentes.push("cuidador");
   if (f.telefones.length === 0) pendentes.push("telefone");
@@ -489,6 +491,7 @@ export async function montarRelatorioPdf(d: DadosRelatorio): Promise<{ doc: JsPD
     ["Uso de fralda", simNao(f.usa_fralda)],
     ["Continência", f.continencia ? (rotulo(CONTINENCIA, f.continencia) ?? f.continencia) : "Não informado"],
     ["Usa cama do PMEC", simNao(f.usa_cama_pmec)],
+    ["Usa aspirador do PMEC", simNao(f.usa_aspirador_pmec)],
   ]);
 
   subtitulo("Dispositivos e condições especiais");

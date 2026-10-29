@@ -324,6 +324,7 @@ function Clinico({ f }: { f: Ficha }) {
           <Dado rotulo="Uso de fralda" valor={simNao(f.usa_fralda)} />
           <Dado rotulo="Continência" valor={f.continencia ? (rotulo(CONTINENCIA, f.continencia) ?? f.continencia) : "Não informado"} />
           <Dado rotulo="Usa cama do PMEC" valor={simNao(f.usa_cama_pmec)} />
+          <Dado rotulo="Usa aspirador do PMEC" valor={simNao(f.usa_aspirador_pmec)} />
         </Grade>
       </Secao>
 
