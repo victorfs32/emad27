@@ -14,7 +14,7 @@ const NOMES: Record<string, string> = {
   continencia: "Continência", tqt: "Traqueostomia", tqt_canula_tipo: "Tipo de cânula", tqt_calibre: "Calibre da cânula",
   tqt_ultima_troca: "Última troca da cânula", tqt_obs: "Obs. da traqueostomia", lpp: "Lesão por pressão", o2: "Oxigênio",
   o2_dispositivo: "Dispositivo de O₂", o2_fluxo: "Fluxo de O₂ (L/min)", o2_regime: "Regime de O₂", o2_obs: "Obs. do O₂",
-  proxima_visita: "Próxima visita", observacoes: "Observações", usa_cama_pmec: "Usa cama do PMEC", colostomia: "Colostomia",
+  proxima_visita: "Próxima visita", observacoes: "Observações", usa_cama_pmec: "Usa cama do PMEC", usa_aspirador_pmec: "Usa aspirador do PMEC", colostomia: "Colostomia",
 };
 
 export const nomeDoCampo = (c: string) => NOMES[c] ?? c;

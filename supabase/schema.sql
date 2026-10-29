@@ -112,6 +112,7 @@ create table if not exists public.pacientes (
   proxima_visita date,
   observacoes text,
   usa_cama_pmec boolean,
+  usa_aspirador_pmec boolean,
   colostomia boolean,
   criado_em timestamptz not null default now(),
   criado_por uuid default auth.uid() references auth.users(id) on delete set null,
@@ -126,6 +127,7 @@ create index if not exists ix2_pac_situacao on public.pacientes (situacao);
 create index if not exists ix2_pac_uaps on public.pacientes (uaps_id);
 alter table public.pacientes add column if not exists nome_pai text;
 alter table public.pacientes add column if not exists usa_cama_pmec boolean;
+alter table public.pacientes add column if not exists usa_aspirador_pmec boolean;
 alter table public.pacientes add column if not exists colostomia boolean;
 alter table public.pacientes add column if not exists sexo text check (sexo in ('F','M'));
 alter table public.pacientes add column if not exists nome_social text;
@@ -272,7 +274,7 @@ declare
     'data_nascimento, admissao, cpf, cns, rg, nome_mae, nome_pai, cep, municipio, bairro, rua, numero, complemento, referencia, '
     'fisio, fisio_frequencia, fisio_obs, dieta_vias, dieta_outra, dieta_obs, diurese, diurese_outra, usa_fralda, continencia, '
     'tqt, tqt_canula_tipo, tqt_calibre, tqt_ultima_troca, tqt_obs, lpp, o2, o2_dispositivo, o2_fluxo, o2_regime, o2_obs, '
-    'proxima_visita, observacoes, usa_cama_pmec, colostomia, sexo, nome_social, acs';
+    'proxima_visita, observacoes, usa_cama_pmec, colostomia, sexo, nome_social, acs, usa_aspirador_pmec';
   ant jsonb; dep jsonb; t record; linhas int;
 begin
   if p_id is null then
