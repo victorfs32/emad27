@@ -823,3 +823,17 @@ revoke execute on function public.atualizar_meu_cadastro(text, text, text, text,
 grant execute on function public.atualizar_meu_cadastro(text, text, text, text, text, text) to authenticated;
 
 notify pgrst, 'reload schema';
+
+-- ================================================================ versão 18: segurança das funções
+-- Quem não fez login (anon) não chama nenhuma função; as funções novas também nascem sem essa permissão.
+revoke execute on all functions in schema public from public, anon;
+grant execute on all functions in schema public to authenticated, service_role;
+alter default privileges for role postgres in schema public revoke execute on functions from public, anon;
+do $$
+begin
+  if to_regprocedure('public.rotulo_dispositivo(text)') is not null then
+    alter function public.rotulo_dispositivo(text) set search_path = public;
+  end if;
+end $$;
+
+notify pgrst, 'reload schema';

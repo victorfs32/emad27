@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { supabaseServidor } from "./supabase/servidor";
 import { linhasCarimbo } from "./carimbo";
 import { camposFaltando } from "./profissional";
@@ -10,6 +11,9 @@ export type Usuario = { id: string; email: string; nome: string; cargo: string; 
 
 /** Exige sessão válida e perfil ativo; senão manda para o login / tela de acesso desativado. */
 export const exigirUsuario = cache(async (): Promise<Usuario> => {
+  // A sessão compara a validade do token com a hora atual (Date.now): isso só pode rodar na requisição,
+  // nunca no pré-carregamento das páginas (senão o Next registra erro de prerender a cada navegação).
+  await connection();
   const supabase = await supabaseServidor();
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) redirect("/login");
