@@ -206,6 +206,8 @@ export function FormularioPaciente({ id, inicial, uapss, bairros }: Props) {
           {texto("prontuario", { maxLength: 30, autoComplete: "off" })}
         </Campo>
         <Campo rotulo="Paciente (nome completo)" obrigatorio>{texto("nome", { autoComplete: "off" })}</Campo>
+        <Campo rotulo="Nome social">{texto("nome_social", { maxLength: 120, autoComplete: "off" })}</Campo>
+        <Campo rotulo="ACS (agente comunitário de saúde)">{texto("acs", { maxLength: 120, autoComplete: "off" })}</Campo>
 
         <Campo rotulo="UAPS de referência">
           <select value={d.uaps_id} onChange={(e) => set("uaps_id", e.target.value)} className="campo">
@@ -303,10 +305,13 @@ export function FormularioPaciente({ id, inicial, uapss, bairros }: Props) {
           {d.cuidadores.map((c, i) => (
             <div key={i} className="grid gap-3 rounded-2xl bg-detail p-3 sm:grid-cols-2">
               <Campo rotulo="Nome completo"><input value={c.nome} onChange={(e) => lista("cuidadores", i, { nome: e.target.value })} className="campo" /></Campo>
+              <Campo rotulo="Nome social"><input value={c.nome_social} onChange={(e) => lista("cuidadores", i, { nome_social: e.target.value })} maxLength={120} className="campo" /></Campo>
               <Campo rotulo="Vínculo com o paciente"><input value={c.vinculo} onChange={(e) => lista("cuidadores", i, { vinculo: e.target.value })} placeholder="Filho(a), cônjuge, cuidador contratado…" className="campo" /></Campo>
               <Campo rotulo="Telefone"><input value={c.telefone} onChange={(e) => lista("cuidadores", i, { telefone: formatarTelefone(e.target.value) })} type="tel" inputMode="tel" className="campo" /></Campo>
               <Campo rotulo="CPF"><input value={c.cpf} onChange={(e) => lista("cuidadores", i, { cpf: formatarCpf(e.target.value) })} inputMode="numeric" className="campo" /></Campo>
               <Campo rotulo="CNS"><input value={c.cns} onChange={(e) => lista("cuidadores", i, { cns: formatarCns(e.target.value) })} inputMode="numeric" className="campo" /></Campo>
+              <Campo rotulo="RG"><input value={c.rg} onChange={(e) => lista("cuidadores", i, { rg: e.target.value })} maxLength={30} autoComplete="off" className="campo" /></Campo>
+              <Campo rotulo="Data de nascimento"><input value={c.data_nascimento} onChange={(e) => lista("cuidadores", i, { data_nascimento: e.target.value })} type="date" className="campo" /></Campo>
               <div className="flex items-end justify-between gap-3">
                 <label className="flex min-h-12 items-center gap-2.5 text-[15px] font-semibold text-heading">
                   <input
@@ -321,7 +326,7 @@ export function FormularioPaciente({ id, inicial, uapss, bairros }: Props) {
             </div>
           ))}
           <div>
-            <BotaoAdicionar onClick={() => set("cuidadores", [...d.cuidadores, { nome: "", principal: d.cuidadores.length === 0, vinculo: "", telefone: "", cns: "", cpf: "" }])}>
+            <BotaoAdicionar onClick={() => set("cuidadores", [...d.cuidadores, { nome: "", nome_social: "", principal: d.cuidadores.length === 0, vinculo: "", telefone: "", cns: "", cpf: "", rg: "", data_nascimento: "" }])}>
               Adicionar cuidador
             </BotaoAdicionar>
           </div>

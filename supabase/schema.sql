@@ -128,6 +128,8 @@ alter table public.pacientes add column if not exists nome_pai text;
 alter table public.pacientes add column if not exists usa_cama_pmec boolean;
 alter table public.pacientes add column if not exists colostomia boolean;
 alter table public.pacientes add column if not exists sexo text check (sexo in ('F','M'));
+alter table public.pacientes add column if not exists nome_social text;
+alter table public.pacientes add column if not exists acs text;
 
 create table if not exists public.telefones (
   id bigint generated always as identity primary key,
@@ -147,6 +149,9 @@ create table if not exists public.cuidadores (
 );
 create index if not exists ix2_cui_pac on public.cuidadores (paciente_id);
 create index if not exists ix2_cui_cpf on public.cuidadores (cpf);
+alter table public.cuidadores add column if not exists nome_social text;
+alter table public.cuidadores add column if not exists rg text;
+alter table public.cuidadores add column if not exists data_nascimento date;
 
 create table if not exists public.diagnosticos (
   id bigint generated always as identity primary key,
@@ -267,7 +272,7 @@ declare
     'data_nascimento, admissao, cpf, cns, rg, nome_mae, nome_pai, cep, municipio, bairro, rua, numero, complemento, referencia, '
     'fisio, fisio_frequencia, fisio_obs, dieta_vias, dieta_outra, dieta_obs, diurese, diurese_outra, usa_fralda, continencia, '
     'tqt, tqt_canula_tipo, tqt_calibre, tqt_ultima_troca, tqt_obs, lpp, o2, o2_dispositivo, o2_fluxo, o2_regime, o2_obs, '
-    'proxima_visita, observacoes, usa_cama_pmec, colostomia, sexo';
+    'proxima_visita, observacoes, usa_cama_pmec, colostomia, sexo, nome_social, acs';
   ant jsonb; dep jsonb; t record; linhas int;
 begin
   if p_id is null then
@@ -295,8 +300,8 @@ begin
       select v_id, x.numero, x.de_quem, x.whatsapp
         from jsonb_populate_recordset(null::public.telefones, coalesce(p -> 'telefones', '[]'::jsonb)) x;
     elsif t.tabela = 'cuidadores' then
-      insert into public.cuidadores (paciente_id, nome, principal, vinculo, telefone, cns, cpf)
-      select v_id, x.nome, coalesce(x.principal, false), x.vinculo, x.telefone, x.cns, x.cpf
+      insert into public.cuidadores (paciente_id, nome, principal, vinculo, telefone, cns, cpf, nome_social, rg, data_nascimento)
+      select v_id, x.nome, coalesce(x.principal, false), x.vinculo, x.telefone, x.cns, x.cpf, x.nome_social, x.rg, x.data_nascimento
         from jsonb_populate_recordset(null::public.cuidadores, coalesce(p -> 'cuidadores', '[]'::jsonb)) x;
     elsif t.tabela = 'diagnosticos' then
       insert into public.diagnosticos (paciente_id, cid, descricao, principal)
