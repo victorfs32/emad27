@@ -32,7 +32,7 @@ export const filtrosVazios = (grupo: Grupo): Filtros => ({
 
 type Bool = boolean | null;
 export type Ficha = {
-  id: number; prontuario: string; nome: string; uaps_id: number | null; uaps: { nome: string } | null;
+  id: number; prontuario: string; nome: string; nome_social?: string | null; acs?: string | null; uaps_id: number | null; uaps: { nome: string } | null;
   situacao: string; modalidade: string | null; situacao_data: string | null; situacao_motivo: string | null; situacao_obs: string | null;
   data_nascimento: string | null; admissao: string; cpf: string | null; cns: string | null; rg: string | null; nome_mae: string | null; nome_pai: string | null; sexo: string | null;
   cep: string | null; municipio: string | null; bairro: string | null; rua: string | null; numero: string | null;
@@ -45,7 +45,7 @@ export type Ficha = {
   proxima_visita: string | null; observacoes: string | null; usa_cama_pmec: Bool; colostomia: Bool;
   criado_em: string; atualizado_em: string;
   telefones: { id: number; numero: string; de_quem: string; whatsapp: Bool }[];
-  cuidadores: { id: number; nome: string; principal: boolean; vinculo: string | null; telefone: string | null; cns: string | null; cpf: string | null }[];
+  cuidadores: { id: number; nome: string; nome_social?: string | null; principal: boolean; vinculo: string | null; telefone: string | null; cns: string | null; cpf: string | null; rg?: string | null; data_nascimento?: string | null }[];
   diagnosticos: { id: number; cid: string; descricao: string | null; principal: boolean }[];
   lesoes_pressao: { id: number; localizacao: string; classificacao: string | null; cobertura: string | null; data_avaliacao: string | null }[];
   admissoes: { id: number; admissao: string | null; saida: string | null; situacao_saida: string | null; motivo: string | null; obs: string | null }[];
@@ -297,6 +297,7 @@ export function normalizar(d: DadosForm): Normalizado {
     if (!c.nome.trim()) return { erro: "Informe o nome de cada cuidador." };
     if (c.cpf.trim() && !validarCpf(c.cpf)) return { erro: `CPF do cuidador ${c.nome.trim()} inválido.` };
     if (c.cns.trim() && !validarCns(c.cns)) return { erro: `CNS do cuidador ${c.nome.trim()} inválido.` };
+    if (c.data_nascimento && !dataOk(c.data_nascimento)) return { erro: `Data de nascimento do cuidador ${c.nome.trim()} inválida.` };
   }
   if (cuidadores.filter((c) => c.principal).length > 1) return { erro: "Só pode haver um cuidador principal." };
   if (cuidadores.length && !cuidadores.some((c) => c.principal)) cuidadores[0].principal = true;
@@ -310,7 +311,7 @@ export function normalizar(d: DadosForm): Normalizado {
 
   const ativo = d.situacao === "ativo";
   const paciente = {
-    prontuario, nome: d.nome.trim().replace(/\s+/g, " "), situacao: d.situacao, modalidade: nul(d.modalidade),
+    prontuario, nome: d.nome.trim().replace(/\s+/g, " "), nome_social: nul(d.nome_social), acs: nul(d.acs), situacao: d.situacao, modalidade: nul(d.modalidade),
     situacao_data: ativo ? null : nul(d.situacao_data), situacao_motivo: ativo ? null : nul(d.situacao_motivo),
     situacao_obs: ativo ? null : nul(d.situacao_obs),
     data_nascimento: nul(d.data_nascimento), admissao: d.admissao, cpf, cns, rg: nul(d.rg), nome_mae: nul(d.nome_mae), nome_pai: nul(d.nome_pai), sexo: nul(d.sexo),
@@ -334,8 +335,8 @@ export function normalizar(d: DadosForm): Normalizado {
     listas: {
       telefones,
       cuidadores: cuidadores.map((c) => ({
-        nome: c.nome.trim(), principal: c.principal, vinculo: nul(c.vinculo), telefone: soDigitos(c.telefone) || null,
-        cns: soDigitos(c.cns) || null, cpf: soDigitos(c.cpf) || null,
+        nome: c.nome.trim(), nome_social: nul(c.nome_social), principal: c.principal, vinculo: nul(c.vinculo), telefone: soDigitos(c.telefone) || null,
+        cns: soDigitos(c.cns) || null, cpf: soDigitos(c.cpf) || null, rg: nul(c.rg), data_nascimento: nul(c.data_nascimento),
       })),
       diagnosticos: diagnosticos.map((x) => ({ cid: x.cid.trim().toUpperCase(), descricao: nul(x.descricao), principal: x.principal })),
       lesoes_pressao: lesoes.map((l) => ({
@@ -402,7 +403,7 @@ export function paraFormulario(f: Ficha): DadosForm {
   const s = (x: string | number | null | undefined) => (x === null || x === undefined ? "" : String(x));
   return {
     ...v,
-    prontuario: f.prontuario, nome: f.nome, uaps_id: s(f.uaps_id), situacao: f.situacao, modalidade: s(f.modalidade),
+    prontuario: f.prontuario, nome: f.nome, nome_social: s(f.nome_social), acs: s(f.acs), uaps_id: s(f.uaps_id), situacao: f.situacao, modalidade: s(f.modalidade),
     situacao_data: s(f.situacao_data), situacao_motivo: s(f.situacao_motivo), situacao_obs: s(f.situacao_obs),
     data_nascimento: s(f.data_nascimento), admissao: s(f.admissao), cpf: s(f.cpf), cns: s(f.cns), rg: s(f.rg), nome_mae: s(f.nome_mae), nome_pai: s(f.nome_pai), sexo: s(f.sexo),
     cep: s(f.cep), municipio: s(f.municipio), bairro: s(f.bairro), rua: s(f.rua), numero: s(f.numero),
@@ -417,7 +418,8 @@ export function paraFormulario(f: Ficha): DadosForm {
     proxima_visita: s(f.proxima_visita), observacoes: s(f.observacoes), usa_cama_pmec: triForm(f.usa_cama_pmec), colostomia: triForm(f.colostomia),
     telefones: f.telefones.map((t) => ({ numero: t.numero, de_quem: t.de_quem, whatsapp: triForm(t.whatsapp) })),
     cuidadores: f.cuidadores.map((c) => ({
-      nome: c.nome, principal: c.principal, vinculo: s(c.vinculo), telefone: s(c.telefone), cns: s(c.cns), cpf: s(c.cpf),
+      nome: c.nome, nome_social: s(c.nome_social), principal: c.principal, vinculo: s(c.vinculo), telefone: s(c.telefone), cns: s(c.cns), cpf: s(c.cpf),
+      rg: s(c.rg), data_nascimento: s(c.data_nascimento),
     })),
     diagnosticos: f.diagnosticos.map((x) => ({ cid: x.cid, descricao: s(x.descricao), principal: x.principal })),
     lesoes: f.lesoes_pressao.map((l) => ({

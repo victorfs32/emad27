@@ -3,12 +3,12 @@
 export type TriEstado = "" | "sim" | "nao"; // "" = não informado
 
 export type TelefoneForm = { numero: string; de_quem: string; whatsapp: TriEstado };
-export type CuidadorForm = { nome: string; principal: boolean; vinculo: string; telefone: string; cns: string; cpf: string };
+export type CuidadorForm = { nome: string; nome_social: string; principal: boolean; vinculo: string; telefone: string; cns: string; cpf: string; rg: string; data_nascimento: string };
 export type DiagnosticoForm = { cid: string; descricao: string; principal: boolean };
 export type LesaoForm = { localizacao: string; classificacao: string; cobertura: string; data_avaliacao: string };
 
 export type DadosForm = {
-  prontuario: string; nome: string; uaps_id: string; uaps_nova: string;
+  prontuario: string; nome: string; nome_social: string; acs: string; uaps_id: string; uaps_nova: string;
   situacao: string; modalidade: string; situacao_data: string; situacao_motivo: string; situacao_obs: string;
   data_nascimento: string; admissao: string; cpf: string; cns: string; rg: string; nome_mae: string; nome_pai: string; sexo: string;
   cep: string; municipio: string; bairro: string; rua: string; numero: string; complemento: string; referencia: string;
@@ -23,7 +23,7 @@ export type DadosForm = {
 };
 
 export const formularioVazio = (): DadosForm => ({
-  prontuario: "", nome: "", uaps_id: "", uaps_nova: "", situacao: "ativo", modalidade: "", situacao_data: "",
+  prontuario: "", nome: "", nome_social: "", acs: "", uaps_id: "", uaps_nova: "", situacao: "ativo", modalidade: "", situacao_data: "",
   situacao_motivo: "", situacao_obs: "", data_nascimento: "", admissao: "", cpf: "", cns: "", rg: "", nome_mae: "", nome_pai: "", sexo: "",
   cep: "", municipio: "", bairro: "", rua: "", numero: "", complemento: "", referencia: "",
   fisio: "", fisio_frequencia: "", fisio_obs: "", dieta_vias: [], dieta_outra: "", dieta_obs: "",

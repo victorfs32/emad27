@@ -112,7 +112,9 @@ function Identificacao({ f, idade }: { f: Ficha; idade: number | null }) {
         <Grade>
           <Dado rotulo="Prontuário" valor={f.prontuario} />
           <Dado rotulo="Paciente" valor={f.nome} />
+          <Dado rotulo="Nome social" valor={valorOuNI(f.nome_social)} />
           <Dado rotulo="UAPS de referência" valor={valorOuNI(f.uaps?.nome)} />
+          <Dado rotulo="ACS" valor={valorOuNI(f.acs)} />
           <Dado rotulo="Modalidade" valor={valorOuNI(f.modalidade)} />
           <Dado rotulo="Data de nascimento" valor={f.data_nascimento ? formatarData(f.data_nascimento) : "Não informado"} />
           <Dado rotulo="Idade" valor={idade === null ? "Não informado" : `${idade} anos`} />
@@ -186,6 +188,9 @@ function Cuidadores({ f }: { f: Ficha }) {
                 <Dado rotulo="Telefone" valor={c.telefone ? formatarTelefone(c.telefone) : "Não informado"} />
                 <Dado rotulo="CPF" valor={c.cpf ? formatarCpf(c.cpf) : "Não informado"} />
                 <Dado rotulo="CNS" valor={c.cns ? formatarCns(c.cns) : "Não informado"} />
+                <Dado rotulo="Nome social" valor={valorOuNI(c.nome_social)} />
+                <Dado rotulo="RG" valor={valorOuNI(c.rg)} />
+                <Dado rotulo="Data de nascimento" valor={c.data_nascimento ? formatarData(c.data_nascimento) : "Não informado"} />
               </Grade>
             </div>
           ))}

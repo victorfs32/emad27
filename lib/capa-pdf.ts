@@ -1,6 +1,6 @@
 // Capa do prontuário domiciliar (A4 retrato), com a identificação do paciente e do cuidador.
 // Roda no navegador (a biblioteca de PDF é carregada só quando o botão é clicado).
-// Campos que o cadastro não guarda (nome social, RG e nascimento do cuidador, ACS) saem em branco para preencher à mão.
+// Campo sem informação no cadastro sai com a linha em branco, para preencher à mão.
 import type { jsPDF as JsPDF } from "jspdf";
 import { desenharLogo, PROPORCAO_LOGO } from "./logo";
 
@@ -10,6 +10,7 @@ export type DadosCapa = {
   admissao: string;
   prontuario: string;
   nome: string;
+  nomeSocial: string;
   cpf: string;
   rg: string;
   mae: string;
@@ -23,10 +24,14 @@ export type DadosCapa = {
   referencia: string;
   telefones: string;
   cuidador: string;
+  cuidadorNomeSocial: string;
   cuidadorCpf: string;
+  cuidadorRg: string;
   cuidadorCns: string;
+  cuidadorNascimento: string;
   cuidadorTelefones: string[];
   uaps: string;
+  acs: string;
   alta: string;
 };
 
@@ -125,7 +130,7 @@ export async function montarCapaPdf(d: DadosCapa): Promise<{ doc: JsPDF; nomeArq
   campo("Prontuário", d.prontuario, 120, y, X1);
   prox();
   campo("Nome", d.nome, X0, y, 128);
-  campo("Nome social", "", 131, y, X1);
+  campo("Nome social", d.nomeSocial, 131, y, X1);
   prox();
   campo("CPF", d.cpf, X0, y, 98);
   campo("RG", d.rg, 101, y, X1);
@@ -146,20 +151,20 @@ export async function montarCapaPdf(d: DadosCapa): Promise<{ doc: JsPDF; nomeArq
   prox(1.4);
 
   campo("Cuidador", d.cuidador, X0, y, 128);
-  campo("Nome social", "", 131, y, X1);
+  campo("Nome social", d.cuidadorNomeSocial, 131, y, X1);
   prox();
   campo("CPF", d.cuidadorCpf, X0, y, 98);
-  campo("RG", "", 101, y, X1);
+  campo("RG", d.cuidadorRg, 101, y, X1);
   prox();
   campo("Cartão SUS", d.cuidadorCns, X0, y, 120);
-  campo("Data de nascimento", "", 123, y, X1);
+  campo("Data de nascimento", d.cuidadorNascimento, 123, y, X1);
   prox();
   campo("Telefones para contato", d.cuidadorTelefones[0] ?? "", X0, y, 112);
   campo("/", d.cuidadorTelefones[1] ?? "", 113, y, 160);
   prox(1.4);
 
   campo("UAPS referência", d.uaps, X0, y, 140);
-  campo("ACS", "", 143, y, X1);
+  campo("ACS", d.acs, 143, y, X1);
   prox(1.4);
   campo("Data da alta", d.alta, X0, y, 80);
 

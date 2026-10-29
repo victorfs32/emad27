@@ -4,7 +4,7 @@ import {
 import { formatarCns, formatarCpf, formatarTelefone } from "./validacao";
 
 const NOMES: Record<string, string> = {
-  prontuario: "Prontuário", nome: "Nome", uaps_id: "UAPS", situacao: "Situação", modalidade: "Modalidade",
+  prontuario: "Prontuário", nome: "Nome", nome_social: "Nome social", acs: "ACS", uaps_id: "UAPS", situacao: "Situação", modalidade: "Modalidade",
   situacao_data: "Data da situação", situacao_motivo: "Motivo da situação", situacao_obs: "Observações da situação",
   data_nascimento: "Data de nascimento", admissao: "Admissão", cpf: "CPF", cns: "CNS", rg: "RG", nome_mae: "Nome da mãe", nome_pai: "Nome do pai", sexo: "Sexo",
   cep: "CEP", municipio: "Município", bairro: "Bairro", rua: "Rua", numero: "Número", complemento: "Complemento",
