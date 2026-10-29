@@ -36,6 +36,10 @@ export const IconeFiltro = (p: P) => <Icone {...p}><path d="M4 7h16M7 12h10M10 1
 export const IconeBaixar = (p: P) => <Icone {...p}><path d="M12 4v11M7.500 10.500L12 15l4.500-4.500M5 19h14" /></Icone>;
 export const IconeSair = (p: P) => <Icone {...p}><path d="M14 4h4a2 2 0 012 2v12a2 2 0 01-2 2h-4M10 8l-4 4 4 4M6 12h10" /></Icone>;
 export const IconeMenu = (p: P) => <Icone {...p}><path d="M4 7h16M4 12h16M4 17h16" /></Icone>;
+export const IconeMapa = (p: P) => <Icone {...p}><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0113 0c0 5.4-6.5 11-6.5 11z" /><circle cx="12" cy="10" r="2.4" /></Icone>;
+export const IconeTelefone = (p: P) => (
+  <Icone {...p}><path d="M5 4h3.5l1.7 4.3-2.200 1.400a11 11 0 005.300 5.300l1.400-2.200L19 14.500V18a2 2 0 01-2 2A14 14 0 013 6a2 2 0 012-2z" /></Icone>
+);
 export const IconeFechar = (p: P) => <Icone {...p}><path d="M6 6l12 12M18 6L6 18" /></Icone>;
 export const IconeAjuda = (p: P) => <Icone {...p}><circle cx="12" cy="12" r="9" /><path d="M9.500 9.500a2.500 2.500 0 114 2c-.9.600-1.500 1-1.500 2M12 17h.01" /></Icone>;
 export const IconeSeta = (p: P) => <Icone {...p}><path d="M9 6l6 6-6 6" /></Icone>;
