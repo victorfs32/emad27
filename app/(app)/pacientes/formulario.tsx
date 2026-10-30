@@ -346,6 +346,11 @@ export function FormularioPaciente({ id, inicial, uapss, bairros }: Props) {
                 <Campo rotulo="Declaração de óbito (DO) fornecida pelo Programa?" largo>
                   <Tri valor={d.obito_do_programa} onChange={(v) => set("obito_do_programa", v)} />
                 </Campo>
+                {d.obito_do_programa === "sim" && (
+                  <Campo rotulo="Número da DO" dica="Obrigatório no indicador quando a DO é emitida pelo Programa (PMEC).">
+                    {texto("obito_do_numero", { maxLength: 30, inputMode: "numeric", autoComplete: "off" })}
+                  </Campo>
+                )}
                 {d.obito_do_programa === "nao" && (
                   <Campo rotulo="Por que a DO não foi fornecida pelo Programa?" largo dica="Sai no indicador de óbitos enviado à gestão.">
                     <textarea value={d.obito_do_justificativa} onChange={(e) => set("obito_do_justificativa", e.target.value)} rows={2} maxLength={500} className="campo" />

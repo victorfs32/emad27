@@ -1,7 +1,6 @@
 // Indicadores do mês em PDF (A4 retrato), um arquivo por quadro, no mesmo visual das planilhas enviadas à gestão.
 // Roda no navegador (a biblioteca de PDF é carregada só quando o botão é clicado).
 import type { jsPDF as JsPDF } from "jspdf";
-import { desenharCarimbo } from "./carimbo";
 import { EQUIPE } from "./equipe";
 import { DIAS_REINTERNACAO, ROTULO_OBITO, TIPOS_ALTA } from "./indicadores-opcoes";
 import { desenharLogo, PROPORCAO_LOGO } from "./logo";
@@ -169,24 +168,22 @@ function desenharQuadro(doc: JsPDF, autoTable: AutoTable, q: Quadro, d: Comum, o
     const yLinha = y + 15;
     fonte(9.5);
     doc.text(`Fortaleza, ${dataPorExtenso(d.hoje)}`, X0, yLinha);
-    desenharCarimbo(doc, d.carimbo, 152, yLinha, 80);
     doc.setDrawColor(75, 85, 85);
     doc.setLineWidth(0.25);
     doc.line(110, yLinha, X1, yLinha);
     fonte(8.5);
-    doc.text("Responsável pelas informações", 152, yLinha + 4, { align: "center" });
+    doc.text("Assinatura e carimbo do responsável", 152, yLinha + 4, { align: "center" });
     return yLinha + 4;
   }
   garantir(45);
   const yAss = Math.max(y + 38, 245);
   fonte(10.5);
   doc.text(`Fortaleza, ${dataPorExtenso(d.hoje)}`, X0, yAss - 22);
-  desenharCarimbo(doc, d.carimbo, MEIO, yAss, 90);
   doc.setDrawColor(75, 85, 85);
   doc.setLineWidth(0.25);
   doc.line(60, yAss, 150, yAss);
   fonte(9.5);
-  doc.text("Responsável pelas informações", MEIO, yAss + 5, { align: "center" });
+  doc.text("Assinatura e carimbo do responsável", MEIO, yAss + 5, { align: "center" });
   return yAss + 5;
 }
 
@@ -235,7 +232,7 @@ const simNao = (v: boolean | null) => (v === true ? "Sim" : v === false ? "Não"
 
 // ------------------------------------------------------------------ quadros
 
-export type ObitoPdf = { nome: string; prontuario: string; data: string; doPrograma: boolean | null; justificativa: string };
+export type ObitoPdf = { nome: string; prontuario: string; data: string; doPrograma: boolean | null; justificativa: string; numero: string };
 export function quadroObitos(lista: ObitoPdf[]): Quadro {
   const fornecidas = lista.filter((o) => o.doPrograma === true).length;
   const nao = lista.filter((o) => o.doPrograma === false).length;
@@ -248,7 +245,7 @@ export function quadroObitos(lista: ObitoPdf[]): Quadro {
       { titulo: "DO fornecida pelo Programa\n(Sim ou Não)", largura: 32, centro: true, negrito: true },
       { titulo: "Justificativa\n(se não foi fornecida)" },
     ],
-    linhas: lista.map((o) => [`${o.nome}\nPront. ${o.prontuario}`, o.data || "—", simNao(o.doPrograma), o.doPrograma === false ? o.justificativa || "Justificativa não informada" : "—"]),
+    linhas: lista.map((o) => [`${o.nome}\nPront. ${o.prontuario}`, o.data || "—", o.doPrograma === true ? `Sim\nDO nº ${o.numero || "não informado"}` : simNao(o.doPrograma), o.doPrograma === false ? o.justificativa || "Justificativa não informada" : "—"]),
     vazio: "Nenhum óbito registrado no mês.",
     nota: "Se caso a Declaração de óbito não tiver sido fornecida pelo Programa, justificar o motivo.",
     resumo: `Total de óbitos no mês: ${lista.length}  ·  DO fornecida pelo Programa: ${fornecidas}  ·  Não fornecida: ${nao}${semInfo ? `  ·  Sem informação: ${semInfo}` : ""}`,

@@ -472,11 +472,12 @@ const idOk = (n: number) => Number.isSafeInteger(n) && n > 0;
 const dataOk = (d: string) => /^\d{4}-\d{2}-\d{2}$/.test(d);
 
 /** Óbito: a DO foi fornecida pelo Programa? Se não, a justificativa. */
-export async function definirDoObito(pacienteId: number, fornecida: "sim" | "nao" | "", justificativa: string): Promise<{ erro?: string }> {
+export async function definirDoObito(pacienteId: number, fornecida: "sim" | "nao" | "", justificativa: string, numero: string): Promise<{ erro?: string }> {
   if (!idOk(pacienteId)) return { erro: "Paciente inválido." };
   const valor = fornecida === "sim" ? true : fornecida === "nao" ? false : null;
   return rpcIndicador("definir_obito_do", {
     p_id: pacienteId, p_fornecida: valor, p_justificativa: valor === false ? String(justificativa ?? "").trim().slice(0, 500) : null,
+    p_numero: valor === true ? String(numero ?? "").trim().slice(0, 30) : null,
   });
 }
 

@@ -7,7 +7,7 @@ import type { Reinternacao } from "@/lib/indicadores";
 import type { Comum } from "@/lib/indicadores-pdf";
 import { DIAS_REINTERNACAO } from "@/lib/indicadores-opcoes";
 import { formatarData } from "@/lib/opcoes";
-import { Aviso, BotaoPdf, Cabecalho, ColunaEmad, Moldura } from "./quadro";
+import { Aviso, Cabecalho, ColunaEmad, Moldura } from "./quadro";
 
 const GRADE = "grid-cols-[5rem_minmax(0,1.2fr)_7rem_7rem_minmax(0,1fr)_3rem]";
 
@@ -31,12 +31,7 @@ export function SecaoReinternacao({ lista, pacientes, editar, comum, dataPadrao,
     <Moldura
       id="reinternacao" titulo={`REINTERNAÇÃO (ATÉ ${DIAS_REINTERNACAO} DIAS APÓS ADMISSÃO HOSPITALAR)`}
       nota={`Contar como Reinternação os pacientes que voltaram para o hospital até ${DIAS_REINTERNACAO} dias após Desospitalização.`}
-      acoes={
-        <BotaoPdf
-          comum={comum} rotulo="Baixar PDF de reinternação"
-          quadro={() => pdfReinternacao(lista)}
-        />
-      }
+      
     >
       {editar && <FormReinternacao pacientes={pacientes} dataPadrao={dataPadrao} limite={limite} />}
       <Cabecalho cor="#f4b183" grade={GRADE} colunas={["EMAD", "Paciente", "Data de Admissão", "Data de Reinternação", "Motivo da Reinternação", ""]} />

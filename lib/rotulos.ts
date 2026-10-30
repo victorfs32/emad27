@@ -6,7 +6,7 @@ import { rotuloTipoAlta } from "./indicadores-opcoes";
 
 const NOMES: Record<string, string> = {
   prontuario: "Prontuário", nome: "Nome", nome_social: "Nome social", acs: "ACS", uaps_id: "UAPS", situacao: "Situação", modalidade: "Modalidade",
-  situacao_data: "Data da situação", obito_do_programa: "DO fornecida pelo Programa", obito_do_justificativa: "Justificativa (DO não fornecida)",
+  situacao_data: "Data da situação", obito_do_programa: "DO fornecida pelo Programa", obito_do_justificativa: "Justificativa (DO não fornecida)", obito_do_numero: "Número da DO",
   motivo_permanencia: "Motivo da permanência (AD1)", alta_tipo: "Tipo de alta", situacao_motivo: "Motivo da situação", situacao_obs: "Observações da situação",
   data_nascimento: "Data de nascimento", admissao: "Admissão", cpf: "CPF", cns: "CNS", rg: "RG", nome_mae: "Nome da mãe", nome_pai: "Nome do pai", sexo: "Sexo",
   cep: "CEP", municipio: "Município", bairro: "Bairro", rua: "Rua", numero: "Número", complemento: "Complemento",
