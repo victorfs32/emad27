@@ -41,7 +41,7 @@ export function PainelIndicadores(p: Props) {
             comum={p.comum}
             quadros={() => Promise.all([pdfObitos(p.obitos), pdfAd1(p.ad1), pdfReinternacao(p.reinternacoes), pdfBusca(p.buscaAtiva), pdfAltas(p.altas)])}
           />
-          <span className="text-sm text-muted">Os 5 quadros numa folha só, com espaço para assinatura e carimbo à mão.</span>
+          <span className="text-sm text-muted">Os 5 quadros numa folha só, na horizontal, com espaço para assinatura e carimbo à mão.</span>
         </div>
         {p.faltaMigracao && (
           <p role="alert" className="m-0 rounded-2xl bg-danger-soft px-4 py-3 text-sm font-semibold text-danger-strong">
