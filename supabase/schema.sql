@@ -113,6 +113,10 @@ create table if not exists public.pacientes (
   observacoes text,
   usa_cama_pmec boolean,
   usa_aspirador_pmec boolean,
+  obito_do_programa boolean,
+  obito_do_justificativa text,
+  motivo_permanencia text,
+  alta_tipo text check (alta_tipo in ('administrativa','atencao_basica','internacao','urgencia')),
   colostomia boolean,
   criado_em timestamptz not null default now(),
   criado_por uuid default auth.uid() references auth.users(id) on delete set null,
@@ -128,6 +132,10 @@ create index if not exists ix2_pac_uaps on public.pacientes (uaps_id);
 alter table public.pacientes add column if not exists nome_pai text;
 alter table public.pacientes add column if not exists usa_cama_pmec boolean;
 alter table public.pacientes add column if not exists usa_aspirador_pmec boolean;
+alter table public.pacientes add column if not exists obito_do_programa boolean;
+alter table public.pacientes add column if not exists obito_do_justificativa text;
+alter table public.pacientes add column if not exists motivo_permanencia text;
+alter table public.pacientes add column if not exists alta_tipo text check (alta_tipo in ('administrativa','atencao_basica','internacao','urgencia'));
 alter table public.pacientes add column if not exists colostomia boolean;
 alter table public.pacientes add column if not exists sexo text check (sexo in ('F','M'));
 alter table public.pacientes add column if not exists nome_social text;
@@ -274,7 +282,8 @@ declare
     'data_nascimento, admissao, cpf, cns, rg, nome_mae, nome_pai, cep, municipio, bairro, rua, numero, complemento, referencia, '
     'fisio, fisio_frequencia, fisio_obs, dieta_vias, dieta_outra, dieta_obs, diurese, diurese_outra, usa_fralda, continencia, '
     'tqt, tqt_canula_tipo, tqt_calibre, tqt_ultima_troca, tqt_obs, lpp, o2, o2_dispositivo, o2_fluxo, o2_regime, o2_obs, '
-    'proxima_visita, observacoes, usa_cama_pmec, colostomia, sexo, nome_social, acs, usa_aspirador_pmec';
+    'proxima_visita, observacoes, usa_cama_pmec, colostomia, sexo, nome_social, acs, usa_aspirador_pmec, '
+    'obito_do_programa, obito_do_justificativa, motivo_permanencia, alta_tipo';
   ant jsonb; dep jsonb; t record; linhas int;
 begin
   if p_id is null then
@@ -823,6 +832,132 @@ revoke execute on function public.atualizar_meu_cadastro(text, text, text, text,
 grant execute on function public.atualizar_meu_cadastro(text, text, text, text, text, text) to authenticated;
 
 notify pgrst, 'reload schema';
+
+-- ================================================================ versão 19: indicadores (óbitos, AD1, reinternação, busca ativa, altas)
+create or replace function public.definir_obito_do(p_id bigint, p_fornecida boolean, p_justificativa text) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.perm('editar') then raise exception 'Sem permissão para editar.' using errcode = '42501'; end if;
+  if length(coalesce(p_justificativa, '')) > 500 then raise exception 'Justificativa longa demais.'; end if;
+  update public.pacientes
+     set obito_do_programa = p_fornecida,
+         obito_do_justificativa = case when p_fornecida is distinct from false then null else nullif(trim(p_justificativa), '') end
+   where id = p_id and situacao = 'obito';
+  if not found then raise exception 'Paciente não encontrado ou não está com situação óbito.'; end if;
+end $$;
+
+-- Motivo da permanência do paciente no programa (indicador de acompanhamento AD1).
+create or replace function public.definir_motivo_permanencia(p_id bigint, p_texto text) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.perm('editar') then raise exception 'Sem permissão para editar.' using errcode = '42501'; end if;
+  if length(coalesce(p_texto, '')) > 300 then raise exception 'Texto longo demais.'; end if;
+  update public.pacientes set motivo_permanencia = nullif(trim(p_texto), '') where id = p_id;
+  if not found then raise exception 'Paciente não encontrado.'; end if;
+end $$;
+
+-- Tipo de alta (indicador de altas); óbito já é um tipo por si.
+create or replace function public.definir_alta_tipo(p_id bigint, p_tipo text) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.perm('editar') then raise exception 'Sem permissão para editar.' using errcode = '42501'; end if;
+  if p_tipo is not null and p_tipo not in ('administrativa','atencao_basica','internacao','urgencia') then
+    raise exception 'Tipo de alta inválido.';
+  end if;
+  update public.pacientes set alta_tipo = p_tipo where id = p_id and situacao in ('alta','transferido');
+  if not found then raise exception 'Paciente não encontrado ou não está com alta/transferência.'; end if;
+end $$;
+
+-- Reinternações: paciente que voltou ao hospital (conta no indicador se for até 30 dias após a admissão).
+create table if not exists public.reinternacoes (
+  id bigint generated always as identity primary key,
+  paciente_id bigint not null references public.pacientes(id) on delete cascade,
+  data date not null,
+  motivo text,
+  usuario_id uuid default auth.uid(),
+  autor text not null default 'Sistema',
+  criado_em timestamptz not null default now()
+);
+create index if not exists ix_reint_data on public.reinternacoes (data);
+create index if not exists ix_reint_pac on public.reinternacoes (paciente_id);
+alter table public.reinternacoes enable row level security;
+drop policy if exists ver_reinternacoes on public.reinternacoes;
+create policy ver_reinternacoes on public.reinternacoes for select to authenticated using (public.perm('ver'));
+revoke all on public.reinternacoes from anon;
+
+create or replace function public.salvar_reinternacao(p_paciente bigint, p_data date, p_motivo text) returns bigint
+language plpgsql security definer set search_path = public as $$
+declare v_id bigint;
+begin
+  if not public.perm('editar') then raise exception 'Sem permissão para editar.' using errcode = '42501'; end if;
+  if p_data is null or p_data > current_date then raise exception 'Data de reinternação inválida.'; end if;
+  if length(coalesce(p_motivo, '')) > 300 then raise exception 'Motivo longo demais.'; end if;
+  if not exists (select 1 from public.pacientes where id = p_paciente) then raise exception 'Paciente não encontrado.'; end if;
+  insert into public.reinternacoes (paciente_id, data, motivo, autor)
+  values (p_paciente, p_data, nullif(trim(p_motivo), ''), public.nome_do_usuario())
+  returning id into v_id;
+  insert into public.historico (paciente_id, usuario_id, autor, tipo, resumo, detalhes)
+  values (p_paciente, auth.uid(), public.nome_do_usuario(), 'reinternacao', 'Reinternação registrada',
+          jsonb_build_object('data', p_data, 'motivo', nullif(trim(p_motivo), '')));
+  return v_id;
+end $$;
+
+create or replace function public.remover_reinternacao(p_id bigint) returns void
+language plpgsql security definer set search_path = public as $$
+declare r public.reinternacoes;
+begin
+  if not public.perm('editar') then raise exception 'Sem permissão para editar.' using errcode = '42501'; end if;
+  delete from public.reinternacoes where id = p_id returning * into r;
+  if not found then raise exception 'Reinternação não encontrada.'; end if;
+  insert into public.historico (paciente_id, usuario_id, autor, tipo, resumo, detalhes)
+  values (r.paciente_id, auth.uid(), public.nome_do_usuario(), 'reinternacao', 'Reinternação removida',
+          jsonb_build_object('data', r.data, 'motivo', r.motivo));
+end $$;
+
+-- Busca ativa: pessoas avaliadas para entrar no programa (ainda não são pacientes cadastrados).
+create table if not exists public.busca_ativa (
+  id bigint generated always as identity primary key,
+  data date not null,
+  paciente text not null,
+  situacao text not null check (situacao in ('elegivel','inelegivel')),
+  usuario_id uuid default auth.uid(),
+  autor text not null default 'Sistema',
+  criado_em timestamptz not null default now()
+);
+create index if not exists ix_busca_data on public.busca_ativa (data);
+alter table public.busca_ativa enable row level security;
+drop policy if exists ver_busca_ativa on public.busca_ativa;
+create policy ver_busca_ativa on public.busca_ativa for select to authenticated using (public.perm('ver'));
+revoke all on public.busca_ativa from anon;
+
+create or replace function public.salvar_busca_ativa(p_data date, p_paciente text, p_situacao text) returns bigint
+language plpgsql security definer set search_path = public as $$
+declare v_id bigint;
+begin
+  if not public.perm('editar') then raise exception 'Sem permissão para editar.' using errcode = '42501'; end if;
+  if p_data is null then raise exception 'Informe a data.'; end if;
+  if length(trim(coalesce(p_paciente, ''))) < 2 or length(p_paciente) > 120 then raise exception 'Informe o nome do paciente.'; end if;
+  if p_situacao not in ('elegivel','inelegivel') then raise exception 'Situação inválida.'; end if;
+  insert into public.busca_ativa (data, paciente, situacao, autor)
+  values (p_data, trim(p_paciente), p_situacao, public.nome_do_usuario())
+  returning id into v_id;
+  return v_id;
+end $$;
+
+create or replace function public.remover_busca_ativa(p_id bigint) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.perm('editar') then raise exception 'Sem permissão para editar.' using errcode = '42501'; end if;
+  delete from public.busca_ativa where id = p_id;
+  if not found then raise exception 'Registro não encontrado.'; end if;
+end $$;
+
+revoke execute on function public.definir_obito_do(bigint, boolean, text), public.definir_motivo_permanencia(bigint, text),
+  public.definir_alta_tipo(bigint, text), public.salvar_reinternacao(bigint, date, text), public.remover_reinternacao(bigint),
+  public.salvar_busca_ativa(date, text, text), public.remover_busca_ativa(bigint) from public, anon;
+grant execute on function public.definir_obito_do(bigint, boolean, text), public.definir_motivo_permanencia(bigint, text),
+  public.definir_alta_tipo(bigint, text), public.salvar_reinternacao(bigint, date, text), public.remover_reinternacao(bigint),
+  public.salvar_busca_ativa(date, text, text), public.remover_busca_ativa(bigint) to authenticated;
 
 -- ================================================================ versão 18: segurança das funções
 -- Quem não fez login (anon) não chama nenhuma função; as funções novas também nascem sem essa permissão.

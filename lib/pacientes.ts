@@ -3,6 +3,7 @@ import { cache } from "react";
 import { connection } from "next/server";
 import { supabaseServidor } from "./supabase/servidor";
 import type { PacienteAgenda, VisitaAgenda } from "./agenda";
+import { TIPOS_ALTA } from "./indicadores-opcoes";
 import { exigirUsuario } from "./auth";
 import {
   CONTINENCIA, DE_QUEM, DIURESE, FISIO, MODALIDADES, SITUACOES, SITUACOES_ARQUIVADAS, SITUACOES_PRINCIPAIS,
@@ -35,6 +36,10 @@ type Bool = boolean | null;
 export type Ficha = {
   id: number; prontuario: string; nome: string; nome_social?: string | null; acs?: string | null; uaps_id: number | null; uaps: { nome: string } | null;
   situacao: string; modalidade: string | null; situacao_data: string | null; situacao_motivo: string | null; situacao_obs: string | null;
+  /** Óbito: a declaração de óbito (DO) foi fornecida pelo Programa? E, se não, por quê. */
+  obito_do_programa?: Bool; obito_do_justificativa?: string | null;
+  /** Indicadores: motivo da permanência no programa (AD1) e tipo de alta. */
+  motivo_permanencia?: string | null; alta_tipo?: string | null;
   data_nascimento: string | null; admissao: string; cpf: string | null; cns: string | null; rg: string | null; nome_mae: string | null; nome_pai: string | null; sexo: string | null;
   cep: string | null; municipio: string | null; bairro: string | null; rua: string | null; numero: string | null;
   complemento: string | null; referencia: string | null;
@@ -315,6 +320,10 @@ export function normalizar(d: DadosForm): Normalizado {
     prontuario, nome: d.nome.trim().replace(/\s+/g, " "), nome_social: nul(d.nome_social), acs: nul(d.acs), situacao: d.situacao, modalidade: nul(d.modalidade),
     situacao_data: ativo ? null : nul(d.situacao_data), situacao_motivo: ativo ? null : nul(d.situacao_motivo),
     situacao_obs: ativo ? null : nul(d.situacao_obs),
+    obito_do_programa: d.situacao === "obito" ? tri(d.obito_do_programa) : null,
+    obito_do_justificativa: d.situacao === "obito" && d.obito_do_programa === "nao" ? nul(d.obito_do_justificativa.slice(0, 500)) : null,
+    motivo_permanencia: nul(d.motivo_permanencia.slice(0, 300)),
+    alta_tipo: (d.situacao === "alta" || d.situacao === "transferido") && TIPOS_ALTA.some((t) => t.valor === d.alta_tipo) ? d.alta_tipo : null,
     data_nascimento: nul(d.data_nascimento), admissao: d.admissao, cpf, cns, rg: nul(d.rg), nome_mae: nul(d.nome_mae), nome_pai: nul(d.nome_pai), sexo: nul(d.sexo),
     cep: soDigitos(d.cep) || null, municipio: nul(d.municipio), bairro: nul(d.bairro), rua: nul(d.rua), numero: nul(d.numero),
     complemento: nul(d.complemento), referencia: nul(d.referencia),
@@ -406,6 +415,8 @@ export function paraFormulario(f: Ficha): DadosForm {
     ...v,
     prontuario: f.prontuario, nome: f.nome, nome_social: s(f.nome_social), acs: s(f.acs), uaps_id: s(f.uaps_id), situacao: f.situacao, modalidade: s(f.modalidade),
     situacao_data: s(f.situacao_data), situacao_motivo: s(f.situacao_motivo), situacao_obs: s(f.situacao_obs),
+    obito_do_programa: triForm(f.obito_do_programa ?? null), obito_do_justificativa: s(f.obito_do_justificativa),
+    motivo_permanencia: s(f.motivo_permanencia), alta_tipo: s(f.alta_tipo),
     data_nascimento: s(f.data_nascimento), admissao: s(f.admissao), cpf: s(f.cpf), cns: s(f.cns), rg: s(f.rg), nome_mae: s(f.nome_mae), nome_pai: s(f.nome_pai), sexo: s(f.sexo),
     cep: s(f.cep), municipio: s(f.municipio), bairro: s(f.bairro), rua: s(f.rua), numero: s(f.numero),
     complemento: s(f.complemento), referencia: s(f.referencia),

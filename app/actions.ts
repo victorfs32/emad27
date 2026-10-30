@@ -454,6 +454,69 @@ export async function buscarCepDaRua(rua: string, municipio: string, bairro: str
   return { lista: lista.slice(0, 12) };
 }
 
+// ---------------------------------------------------------------- indicadores mensais (exigem "editar")
+async function rpcIndicador(nome: string, args: Record<string, unknown>): Promise<{ erro?: string }> {
+  await exigirPermissao("editar");
+  const sb = await supabaseServidor();
+  const r = await sb.rpc(nome, args);
+  if (r.error) {
+    console.error(`[${nome}]`, r.error.code ?? r.error.message);
+    if (r.error.code === "PGRST202" || r.error.code === "PGRST205") return { erro: "Falta rodar a migração v19 no Supabase." };
+    if (r.error.code === "P0001") return { erro: r.error.message };
+    return { erro: "Não foi possível salvar. Tente novamente." };
+  }
+  revalidatePath("/indicadores");
+  return {};
+}
+const idOk = (n: number) => Number.isSafeInteger(n) && n > 0;
+const dataOk = (d: string) => /^\d{4}-\d{2}-\d{2}$/.test(d);
+
+/** Óbito: a DO foi fornecida pelo Programa? Se não, a justificativa. */
+export async function definirDoObito(pacienteId: number, fornecida: "sim" | "nao" | "", justificativa: string): Promise<{ erro?: string }> {
+  if (!idOk(pacienteId)) return { erro: "Paciente inválido." };
+  const valor = fornecida === "sim" ? true : fornecida === "nao" ? false : null;
+  return rpcIndicador("definir_obito_do", {
+    p_id: pacienteId, p_fornecida: valor, p_justificativa: valor === false ? String(justificativa ?? "").trim().slice(0, 500) : null,
+  });
+}
+
+/** Acompanhamento AD1: motivo da permanência do paciente no programa. */
+export async function definirMotivoPermanencia(pacienteId: number, texto: string): Promise<{ erro?: string }> {
+  if (!idOk(pacienteId)) return { erro: "Paciente inválido." };
+  return rpcIndicador("definir_motivo_permanencia", { p_id: pacienteId, p_texto: String(texto ?? "").trim().slice(0, 300) });
+}
+
+/** Altas: tipo de alta (para alta e transferência; óbito entra sozinho). */
+export async function definirTipoAlta(pacienteId: number, tipo: string): Promise<{ erro?: string }> {
+  if (!idOk(pacienteId)) return { erro: "Paciente inválido." };
+  return rpcIndicador("definir_alta_tipo", { p_id: pacienteId, p_tipo: tipo || null });
+}
+
+export async function salvarReinternacao(pacienteId: number, data: string, motivo: string): Promise<{ erro?: string }> {
+  if (!idOk(pacienteId)) return { erro: "Escolha o paciente." };
+  if (!dataOk(data)) return { erro: "Informe a data da reinternação." };
+  if (data > hojeISO()) return { erro: "A data da reinternação não pode ser futura." };
+  return rpcIndicador("salvar_reinternacao", { p_paciente: pacienteId, p_data: data, p_motivo: String(motivo ?? "").trim().slice(0, 300) });
+}
+
+export async function removerReinternacao(id: number): Promise<{ erro?: string }> {
+  if (!idOk(id)) return { erro: "Registro inválido." };
+  return rpcIndicador("remover_reinternacao", { p_id: id });
+}
+
+export async function salvarBuscaAtiva(data: string, paciente: string, situacao: string): Promise<{ erro?: string }> {
+  if (!dataOk(data)) return { erro: "Informe a data." };
+  const nome = String(paciente ?? "").trim().replace(/\s+/g, " ").slice(0, 120);
+  if (nome.length < 2) return { erro: "Informe o nome do paciente." };
+  if (situacao !== "elegivel" && situacao !== "inelegivel") return { erro: "Marque se é elegível ou inelegível." };
+  return rpcIndicador("salvar_busca_ativa", { p_data: data, p_paciente: nome, p_situacao: situacao });
+}
+
+export async function removerBuscaAtiva(id: number): Promise<{ erro?: string }> {
+  if (!idOk(id)) return { erro: "Registro inválido." };
+  return rpcIndicador("remover_busca_ativa", { p_id: id });
+}
+
 export type AjustesAgenda = { meta: number; maxPorDia: number; diasSemana: number[]; folgas: string[]; atender: string[] };
 
 /**
