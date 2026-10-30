@@ -34,33 +34,6 @@ export function ColunaEmad({ cor }: { cor: string }) {
   return <span className="hidden items-center justify-center text-lg font-extrabold text-[#1a1a1a] sm:flex" style={{ backgroundColor: cor }}>27</span>;
 }
 
-/** Botão que gera o PDF de um quadro (a biblioteca de PDF só é carregada ao clicar). */
-export function BotaoPdf({ quadro, comum, rotulo = "Baixar PDF" }: { quadro: () => Promise<Quadro>; comum: Comum; rotulo?: string }) {
-  const [gerando, setGerando] = useState(false);
-  const [erro, setErro] = useState("");
-  async function gerar() {
-    setErro("");
-    setGerando(true);
-    try {
-      const { baixarIndicadorPdf } = await import("@/lib/indicadores-pdf");
-      await baixarIndicadorPdf(await quadro(), comum);
-    } catch (e) {
-      console.error(e);
-      setErro("Não foi possível gerar o PDF. Tente novamente.");
-    } finally {
-      setGerando(false);
-    }
-  }
-  return (
-    <>
-      <button type="button" onClick={gerar} disabled={gerando} className="btn-primario">
-        <IconeBaixar /> {gerando ? "Gerando PDF…" : rotulo}
-      </button>
-      {erro && <span role="alert" className="text-sm font-semibold text-danger-strong">{erro}</span>}
-    </>
-  );
-}
-
 /** Botão que gera um PDF só com vários quadros (cada um numa página). */
 export function BotaoPdfTodos({ quadros, comum }: { quadros: () => Promise<Quadro[]>; comum: Comum }) {
   const [gerando, setGerando] = useState(false);
