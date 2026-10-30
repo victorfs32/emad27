@@ -17,7 +17,6 @@ type Props = {
   obitos: Obito[]; obitosSemData: Obito[]; ad1: PacienteAd1[]; reinternacoes: Reinternacao[]; buscaAtiva: BuscaAtiva[]; altas: Alta[];
 };
 
-const ATALHOS = [["obitos", "Óbitos"], ["ad1", "Acompanhamento AD1"], ["reinternacao", "Reinternação"], ["busca", "Busca ativa"], ["altas", "Altas"]];
 
 export function PainelIndicadores(p: Props) {
   const editar = p.editar && !p.faltaMigracao;
@@ -28,13 +27,6 @@ export function PainelIndicadores(p: Props) {
           <Link href={`/indicadores?mes=${p.anterior}`} className="btn-secundario min-h-11 px-4" aria-label="Mês anterior">‹</Link>
           <span className="min-w-44 text-center text-lg font-bold text-heading">{p.comum.nomeMes}</span>
           <Link href={`/indicadores?mes=${p.proximo}`} className="btn-secundario min-h-11 px-4" aria-label="Próximo mês">›</Link>
-        </nav>
-        <nav className="flex gap-2 overflow-x-auto pb-1" aria-label="Indicadores">
-          {ATALHOS.map(([id, rotulo]) => (
-            <a key={id} href={`#${id}`} className="whitespace-nowrap rounded-full border border-border bg-surface px-4 py-2 text-sm font-semibold text-muted hover:text-heading">
-              {rotulo}
-            </a>
-          ))}
         </nav>
         <div className="flex flex-wrap items-center gap-3">
           <BotaoPdfTodos
