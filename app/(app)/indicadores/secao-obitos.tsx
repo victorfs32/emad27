@@ -6,7 +6,7 @@ import { definirDoObito } from "../../actions";
 import type { Obito } from "@/lib/indicadores";
 import type { Comum } from "@/lib/indicadores-pdf";
 import { formatarData } from "@/lib/opcoes";
-import { Aviso, BotaoPdf, Cabecalho, ColunaEmad, Moldura } from "./quadro";
+import { Aviso, Cabecalho, ColunaEmad, Moldura } from "./quadro";
 
 type Resposta = "sim" | "nao" | "";
 const paraResposta = (v: boolean | null): Resposta => (v === true ? "sim" : v === false ? "nao" : "");
@@ -14,23 +14,19 @@ const GRADE = "grid-cols-[5rem_minmax(0,1.3fr)_minmax(0,1fr)]";
 
 export async function pdfObitos(obitos: Obito[]) {
   return (await import("@/lib/indicadores-pdf")).quadroObitos(obitos.map((o) => ({
-    nome: o.nome, prontuario: o.prontuario, data: o.data ? formatarData(o.data) : "", doPrograma: o.doPrograma, justificativa: o.justificativa ?? "",
+    nome: o.nome, prontuario: o.prontuario, data: o.data ? formatarData(o.data) : "", doPrograma: o.doPrograma, justificativa: o.justificativa ?? "", numero: o.numero ?? "",
   })));
 }
 
 export function SecaoObitos({ obitos, semData, editar, comum }: { obitos: Obito[]; semData: Obito[]; editar: boolean; comum: Comum }) {
-  const pendentes = obitos.filter((o) => o.doPrograma === null || (o.doPrograma === false && !o.justificativa)).length;
+  const pendentes = obitos.filter((o) => o.doPrograma === null || (o.doPrograma === false && !o.justificativa) || (o.doPrograma === true && !o.numero)).length;
   return (
     <Moldura
       id="obitos" titulo="ÓBITOS"
       nota={<>Se caso a Declaração de óbito <strong>não</strong> tiver sido fornecida pelo Programa, <strong>justificar o motivo</strong>.</>}
       acoes={
         <>
-          <BotaoPdf
-            comum={comum} rotulo="Baixar PDF de óbitos"
-            quadro={() => pdfObitos(obitos)}
-          />
-          {pendentes > 0 && <span className="text-sm font-semibold text-danger-strong">{pendentes} sem a resposta da DO ou a justificativa.</span>}
+          {pendentes > 0 && <span className="text-sm font-semibold text-danger-strong">{pendentes} sem a resposta da DO, o número da DO ou a justificativa.</span>}
         </>
       }
     >
@@ -63,17 +59,18 @@ export function SecaoObitos({ obitos, semData, editar, comum }: { obitos: Obito[
 }
 
 function LinhaObito({ o, editar }: { o: Obito; editar: boolean }) {
-  const salvo = { do: paraResposta(o.doPrograma), justificativa: o.justificativa ?? "" };
+  const salvo = { do: paraResposta(o.doPrograma), justificativa: o.justificativa ?? "", numero: o.numero ?? "" };
   const [doProg, setDoProg] = useState<Resposta>(salvo.do);
   const [justificativa, setJustificativa] = useState(salvo.justificativa);
+  const [numero, setNumero] = useState(salvo.numero);
   const [aviso, setAviso] = useState<{ ok: boolean; texto: string } | null>(null);
   const [pendente, iniciar] = useTransition();
-  const mudou = doProg !== salvo.do || (doProg === "nao" && justificativa.trim() !== salvo.justificativa);
+  const mudou = doProg !== salvo.do || (doProg === "nao" && justificativa.trim() !== salvo.justificativa) || (doProg === "sim" && numero.trim() !== salvo.numero);
 
   function salvar() {
     setAviso(null);
     iniciar(async () => {
-      const r = await definirDoObito(o.id, doProg, justificativa);
+      const r = await definirDoObito(o.id, doProg, justificativa, numero);
       setAviso(r.erro ? { ok: false, texto: r.erro } : { ok: true, texto: "Salvo." });
     });
   }
@@ -101,6 +98,12 @@ function LinhaObito({ o, editar }: { o: Obito; editar: boolean }) {
           {opcao("nao", "Não")}
           {opcao("", "Não informado")}
         </div>
+        {doProg === "sim" && (
+          <input
+            value={numero} onChange={(e) => setNumero(e.target.value)} readOnly={!editar} maxLength={30} inputMode="numeric"
+            placeholder="Número da DO" aria-label="Número da DO" className="campo"
+          />
+        )}
         {doProg === "nao" && (
           <textarea
             value={justificativa} onChange={(e) => setJustificativa(e.target.value)} readOnly={!editar} rows={2} maxLength={500}

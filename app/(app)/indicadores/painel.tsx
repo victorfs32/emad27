@@ -41,7 +41,7 @@ export function PainelIndicadores(p: Props) {
             comum={p.comum}
             quadros={() => Promise.all([pdfObitos(p.obitos), pdfAd1(p.ad1), pdfReinternacao(p.reinternacoes), pdfBusca(p.buscaAtiva), pdfAltas(p.altas)])}
           />
-          <span className="text-sm text-muted">Os 5 quadros num arquivo só, cada um em uma página. Cada quadro também tem o seu botão.</span>
+          <span className="text-sm text-muted">Os 5 quadros numa folha só, com espaço para assinatura e carimbo à mão.</span>
         </div>
         {p.faltaMigracao && (
           <p role="alert" className="m-0 rounded-2xl bg-danger-soft px-4 py-3 text-sm font-semibold text-danger-strong">
@@ -51,9 +51,9 @@ export function PainelIndicadores(p: Props) {
       </div>
 
       <SecaoObitos obitos={p.obitos} semData={p.obitosSemData} editar={editar} comum={p.comum} />
-      <SecaoAd1 lista={p.ad1} editar={editar} comum={p.comum} />
+      <SecaoAd1 lista={p.ad1} editar={editar} />
       <SecaoReinternacao lista={p.reinternacoes} pacientes={p.pacientes} editar={editar} comum={p.comum} dataPadrao={p.dataPadrao} limite={p.limite} />
-      <SecaoBusca lista={p.buscaAtiva} editar={editar} comum={p.comum} dataPadrao={p.dataPadrao} limite={p.limite} />
+      <SecaoBusca lista={p.buscaAtiva} editar={editar} dataPadrao={p.dataPadrao} limite={p.limite} />
       <SecaoAltas lista={p.altas} editar={editar} comum={p.comum} />
     </div>
   );

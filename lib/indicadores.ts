@@ -21,7 +21,7 @@ const diasEntre = (de: string, ate: string) => Math.round((Date.parse(`${ate}T00
 // ------------------------------------------------------------------ óbitos
 export type Obito = {
   id: number; nome: string; prontuario: string; data: string | null; motivo: string | null;
-  doPrograma: Bool; justificativa: string | null;
+  doPrograma: Bool; justificativa: string | null; numero: string | null;
 };
 
 /** Óbitos do mês (pela data da situação) e os óbitos sem data, que não entram em nenhum mês. */
@@ -31,16 +31,16 @@ export async function listarObitos(mes: string): Promise<{ doMes: Obito[]; semDa
   const { inicio, fim } = limitesDoMes(mes);
   type Linha = {
     id: number; nome: string; prontuario: string; situacao_data: string | null; situacao_motivo: string | null;
-    obito_do_programa?: Bool; obito_do_justificativa?: string | null;
+    obito_do_programa?: Bool; obito_do_justificativa?: string | null; obito_do_numero?: string | null;
   };
   const consulta = (colunas: string) =>
     sb.from("pacientes").select(colunas).eq("situacao", "obito").order("situacao_data", { nullsFirst: false }).order("nome");
-  let r = await consulta("id, nome, prontuario, situacao_data, situacao_motivo, obito_do_programa, obito_do_justificativa");
+  let r = await consulta("id, nome, prontuario, situacao_data, situacao_motivo, obito_do_programa, obito_do_justificativa, obito_do_numero");
   const falta = faltaMigracao(r.error);
   if (falta) r = await consulta("id, nome, prontuario, situacao_data, situacao_motivo");
   const linhas = (ok(r) as unknown as Linha[]).map((l): Obito => ({
     id: l.id, nome: l.nome, prontuario: l.prontuario, data: l.situacao_data, motivo: l.situacao_motivo,
-    doPrograma: l.obito_do_programa ?? null, justificativa: l.obito_do_justificativa ?? null,
+    doPrograma: l.obito_do_programa ?? null, justificativa: l.obito_do_justificativa ?? null, numero: l.obito_do_numero ?? null,
   }));
   return {
     doMes: linhas.filter((l) => l.data !== null && l.data >= inicio && l.data < fim),

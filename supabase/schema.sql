@@ -115,6 +115,7 @@ create table if not exists public.pacientes (
   usa_aspirador_pmec boolean,
   obito_do_programa boolean,
   obito_do_justificativa text,
+  obito_do_numero text,
   motivo_permanencia text,
   alta_tipo text check (alta_tipo in ('administrativa','atencao_basica','internacao','urgencia')),
   colostomia boolean,
@@ -134,6 +135,7 @@ alter table public.pacientes add column if not exists usa_cama_pmec boolean;
 alter table public.pacientes add column if not exists usa_aspirador_pmec boolean;
 alter table public.pacientes add column if not exists obito_do_programa boolean;
 alter table public.pacientes add column if not exists obito_do_justificativa text;
+alter table public.pacientes add column if not exists obito_do_numero text;
 alter table public.pacientes add column if not exists motivo_permanencia text;
 alter table public.pacientes add column if not exists alta_tipo text check (alta_tipo in ('administrativa','atencao_basica','internacao','urgencia'));
 alter table public.pacientes add column if not exists colostomia boolean;
@@ -283,7 +285,7 @@ declare
     'fisio, fisio_frequencia, fisio_obs, dieta_vias, dieta_outra, dieta_obs, diurese, diurese_outra, usa_fralda, continencia, '
     'tqt, tqt_canula_tipo, tqt_calibre, tqt_ultima_troca, tqt_obs, lpp, o2, o2_dispositivo, o2_fluxo, o2_regime, o2_obs, '
     'proxima_visita, observacoes, usa_cama_pmec, colostomia, sexo, nome_social, acs, usa_aspirador_pmec, '
-    'obito_do_programa, obito_do_justificativa, motivo_permanencia, alta_tipo';
+    'obito_do_programa, obito_do_justificativa, obito_do_numero, motivo_permanencia, alta_tipo';
   ant jsonb; dep jsonb; t record; linhas int;
 begin
   if p_id is null then
@@ -834,13 +836,15 @@ grant execute on function public.atualizar_meu_cadastro(text, text, text, text, 
 notify pgrst, 'reload schema';
 
 -- ================================================================ versão 19: indicadores (óbitos, AD1, reinternação, busca ativa, altas)
-create or replace function public.definir_obito_do(p_id bigint, p_fornecida boolean, p_justificativa text) returns void
+create or replace function public.definir_obito_do(p_id bigint, p_fornecida boolean, p_justificativa text, p_numero text) returns void
 language plpgsql security definer set search_path = public as $$
 begin
   if not public.perm('editar') then raise exception 'Sem permissão para editar.' using errcode = '42501'; end if;
   if length(coalesce(p_justificativa, '')) > 500 then raise exception 'Justificativa longa demais.'; end if;
+  if length(coalesce(p_numero, '')) > 30 then raise exception 'Número da DO longo demais.'; end if;
   update public.pacientes
      set obito_do_programa = p_fornecida,
+         obito_do_numero = case when p_fornecida then nullif(trim(p_numero), '') else null end,
          obito_do_justificativa = case when p_fornecida is distinct from false then null else nullif(trim(p_justificativa), '') end
    where id = p_id and situacao = 'obito';
   if not found then raise exception 'Paciente não encontrado ou não está com situação óbito.'; end if;
@@ -952,10 +956,10 @@ begin
   if not found then raise exception 'Registro não encontrado.'; end if;
 end $$;
 
-revoke execute on function public.definir_obito_do(bigint, boolean, text), public.definir_motivo_permanencia(bigint, text),
+revoke execute on function public.definir_obito_do(bigint, boolean, text, text), public.definir_motivo_permanencia(bigint, text),
   public.definir_alta_tipo(bigint, text), public.salvar_reinternacao(bigint, date, text), public.remover_reinternacao(bigint),
   public.salvar_busca_ativa(date, text, text), public.remover_busca_ativa(bigint) from public, anon;
-grant execute on function public.definir_obito_do(bigint, boolean, text), public.definir_motivo_permanencia(bigint, text),
+grant execute on function public.definir_obito_do(bigint, boolean, text, text), public.definir_motivo_permanencia(bigint, text),
   public.definir_alta_tipo(bigint, text), public.salvar_reinternacao(bigint, date, text), public.remover_reinternacao(bigint),
   public.salvar_busca_ativa(date, text, text), public.remover_busca_ativa(bigint) to authenticated;
 

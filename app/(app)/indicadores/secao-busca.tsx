@@ -3,29 +3,23 @@
 import { useState, useTransition } from "react";
 import { removerBuscaAtiva, salvarBuscaAtiva } from "../../actions";
 import type { BuscaAtiva } from "@/lib/indicadores";
-import type { Comum } from "@/lib/indicadores-pdf";
 import { formatarData } from "@/lib/opcoes";
-import { Aviso, BotaoPdf, Cabecalho, ColunaEmad, Moldura } from "./quadro";
+import { Aviso, Cabecalho, ColunaEmad, Moldura } from "./quadro";
 
 const GRADE = "grid-cols-[5rem_minmax(0,1fr)_12rem_6rem]";
 
-type Props = { lista: BuscaAtiva[]; editar: boolean; comum: Comum; dataPadrao: string; limite: { min: string; max: string } };
+type Props = { lista: BuscaAtiva[]; editar: boolean; dataPadrao: string; limite: { min: string; max: string } };
 
 export async function pdfBusca(lista: BuscaAtiva[]) {
   return (await import("@/lib/indicadores-pdf")).quadroBuscaAtiva(lista.map((b) => ({ paciente: b.paciente, situacao: b.situacao })));
 }
 
-export function SecaoBusca({ lista, editar, comum, dataPadrao, limite }: Props) {
+export function SecaoBusca({ lista, editar, dataPadrao, limite }: Props) {
   return (
     <Moldura
       id="busca" titulo="BUSCA ATIVA"
       nota={<>Caso não tenha ocorrido Busca Ativa durante o mês, sinalizar como: <strong>NÃO HOUVE BUSCA ATIVA</strong></>}
-      acoes={
-        <BotaoPdf
-          comum={comum} rotulo="Baixar PDF de busca ativa"
-          quadro={() => pdfBusca(lista)}
-        />
-      }
+      
     >
       {editar && <FormBusca dataPadrao={dataPadrao} limite={limite} />}
       <Cabecalho cor="#a6a6a6" grade={GRADE} colunas={["EMAD", "Paciente", "Situação", ""]} />

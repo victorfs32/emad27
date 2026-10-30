@@ -137,6 +137,7 @@ function Identificacao({ f, idade }: { f: Ficha; idade: number | null }) {
           {(f.situacao === "alta" || f.situacao === "transferido") && <Dado rotulo="Tipo de alta" valor={valorOuNI(rotuloTipoAlta(f.alta_tipo))} />}
           {f.modalidade === "AD1" && <Dado rotulo="Motivo da permanência (AD1)" valor={valorOuNI(f.motivo_permanencia)} largo />}
           {f.situacao === "obito" && <Dado rotulo="DO fornecida pelo Programa" valor={simNao(f.obito_do_programa)} />}
+          {f.situacao === "obito" && f.obito_do_programa === true && <Dado rotulo="Número da DO" valor={valorOuNI(f.obito_do_numero)} />}
           {f.situacao === "obito" && f.obito_do_programa === false && (
             <Dado rotulo="Justificativa (DO não fornecida)" valor={valorOuNI(f.obito_do_justificativa)} largo />
           )}

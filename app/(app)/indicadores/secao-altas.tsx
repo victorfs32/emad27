@@ -7,7 +7,7 @@ import type { Alta } from "@/lib/indicadores";
 import type { Comum } from "@/lib/indicadores-pdf";
 import { ROTULO_OBITO, TIPOS_ALTA, rotuloTipoAlta } from "@/lib/indicadores-opcoes";
 import { formatarData } from "@/lib/opcoes";
-import { Aviso, BotaoPdf, Cabecalho, ColunaEmad, Moldura } from "./quadro";
+import { Aviso, Cabecalho, ColunaEmad, Moldura } from "./quadro";
 
 const GRADE = "grid-cols-[5rem_minmax(0,1.1fr)_6rem_minmax(0,1.3fr)]";
 const tipoDe = (a: Alta) => (a.situacao === "obito" ? ROTULO_OBITO : rotuloTipoAlta(a.tipo) ?? "");
@@ -26,10 +26,6 @@ export function SecaoAltas({ lista, editar, comum }: { lista: Alta[]; editar: bo
       nota={<><strong>Tipos de alta:</strong> {[...TIPOS_ALTA.map((t) => t.rotulo), ROTULO_OBITO].join(" · ")}</>}
       acoes={
         <>
-          <BotaoPdf
-            comum={comum} rotulo="Baixar PDF de altas"
-            quadro={() => pdfAltas(lista)}
-          />
           {semTipo > 0 && <span className="text-sm font-semibold text-danger-strong">{semTipo} sem o tipo de alta.</span>}
         </>
       }
