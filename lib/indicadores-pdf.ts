@@ -216,45 +216,12 @@ async function montarQuadro(q: Quadro, d: Comum): Promise<{ doc: JsPDF; nomeArqu
   return { doc, nomeArquivo: `${q.arquivo}-emad${d.emad}-${d.mes}.pdf` };
 }
 
-/** Desenha só o cabeçalho (logo, mês, equipe) na largura toda da folha; devolve onde ele termina. */
-function cabecalho(doc: JsPDF, d: Comum): number {
-  const W = doc.internal.pageSize.getWidth();
-  const larguraLogo = 30;
-  desenharLogo(doc, 12, 8, larguraLogo);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
-  doc.setTextColor(...TINTA);
-  doc.text("INDICADORES", W - 12, 14, { align: "right" });
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9.5);
-  doc.setTextColor(70, 85, 85);
-  doc.text(limpar(`${d.nomeMes} · EMAD ${d.emad} — Programa Melhor em Casa`), W - 12, 19.5, { align: "right" });
-  doc.setFontSize(7.5);
-  doc.setTextColor(...APAGADO);
-  doc.text(limpar(EQUIPE.map(([f, n]) => `${f}: ${n}`).join(" · ")), W - 12, 24, { align: "right" });
-  return 8 + larguraLogo * PROPORCAO_LOGO + 3;
-}
-
-/**
- * Todos os quadros num PDF só, na horizontal (A4 paisagem), numa folha:
- * coluna da esquerda com os 3 primeiros quadros, coluna da direita com os outros e a assinatura.
- */
+/** Todos os quadros num PDF só (A4 retrato), um embaixo do outro na mesma folha; só passa para a próxima se não couber. */
 async function montarTodos(quadros: Quadro[], d: Comum): Promise<{ doc: JsPDF; nomeArquivo: string }> {
-  const { doc, autoTable } = await novoDoc("Indicadores", d, true);
-  const W = doc.internal.pageSize.getWidth();
-  const meio = W / 2, vao = 3;
-  const topo = cabecalho(doc, d);
-  const esquerda = quadros.slice(0, 3), direita = quadros.slice(3);
-  let y = topo;
-  esquerda.forEach((q) => {
-    y = desenharQuadro(doc, autoTable, q, d, { cabecalho: false, y, compacto: true, assinatura: false, x0: 12, x1: meio - vao }) + 2.5;
-  });
-  doc.setPage(1);
-  y = topo;
-  direita.forEach((q, i) => {
-    y = desenharQuadro(doc, autoTable, q, d, {
-      cabecalho: false, y, compacto: true, assinatura: i === direita.length - 1, x0: meio + vao, x1: W - 12,
-    }) + 2.5;
+  const { doc, autoTable } = await novoDoc("Indicadores", d);
+  let y: number | undefined;
+  quadros.forEach((q, i) => {
+    y = desenharQuadro(doc, autoTable, q, d, { cabecalho: i === 0, y: i === 0 ? undefined : (y ?? 14) + 2.5, compacto: true, assinatura: i === quadros.length - 1 });
   });
   rodape(doc, d, () => "Indicadores do mês");
   return { doc, nomeArquivo: `indicadores-emad${d.emad}-${d.mes}.pdf` };
