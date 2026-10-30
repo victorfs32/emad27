@@ -33,17 +33,17 @@ type Quadro = {
 
 const limpar = (t: string) => t.replace(/[‘’]/g, "'").replace(/[^\x09\x0A\x0D\x20-\x7E -ÿ–—•…“”]/g, "");
 
-async function montarQuadro(q: Quadro, d: Comum): Promise<{ doc: JsPDF; nomeArquivo: string }> {
-  const [{ jsPDF }, tabela] = await Promise.all([import("jspdf"), import("jspdf-autotable")]);
-  const autoTable = tabela.default;
-  const doc: JsPDF = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait", compress: true });
-  doc.setProperties({
-    title: `${q.titulo} — ${d.nomeMes}`,
-    author: `EMAD ${d.emad}`,
-    subject: "Indicadores mensais",
-    creator: "EMAD 27 — Programa Melhor em Casa",
-  });
+type AutoTable = typeof import("jspdf-autotable").default;
 
+async function novoDoc(titulo: string, d: Comum) {
+  const [{ jsPDF }, tabela] = await Promise.all([import("jspdf"), import("jspdf-autotable")]);
+  const doc: JsPDF = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait", compress: true });
+  doc.setProperties({ title: `${titulo} — ${d.nomeMes}`, author: `EMAD ${d.emad}`, subject: "Indicadores mensais", creator: "EMAD 27 — Programa Melhor em Casa" });
+  return { doc, autoTable: tabela.default };
+}
+
+/** Desenha um quadro começando na página atual do documento; devolve a última página usada. */
+function desenharQuadro(doc: JsPDF, autoTable: AutoTable, q: Quadro, d: Comum, comAssinatura: boolean): number {
   const X0 = 15, X1 = 195, LARG = X1 - X0, MEIO = 105;
   const fonte = (tam: number, estilo: "normal" | "bold" = "normal", cor: Cor = TINTA) => {
     doc.setFont("helvetica", estilo);
@@ -144,6 +144,8 @@ async function montarQuadro(q: Quadro, d: Comum): Promise<{ doc: JsPDF; nomeArqu
     y += 4 + linhas.length * 5;
   }
 
+  if (!comAssinatura) return doc.getNumberOfPages();
+
   // data e assinatura
   garantir(45);
   const yAss = Math.max(y + 38, 245);
@@ -155,20 +157,48 @@ async function montarQuadro(q: Quadro, d: Comum): Promise<{ doc: JsPDF; nomeArqu
   doc.line(60, yAss, 150, yAss);
   fonte(9.5);
   doc.text("Responsável pelas informações", MEIO, yAss + 5, { align: "center" });
+  return doc.getNumberOfPages();
+}
 
+/** Rodapé em todas as páginas: título do quadro daquela página e numeração. */
+function rodape(doc: JsPDF, d: Comum, tituloDaPagina: (p: number) => string) {
   const paginas = doc.getNumberOfPages();
   for (let p = 1; p <= paginas; p++) {
     doc.setPage(p);
-    fonte(8, "normal", [110, 120, 120]);
-    doc.text(limpar(`EMAD ${d.emad} — Programa Melhor em Casa · ${q.titulo} · ${d.nomeMes}`), MEIO, 287, { align: "center" });
-    if (paginas > 1) doc.text(`${p}/${paginas}`, X1, 287, { align: "right" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(110, 120, 120);
+    doc.text(limpar(`EMAD ${d.emad} — Programa Melhor em Casa · ${tituloDaPagina(p)} · ${d.nomeMes}`), 105, 287, { align: "center" });
+    if (paginas > 1) doc.text(`${p}/${paginas}`, 195, 287, { align: "right" });
   }
+}
 
+async function montarQuadro(q: Quadro, d: Comum): Promise<{ doc: JsPDF; nomeArquivo: string }> {
+  const { doc, autoTable } = await novoDoc(q.titulo, d);
+  desenharQuadro(doc, autoTable, q, d, true);
+  rodape(doc, d, () => q.titulo);
   return { doc, nomeArquivo: `${q.arquivo}-emad${d.emad}-${d.mes}.pdf` };
+}
+
+/** Todos os quadros num PDF só: cada quadro começa numa página nova; data e assinatura no fim. */
+async function montarTodos(quadros: Quadro[], d: Comum): Promise<{ doc: JsPDF; nomeArquivo: string }> {
+  const { doc, autoTable } = await novoDoc("Indicadores", d);
+  const fimDe: number[] = [];
+  quadros.forEach((q, i) => {
+    if (i > 0) doc.addPage();
+    fimDe.push(desenharQuadro(doc, autoTable, q, d, i === quadros.length - 1));
+  });
+  rodape(doc, d, (p) => quadros[fimDe.findIndex((f) => p <= f)]?.titulo ?? "Indicadores");
+  return { doc, nomeArquivo: `indicadores-emad${d.emad}-${d.mes}.pdf` };
 }
 
 async function baixar(q: Quadro, d: Comum) {
   const { doc, nomeArquivo } = await montarQuadro(q, d);
+  doc.save(nomeArquivo);
+}
+
+async function baixarTodos(quadros: Quadro[], d: Comum) {
+  const { doc, nomeArquivo } = await montarTodos(quadros, d);
   doc.save(nomeArquivo);
 }
 
@@ -269,4 +299,6 @@ export function quadroAltas(lista: AltaPdf[]): Quadro {
 
 export const montarIndicadorPdf = montarQuadro;
 export const baixarIndicadorPdf = baixar;
+export const montarTodosIndicadoresPdf = montarTodos;
+export const baixarTodosIndicadoresPdf = baixarTodos;
 export type { Quadro };
