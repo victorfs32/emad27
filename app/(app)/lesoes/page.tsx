@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { listarLesoes } from "@/lib/pacientes";
 import { formatarData, hojeISO } from "@/lib/opcoes";
 import { IconeLesao } from "../icones";
+import { BotaoPdfLista } from "../botao-pdf-lista";
 
 export default async function Lesoes() {
   await connection();
@@ -13,13 +14,40 @@ export default async function Lesoes() {
 
   return (
     <div className="grid gap-6">
-      <header>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div>
         <p className="m-0 text-[12.5px] font-semibold uppercase tracking-[0.14em] text-muted">Lesão por pressão (LPP)</p>
         <h1 className="m-0 mt-1 text-[32px] font-extrabold tracking-[-0.02em] text-heading">Lesões<span className="text-accent">.</span></h1>
         <p className="m-0 mt-1 text-sm text-muted">
           {lesoes.length} {lesoes.length === 1 ? "lesão registrada" : "lesões registradas"} em {pacientes} {pacientes === 1 ? "paciente" : "pacientes"}.
           As avaliações mais antigas aparecem primeiro.
         </p>
+        </div>
+        <BotaoPdfLista
+          rotulo="Relatório em PDF"
+          dados={{
+            titulo: "Pacientes com lesão por pressão",
+            subtitulo: "EMAD 27 — Programa Melhor em Casa",
+            colunas: [
+              { titulo: "Paciente", negrito: true },
+              { titulo: "Localização", largura: 34 },
+              { titulo: "Classificação", largura: 28 },
+              { titulo: "Cobertura", largura: 38 },
+              { titulo: "Última avaliação", largura: 28, centro: true },
+            ],
+            linhas: lesoes.map((l) => [
+              `${l.pacientes.nome}\nPront. ${l.pacientes.prontuario}`,
+              l.localizacao,
+              l.classificacao || "—",
+              l.cobertura || "—",
+              l.data_avaliacao ? `${formatarData(l.data_avaliacao)}\nhá ${dias(l.data_avaliacao)} dias` : "Não informada",
+            ]),
+            destacar: lesoes.flatMap((l, i) => (l.data_avaliacao && dias(l.data_avaliacao) > 14 ? [i] : [])),
+            vazio: "Nenhuma lesão registrada.",
+            resumo: `Lesões: ${lesoes.length} em ${pacientes} ${pacientes === 1 ? "paciente" : "pacientes"}  ·  Avaliação há mais de 14 dias (em destaque): ${lesoes.filter((l) => l.data_avaliacao && dias(l.data_avaliacao) > 14).length}`,
+            arquivo: `lesoes-emad27-${hoje}.pdf`,
+          }}
+        />
       </header>
 
       {lesoes.length === 0 ? (

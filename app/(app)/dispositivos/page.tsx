@@ -7,6 +7,7 @@ import { registrarTroca } from "../../actions";
 import { IconeDispositivo, IconeMais } from "../icones";
 import { BotaoRemover } from "./botao-remover";
 import { FormDispositivo } from "./form-dispositivo";
+import { BotaoPdfLista } from "../botao-pdf-lista";
 
 const sigla = (tipo: string) => TIPOS_DISPOSITIVO.find((t) => t.valor === tipo)?.sigla ?? tipo;
 const ordemTipo = (tipo: string) => TIPOS_DISPOSITIVO.findIndex((t) => t.valor === tipo);
@@ -96,6 +97,40 @@ export default async function Dispositivos({ searchParams }: PageProps<"/disposi
           <h1 className="m-0 mt-1 text-[32px] font-extrabold tracking-[-0.02em] text-heading">Dispositivos<span className="text-accent">.</span></h1>
           <p className="m-0 mt-1 text-sm text-muted">GTT, SNG e SVD: número, confecção, troca e próxima troca de cada paciente.</p>
         </div>
+        <BotaoPdfLista
+          rotulo="Relatório em PDF"
+          dados={{
+            titulo: "Pacientes com dispositivos",
+            subtitulo: `EMAD 27 — Programa Melhor em Casa${tipo ? ` · somente ${sigla(tipo)}` : ""}${prazo === "vencidas" ? " · trocas vencidas" : prazo === "30" ? " · vencem em 30 dias" : ""}`,
+            colunas: [
+              { titulo: "UAPS", largura: 30 },
+              { titulo: "Paciente", negrito: true },
+              { titulo: "Disp.", largura: 13, centro: true },
+              { titulo: "Nº", largura: 13, centro: true },
+              { titulo: "Confecção", largura: 22, centro: true },
+              { titulo: "Última troca", largura: 21, centro: true },
+              { titulo: "Próxima troca", largura: 26, centro: true },
+            ],
+            linhas: lista.map((d) => {
+              const s = situacaoTroca(d.proxima_troca, hoje);
+              return [
+                d.pacientes.uaps?.nome ?? "—",
+                `${d.pacientes.nome}\nPront. ${d.pacientes.prontuario}`,
+                sigla(d.tipo),
+                d.numero ?? "—",
+                d.confeccao ?? "—",
+                d.troca ? formatarData(d.troca) : "—",
+                (d.proxima_troca ? formatarData(d.proxima_troca) : "Sem data") + (s === "vencida" ? "\nVENCIDA" : ""),
+              ];
+            }),
+            destacar: lista.flatMap((d, i) => (situacaoTroca(d.proxima_troca, hoje) === "vencida" ? [i] : [])),
+            vazio: "Nenhum dispositivo em uso.",
+            resumo: `Dispositivos: ${lista.length} em ${new Set(lista.map((d) => d.pacientes.id)).size} pacientes` +
+              TIPOS_DISPOSITIVO.map((t) => [t.sigla, lista.filter((d) => d.tipo === t.valor).length] as const).filter(([, n]) => n).map(([s, n]) => `  ·  ${s}: ${n}`).join("") +
+              `  ·  Trocas vencidas: ${lista.filter((d) => situacaoTroca(d.proxima_troca, hoje) === "vencida").length}`,
+            arquivo: `dispositivos-emad27-${hoje}.pdf`,
+          }}
+        />
       </header>
 
       <section className="grid grid-cols-3 gap-3" aria-label="Resumo">
