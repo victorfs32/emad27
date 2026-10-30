@@ -12,6 +12,12 @@ import { Aviso, BotaoPdf, Cabecalho, ColunaEmad, Moldura } from "./quadro";
 const GRADE = "grid-cols-[5rem_minmax(0,1.1fr)_6rem_minmax(0,1.3fr)]";
 const tipoDe = (a: Alta) => (a.situacao === "obito" ? ROTULO_OBITO : rotuloTipoAlta(a.tipo) ?? "");
 
+export async function pdfAltas(lista: Alta[]) {
+  return (await import("@/lib/indicadores-pdf")).quadroAltas(lista.map((a) => ({
+    nome: a.nome, prontuario: a.prontuario, data: formatarData(a.data), tipo: tipoDe(a), motivo: a.motivo ?? "",
+  })));
+}
+
 export function SecaoAltas({ lista, editar, comum }: { lista: Alta[]; editar: boolean; comum: Comum }) {
   const semTipo = lista.filter((a) => !tipoDe(a)).length;
   return (
@@ -22,9 +28,7 @@ export function SecaoAltas({ lista, editar, comum }: { lista: Alta[]; editar: bo
         <>
           <BotaoPdf
             comum={comum} rotulo="Baixar PDF de altas"
-            quadro={async () => (await import("@/lib/indicadores-pdf")).quadroAltas(lista.map((a) => ({
-              nome: a.nome, prontuario: a.prontuario, data: formatarData(a.data), tipo: tipoDe(a), motivo: a.motivo ?? "",
-            })))}
+            quadro={() => pdfAltas(lista)}
           />
           {semTipo > 0 && <span className="text-sm font-semibold text-danger-strong">{semTipo} sem o tipo de alta.</span>}
         </>

@@ -11,6 +11,10 @@ const GRADE = "grid-cols-[5rem_minmax(0,1fr)_12rem_6rem]";
 
 type Props = { lista: BuscaAtiva[]; editar: boolean; comum: Comum; dataPadrao: string; limite: { min: string; max: string } };
 
+export async function pdfBusca(lista: BuscaAtiva[]) {
+  return (await import("@/lib/indicadores-pdf")).quadroBuscaAtiva(lista.map((b) => ({ paciente: b.paciente, situacao: b.situacao })));
+}
+
 export function SecaoBusca({ lista, editar, comum, dataPadrao, limite }: Props) {
   return (
     <Moldura
@@ -19,7 +23,7 @@ export function SecaoBusca({ lista, editar, comum, dataPadrao, limite }: Props) 
       acoes={
         <BotaoPdf
           comum={comum} rotulo="Baixar PDF de busca ativa"
-          quadro={async () => (await import("@/lib/indicadores-pdf")).quadroBuscaAtiva(lista.map((b) => ({ paciente: b.paciente, situacao: b.situacao })))}
+          quadro={() => pdfBusca(lista)}
         />
       }
     >

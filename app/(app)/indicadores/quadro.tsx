@@ -61,6 +61,33 @@ export function BotaoPdf({ quadro, comum, rotulo = "Baixar PDF" }: { quadro: () 
   );
 }
 
+/** Botão que gera um PDF só com vários quadros (cada um numa página). */
+export function BotaoPdfTodos({ quadros, comum }: { quadros: () => Promise<Quadro[]>; comum: Comum }) {
+  const [gerando, setGerando] = useState(false);
+  const [erro, setErro] = useState("");
+  async function gerar() {
+    setErro("");
+    setGerando(true);
+    try {
+      const { baixarTodosIndicadoresPdf } = await import("@/lib/indicadores-pdf");
+      await baixarTodosIndicadoresPdf(await quadros(), comum);
+    } catch (e) {
+      console.error(e);
+      setErro("Não foi possível gerar o PDF. Tente novamente.");
+    } finally {
+      setGerando(false);
+    }
+  }
+  return (
+    <>
+      <button type="button" onClick={gerar} disabled={gerando} className="btn-primario">
+        <IconeBaixar /> {gerando ? "Gerando PDF…" : "Baixar todos os indicadores em um PDF"}
+      </button>
+      {erro && <span role="alert" className="text-sm font-semibold text-danger-strong">{erro}</span>}
+    </>
+  );
+}
+
 /** Mensagem curta de resultado ao salvar. */
 export function Aviso({ aviso }: { aviso: { ok: boolean; texto: string } | null }) {
   if (!aviso) return null;

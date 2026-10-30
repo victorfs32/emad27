@@ -3,11 +3,12 @@
 import Link from "next/link";
 import type { Alta, BuscaAtiva, Obito, PacienteAd1, Reinternacao } from "@/lib/indicadores";
 import type { Comum } from "@/lib/indicadores-pdf";
-import { SecaoAd1 } from "./secao-ad1";
-import { SecaoAltas } from "./secao-altas";
-import { SecaoBusca } from "./secao-busca";
-import { SecaoObitos } from "./secao-obitos";
-import { SecaoReinternacao } from "./secao-reinternacao";
+import { BotaoPdfTodos } from "./quadro";
+import { SecaoAd1, pdfAd1 } from "./secao-ad1";
+import { SecaoAltas, pdfAltas } from "./secao-altas";
+import { SecaoBusca, pdfBusca } from "./secao-busca";
+import { SecaoObitos, pdfObitos } from "./secao-obitos";
+import { SecaoReinternacao, pdfReinternacao } from "./secao-reinternacao";
 
 type Props = {
   comum: Comum; anterior: string; proximo: string; editar: boolean; faltaMigracao: boolean;
@@ -35,6 +36,13 @@ export function PainelIndicadores(p: Props) {
             </a>
           ))}
         </nav>
+        <div className="flex flex-wrap items-center gap-3">
+          <BotaoPdfTodos
+            comum={p.comum}
+            quadros={() => Promise.all([pdfObitos(p.obitos), pdfAd1(p.ad1), pdfReinternacao(p.reinternacoes), pdfBusca(p.buscaAtiva), pdfAltas(p.altas)])}
+          />
+          <span className="text-sm text-muted">Os 5 quadros num arquivo só, cada um em uma página. Cada quadro também tem o seu botão.</span>
+        </div>
         {p.faltaMigracao && (
           <p role="alert" className="m-0 rounded-2xl bg-danger-soft px-4 py-3 text-sm font-semibold text-danger-strong">
             Falta rodar a migração v19 no Supabase: até lá os quadros mostram o que já existe no cadastro, mas não dá para registrar nem salvar respostas.

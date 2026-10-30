@@ -10,6 +10,10 @@ import { Aviso, BotaoPdf, Cabecalho, ColunaEmad, Moldura } from "./quadro";
 
 const GRADE = "grid-cols-[5rem_minmax(0,1fr)_4rem_minmax(0,1.4fr)]";
 
+export async function pdfAd1(lista: PacienteAd1[]) {
+  return (await import("@/lib/indicadores-pdf")).quadroAd1(lista.map((p) => ({ nome: p.nome, prontuario: p.prontuario, motivo: p.motivo ?? p.sugestao })));
+}
+
 export function SecaoAd1({ lista, editar, comum }: { lista: PacienteAd1[]; editar: boolean; comum: Comum }) {
   const semMotivo = lista.filter((p) => !p.motivo && !p.sugestao).length;
   return (
@@ -20,9 +24,7 @@ export function SecaoAd1({ lista, editar, comum }: { lista: PacienteAd1[]; edita
         <>
           <BotaoPdf
             comum={comum} rotulo="Baixar PDF de acompanhamento AD1"
-            quadro={async () => (await import("@/lib/indicadores-pdf")).quadroAd1(lista.map((p) => ({
-              nome: p.nome, prontuario: p.prontuario, motivo: p.motivo ?? p.sugestao,
-            })))}
+            quadro={() => pdfAd1(lista)}
           />
           {semMotivo > 0 && <span className="text-sm font-semibold text-danger-strong">{semMotivo} sem motivo de permanência.</span>}
         </>

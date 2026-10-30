@@ -33,46 +33,68 @@ type Quadro = {
 
 const limpar = (t: string) => t.replace(/[‘’]/g, "'").replace(/[^\x09\x0A\x0D\x20-\x7E -ÿ–—•…“”]/g, "");
 
-async function montarQuadro(q: Quadro, d: Comum): Promise<{ doc: JsPDF; nomeArquivo: string }> {
-  const [{ jsPDF }, tabela] = await Promise.all([import("jspdf"), import("jspdf-autotable")]);
-  const autoTable = tabela.default;
-  const doc: JsPDF = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait", compress: true });
-  doc.setProperties({
-    title: `${q.titulo} — ${d.nomeMes}`,
-    author: `EMAD ${d.emad}`,
-    subject: "Indicadores mensais",
-    creator: "EMAD 27 — Programa Melhor em Casa",
-  });
+type AutoTable = typeof import("jspdf-autotable").default;
 
+async function novoDoc(titulo: string, d: Comum) {
+  const [{ jsPDF }, tabela] = await Promise.all([import("jspdf"), import("jspdf-autotable")]);
+  const doc: JsPDF = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait", compress: true });
+  doc.setProperties({ title: `${titulo} — ${d.nomeMes}`, author: `EMAD ${d.emad}`, subject: "Indicadores mensais", creator: "EMAD 27 — Programa Melhor em Casa" });
+  return { doc, autoTable: tabela.default };
+}
+
+type Opcoes = {
+  /** Desenha o cabeçalho (logo, mês, equipe); sem ele o quadro começa em `y`. */
+  cabecalho: boolean;
+  y?: number;
+  /** Letras e espaços menores, para caber vários quadros na mesma folha. */
+  compacto: boolean;
+  assinatura: boolean;
+};
+
+/** Desenha um quadro na página atual do documento; devolve a altura (y) onde ele terminou. */
+function desenharQuadro(doc: JsPDF, autoTable: AutoTable, q: Quadro, d: Comum, o: Opcoes): number {
   const X0 = 15, X1 = 195, LARG = X1 - X0, MEIO = 105;
+  const k = o.compacto ? 0.76 : 1;
   const fonte = (tam: number, estilo: "normal" | "bold" = "normal", cor: Cor = TINTA) => {
     doc.setFont("helvetica", estilo);
     doc.setFontSize(tam);
     doc.setTextColor(cor[0], cor[1], cor[2]);
   };
 
+  let y = o.y ?? 12;
+  const garantir = (altura: number) => {
+    if (y + altura > 280) {
+      doc.addPage();
+      y = 14;
+    }
+  };
+
   // cabeçalho
-  const larguraLogo = 44;
-  desenharLogo(doc, X0, 12, larguraLogo);
-  fonte(16, "bold");
-  doc.text("INDICADORES", X1, 20, { align: "right" });
-  fonte(11, "normal", [70, 85, 85]);
-  doc.text(limpar(`${d.nomeMes} · EMAD ${d.emad} — Programa Melhor em Casa`), X1, 26.5, { align: "right" });
-  fonte(8.5, "normal", APAGADO);
-  const equipe = doc.splitTextToSize(limpar(EQUIPE.map(([f, n]) => `${f}: ${n}`).join(" · ")), 120) as string[];
-  doc.text(equipe, X1, 32, { align: "right", lineHeightFactor: 1.35 });
-  let y = 12 + larguraLogo * PROPORCAO_LOGO + 8;
+  if (o.cabecalho) {
+    const larguraLogo = o.compacto ? 34 : 44;
+    desenharLogo(doc, X0, 10, larguraLogo);
+    fonte(o.compacto ? 14 : 16, "bold");
+    doc.text("INDICADORES", X1, 17, { align: "right" });
+    fonte(o.compacto ? 9.5 : 11, "normal", [70, 85, 85]);
+    doc.text(limpar(`${d.nomeMes} · EMAD ${d.emad} — Programa Melhor em Casa`), X1, 22.5, { align: "right" });
+    fonte(o.compacto ? 7.5 : 8.5, "normal", APAGADO);
+    const equipe = doc.splitTextToSize(limpar(EQUIPE.map(([f, n]) => `${f}: ${n}`).join(" · ")), 120) as string[];
+    doc.text(equipe, X1, 27.5, { align: "right", lineHeightFactor: 1.35 });
+    y = 10 + larguraLogo * PROPORCAO_LOGO + (o.compacto ? 4 : 8);
+  }
 
   // faixa laranja com o título do quadro (como na planilha)
+  garantir(o.compacto ? 22 : 30);
+  const hTitulo = o.compacto ? 7 : 10;
   doc.setFillColor(...LARANJA);
   doc.setDrawColor(40, 40, 40);
   doc.setLineWidth(0.35);
-  doc.rect(X0, y, LARG, 10, "FD");
-  fonte(q.titulo.length > 40 ? 11.5 : 14, "bold");
-  doc.text(limpar(q.titulo), MEIO, y + 6.8, { align: "center" });
-  y += 10;
+  doc.rect(X0, y, LARG, hTitulo, "FD");
+  fonte((q.titulo.length > 40 ? 11.5 : 14) * (o.compacto ? 0.78 : 1), "bold");
+  doc.text(limpar(q.titulo), MEIO, y + hTitulo * 0.68, { align: "center" });
+  y += hTitulo;
 
-  const emad = { content: d.emad, styles: { fillColor: q.corEmad, halign: "center" as const, valign: "middle" as const, fontStyle: "bold" as const, fontSize: 13 } };
+  const emad = { content: d.emad, styles: { fillColor: q.corEmad, halign: "center" as const, valign: "middle" as const, fontStyle: "bold" as const, fontSize: 13 * k } };
   const corpo = q.linhas.length
     ? q.linhas.map((l, i) => (i === 0 ? [{ ...emad, rowSpan: q.linhas.length }, ...l.map(limpar)] : l.map(limpar)))
     : [[emad, {
@@ -82,46 +104,41 @@ async function montarQuadro(q: Quadro, d: Comum): Promise<{ doc: JsPDF; nomeArqu
 
   autoTable(doc, {
     startY: y,
-    margin: { left: X0, right: 210 - X1, top: 18 },
+    margin: { left: X0, right: 210 - X1, top: 14 },
     head: [[{ content: "EMAD", styles: { halign: "center" } }, ...q.colunas.map((c) => ({ content: c.titulo, styles: { halign: c.centro ? "center" as const : "left" as const } }))]],
     body: corpo,
     theme: "grid",
-    styles: { font: "helvetica", fontSize: 9.5, cellPadding: 2.4, textColor: TINTA, lineColor: [40, 40, 40], lineWidth: 0.3, valign: "middle" },
-    headStyles: { fillColor: q.corCabecalho, textColor: TINTA, fontStyle: "bold", fontSize: 9.5, valign: "middle" },
+    styles: { font: "helvetica", fontSize: 9.5 * k, cellPadding: o.compacto ? 1 : 2.4, textColor: TINTA, lineColor: [40, 40, 40], lineWidth: 0.3, valign: "middle" },
+    headStyles: { fillColor: q.corCabecalho, textColor: TINTA, fontStyle: "bold", fontSize: 9.5 * k, valign: "middle" },
     columnStyles: Object.fromEntries([
       [0, { cellWidth: 20 }],
       ...q.colunas.map((c, i) => [i + 1, {
         cellWidth: c.largura ?? "auto",
         halign: c.centro ? "center" : "left",
         fontStyle: c.negrito ? "bold" : "normal",
-        ...(c.pequeno ? { fontSize: 8.5, textColor: [70, 85, 85] } : {}),
+        ...(c.pequeno ? { fontSize: 8.5 * k, textColor: [70, 85, 85] } : {}),
       }]),
     ]),
     rowPageBreak: "avoid",
   });
-  y = (doc as JsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
+  y = (doc as JsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + (o.compacto ? 1.5 : 6);
 
-  const garantir = (altura: number) => {
-    if (y + altura > 270) {
-      doc.addPage();
-      y = 20;
-    }
-  };
-
-  // faixa amarela de orientação
-  if (q.nota) {
+  // faixa amarela de orientação (no modo compacto a legenda vira uma linha da faixa)
+  const nota = o.compacto && q.legenda ? [q.nota, `${q.legenda.titulo} ${q.legenda.itens.join(" · ")}`].filter(Boolean).join("  ") : q.nota;
+  if (nota) {
     garantir(10);
     doc.setFillColor(...AMARELO);
-    fonte(9.5);
-    const linhas = doc.splitTextToSize(limpar(q.nota), LARG - 6) as string[];
-    const h = 4 + linhas.length * 4.4;
+    fonte(9.5 * k);
+    const linhas = doc.splitTextToSize(limpar(nota), LARG - 6) as string[];
+    const passo = 4.4 * k;
+    const h = (o.compacto ? 2 : 4) + linhas.length * passo;
     doc.rect(X0, y, LARG, h, "F");
-    doc.text(linhas, MEIO, y + 5.3, { align: "center", lineHeightFactor: 1.3 });
-    y += h + 4;
+    doc.text(linhas, MEIO, y + (o.compacto ? 3.6 : 5.3), { align: "center", lineHeightFactor: 1.3 });
+    y += h + (o.compacto ? 1.5 : 4);
   }
 
   // legenda (ex.: tipos de alta)
-  if (q.legenda) {
+  if (q.legenda && !o.compacto) {
     garantir(8 + q.legenda.itens.length * 6);
     autoTable(doc, {
       startY: y,
@@ -137,14 +154,29 @@ async function montarQuadro(q: Quadro, d: Comum): Promise<{ doc: JsPDF; nomeArqu
   }
 
   if (q.resumo) {
-    garantir(10);
-    fonte(10, "bold");
+    garantir(8);
+    fonte(10 * k, "bold");
     const linhas = doc.splitTextToSize(limpar(q.resumo), LARG) as string[];
-    doc.text(linhas, X0, y + 4, { lineHeightFactor: 1.35 });
-    y += 4 + linhas.length * 5;
+    doc.text(linhas, X0, y + 3.5 * k, { lineHeightFactor: 1.35 });
+    y += 3.5 * k + linhas.length * 5 * k;
   }
 
-  // data e assinatura
+  if (!o.assinatura) return y;
+
+  // data e assinatura (no modo compacto, lado a lado para caber na mesma folha)
+  if (o.compacto) {
+    garantir(19);
+    const yLinha = y + 15;
+    fonte(9.5);
+    doc.text(`Fortaleza, ${dataPorExtenso(d.hoje)}`, X0, yLinha);
+    desenharCarimbo(doc, d.carimbo, 152, yLinha, 80);
+    doc.setDrawColor(75, 85, 85);
+    doc.setLineWidth(0.25);
+    doc.line(110, yLinha, X1, yLinha);
+    fonte(8.5);
+    doc.text("Responsável pelas informações", 152, yLinha + 4, { align: "center" });
+    return yLinha + 4;
+  }
   garantir(45);
   const yAss = Math.max(y + 38, 245);
   fonte(10.5);
@@ -155,20 +187,47 @@ async function montarQuadro(q: Quadro, d: Comum): Promise<{ doc: JsPDF; nomeArqu
   doc.line(60, yAss, 150, yAss);
   fonte(9.5);
   doc.text("Responsável pelas informações", MEIO, yAss + 5, { align: "center" });
+  return yAss + 5;
+}
 
+/** Rodapé em todas as páginas: título do quadro daquela página e numeração. */
+function rodape(doc: JsPDF, d: Comum, tituloDaPagina: (p: number) => string) {
   const paginas = doc.getNumberOfPages();
   for (let p = 1; p <= paginas; p++) {
     doc.setPage(p);
-    fonte(8, "normal", [110, 120, 120]);
-    doc.text(limpar(`EMAD ${d.emad} — Programa Melhor em Casa · ${q.titulo} · ${d.nomeMes}`), MEIO, 287, { align: "center" });
-    if (paginas > 1) doc.text(`${p}/${paginas}`, X1, 287, { align: "right" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(110, 120, 120);
+    doc.text(limpar(`EMAD ${d.emad} — Programa Melhor em Casa · ${tituloDaPagina(p)} · ${d.nomeMes}`), 105, 287, { align: "center" });
+    if (paginas > 1) doc.text(`${p}/${paginas}`, 195, 287, { align: "right" });
   }
+}
 
+async function montarQuadro(q: Quadro, d: Comum): Promise<{ doc: JsPDF; nomeArquivo: string }> {
+  const { doc, autoTable } = await novoDoc(q.titulo, d);
+  desenharQuadro(doc, autoTable, q, d, { cabecalho: true, compacto: false, assinatura: true });
+  rodape(doc, d, () => q.titulo);
   return { doc, nomeArquivo: `${q.arquivo}-emad${d.emad}-${d.mes}.pdf` };
+}
+
+/** Todos os quadros num PDF só, um embaixo do outro na mesma folha (só passa para a próxima se não couber). */
+async function montarTodos(quadros: Quadro[], d: Comum): Promise<{ doc: JsPDF; nomeArquivo: string }> {
+  const { doc, autoTable } = await novoDoc("Indicadores", d);
+  let y: number | undefined;
+  quadros.forEach((q, i) => {
+    y = desenharQuadro(doc, autoTable, q, d, { cabecalho: i === 0, y: i === 0 ? undefined : (y ?? 14) + 2.5, compacto: true, assinatura: i === quadros.length - 1 });
+  });
+  rodape(doc, d, () => "Indicadores do mês");
+  return { doc, nomeArquivo: `indicadores-emad${d.emad}-${d.mes}.pdf` };
 }
 
 async function baixar(q: Quadro, d: Comum) {
   const { doc, nomeArquivo } = await montarQuadro(q, d);
+  doc.save(nomeArquivo);
+}
+
+async function baixarTodos(quadros: Quadro[], d: Comum) {
+  const { doc, nomeArquivo } = await montarTodos(quadros, d);
   doc.save(nomeArquivo);
 }
 
@@ -269,4 +328,6 @@ export function quadroAltas(lista: AltaPdf[]): Quadro {
 
 export const montarIndicadorPdf = montarQuadro;
 export const baixarIndicadorPdf = baixar;
+export const montarTodosIndicadoresPdf = montarTodos;
+export const baixarTodosIndicadoresPdf = baixarTodos;
 export type { Quadro };

@@ -16,8 +16,17 @@ type Props = {
   editar: boolean; comum: Comum; dataPadrao: string; limite: { min: string; max: string };
 };
 
-export function SecaoReinternacao({ lista, pacientes, editar, comum, dataPadrao, limite }: Props) {
+export async function pdfReinternacao(lista: Reinternacao[]) {
   const contam = lista.filter((r) => r.conta);
+  return (await import("@/lib/indicadores-pdf")).quadroReinternacao(
+    contam.map((r) => ({
+      nome: r.nome, prontuario: r.prontuario, admissao: r.admissao ? formatarData(r.admissao) : "", data: formatarData(r.data), motivo: r.motivo ?? "",
+    })),
+    lista.length - contam.length,
+  );
+}
+
+export function SecaoReinternacao({ lista, pacientes, editar, comum, dataPadrao, limite }: Props) {
   return (
     <Moldura
       id="reinternacao" titulo={`REINTERNAÇÃO (ATÉ ${DIAS_REINTERNACAO} DIAS APÓS ADMISSÃO HOSPITALAR)`}
@@ -25,12 +34,7 @@ export function SecaoReinternacao({ lista, pacientes, editar, comum, dataPadrao,
       acoes={
         <BotaoPdf
           comum={comum} rotulo="Baixar PDF de reinternação"
-          quadro={async () => (await import("@/lib/indicadores-pdf")).quadroReinternacao(
-            contam.map((r) => ({
-              nome: r.nome, prontuario: r.prontuario, admissao: r.admissao ? formatarData(r.admissao) : "", data: formatarData(r.data), motivo: r.motivo ?? "",
-            })),
-            lista.length - contam.length,
-          )}
+          quadro={() => pdfReinternacao(lista)}
         />
       }
     >

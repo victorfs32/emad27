@@ -12,6 +12,12 @@ type Resposta = "sim" | "nao" | "";
 const paraResposta = (v: boolean | null): Resposta => (v === true ? "sim" : v === false ? "nao" : "");
 const GRADE = "grid-cols-[5rem_minmax(0,1.3fr)_minmax(0,1fr)]";
 
+export async function pdfObitos(obitos: Obito[]) {
+  return (await import("@/lib/indicadores-pdf")).quadroObitos(obitos.map((o) => ({
+    nome: o.nome, prontuario: o.prontuario, data: o.data ? formatarData(o.data) : "", doPrograma: o.doPrograma, justificativa: o.justificativa ?? "",
+  })));
+}
+
 export function SecaoObitos({ obitos, semData, editar, comum }: { obitos: Obito[]; semData: Obito[]; editar: boolean; comum: Comum }) {
   const pendentes = obitos.filter((o) => o.doPrograma === null || (o.doPrograma === false && !o.justificativa)).length;
   return (
@@ -22,9 +28,7 @@ export function SecaoObitos({ obitos, semData, editar, comum }: { obitos: Obito[
         <>
           <BotaoPdf
             comum={comum} rotulo="Baixar PDF de óbitos"
-            quadro={async () => (await import("@/lib/indicadores-pdf")).quadroObitos(obitos.map((o) => ({
-              nome: o.nome, prontuario: o.prontuario, data: o.data ? formatarData(o.data) : "", doPrograma: o.doPrograma, justificativa: o.justificativa ?? "",
-            })))}
+            quadro={() => pdfObitos(obitos)}
           />
           {pendentes > 0 && <span className="text-sm font-semibold text-danger-strong">{pendentes} sem a resposta da DO ou a justificativa.</span>}
         </>
