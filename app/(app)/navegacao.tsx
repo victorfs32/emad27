@@ -6,7 +6,7 @@ import { useState } from "react";
 import { sair } from "../actions";
 import {
   IconeEscudo as IconeEquipe, IconeDispositivo, IconeLesao, IconeVisita, IconeProcedimento, IconeArquivo, IconeCalendario, IconeCasa, IconeEscudo, IconeFechar, IconeMais, IconeMapa,
-  IconeMenu, IconePessoas, IconePrescricao, IconeSair,
+  IconeMenu, IconePessoas, IconePrancheta, IconePrescricao, IconeSair,
 } from "./icones";
 
 type Props = {
@@ -44,6 +44,7 @@ export function Navegacao({ nome, cadastrados, dispositivos, lesoes, visitas, ar
     { href: "/documentos", rotulo: "Documentos", icone: IconeArquivo, n: null as number | null, ativo: rota === "/documentos" },
     { href: "/agenda", rotulo: "Agenda do mês", icone: IconeCalendario, n: null as number | null, ativo: rota === "/agenda" },
     { href: "/enderecos", rotulo: "Endereços", icone: IconeMapa, n: null as number | null, ativo: rota === "/enderecos" },
+    { href: "/indicadores", rotulo: "Indicadores", icone: IconePrancheta, n: null as number | null, ativo: rota === "/indicadores" },
     { href: "/proximas-visitas", rotulo: "Próximas visitas", icone: IconeCalendario, n: visitas, ativo: rota === "/proximas-visitas" },
     { href: "/arquivados", rotulo: "Arquivados", icone: IconeArquivo, n: arquivados, ativo: rota === "/arquivados" },
     ...(admin ? [{ href: "/equipe", rotulo: "Equipe", icone: IconeEquipe, n: null as number | null, ativo: rota === "/equipe" }] : []),

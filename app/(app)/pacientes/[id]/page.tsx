@@ -133,6 +133,10 @@ function Identificacao({ f, idade }: { f: Ficha; idade: number | null }) {
           <Dado rotulo="Data" valor={f.situacao_data ? formatarData(f.situacao_data) : "Não informado"} />
           <Dado rotulo="Motivo" valor={valorOuNI(f.situacao_motivo)} />
           <Dado rotulo="Observações" valor={valorOuNI(f.situacao_obs)} />
+          {f.situacao === "obito" && <Dado rotulo="DO fornecida pelo Programa" valor={simNao(f.obito_do_programa)} />}
+          {f.situacao === "obito" && f.obito_do_programa === false && (
+            <Dado rotulo="Justificativa (DO não fornecida)" valor={valorOuNI(f.obito_do_justificativa)} largo />
+          )}
         </Grade>
       </Secao>
     </div>

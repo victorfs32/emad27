@@ -454,6 +454,22 @@ export async function buscarCepDaRua(rua: string, municipio: string, bairro: str
   return { lista: lista.slice(0, 12) };
 }
 
+/** Indicador de óbitos: a DO foi fornecida pelo Programa? Se não, a justificativa. Exige "editar". */
+export async function definirDoObito(pacienteId: number, fornecida: "sim" | "nao" | "", justificativa: string): Promise<{ erro?: string }> {
+  await exigirPermissao("editar");
+  if (!Number.isSafeInteger(pacienteId)) return { erro: "Paciente inválido." };
+  const valor = fornecida === "sim" ? true : fornecida === "nao" ? false : null;
+  const texto = String(justificativa ?? "").trim().slice(0, 500);
+  const sb = await supabaseServidor();
+  const r = await sb.rpc("definir_obito_do", { p_id: pacienteId, p_fornecida: valor, p_justificativa: valor === false ? texto : null });
+  if (r.error) {
+    console.error("[definirDoObito]", r.error.code ?? r.error.message);
+    return { erro: r.error.code === "PGRST202" ? "Falta rodar a migração v19 no Supabase." : "Não foi possível salvar. Tente novamente." };
+  }
+  revalidatePath("/indicadores");
+  return {};
+}
+
 export type AjustesAgenda = { meta: number; maxPorDia: number; diasSemana: number[]; folgas: string[]; atender: string[] };
 
 /**

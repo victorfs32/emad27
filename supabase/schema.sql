@@ -113,6 +113,8 @@ create table if not exists public.pacientes (
   observacoes text,
   usa_cama_pmec boolean,
   usa_aspirador_pmec boolean,
+  obito_do_programa boolean,
+  obito_do_justificativa text,
   colostomia boolean,
   criado_em timestamptz not null default now(),
   criado_por uuid default auth.uid() references auth.users(id) on delete set null,
@@ -128,6 +130,8 @@ create index if not exists ix2_pac_uaps on public.pacientes (uaps_id);
 alter table public.pacientes add column if not exists nome_pai text;
 alter table public.pacientes add column if not exists usa_cama_pmec boolean;
 alter table public.pacientes add column if not exists usa_aspirador_pmec boolean;
+alter table public.pacientes add column if not exists obito_do_programa boolean;
+alter table public.pacientes add column if not exists obito_do_justificativa text;
 alter table public.pacientes add column if not exists colostomia boolean;
 alter table public.pacientes add column if not exists sexo text check (sexo in ('F','M'));
 alter table public.pacientes add column if not exists nome_social text;
@@ -274,7 +278,8 @@ declare
     'data_nascimento, admissao, cpf, cns, rg, nome_mae, nome_pai, cep, municipio, bairro, rua, numero, complemento, referencia, '
     'fisio, fisio_frequencia, fisio_obs, dieta_vias, dieta_outra, dieta_obs, diurese, diurese_outra, usa_fralda, continencia, '
     'tqt, tqt_canula_tipo, tqt_calibre, tqt_ultima_troca, tqt_obs, lpp, o2, o2_dispositivo, o2_fluxo, o2_regime, o2_obs, '
-    'proxima_visita, observacoes, usa_cama_pmec, colostomia, sexo, nome_social, acs, usa_aspirador_pmec';
+    'proxima_visita, observacoes, usa_cama_pmec, colostomia, sexo, nome_social, acs, usa_aspirador_pmec, '
+    'obito_do_programa, obito_do_justificativa';
   ant jsonb; dep jsonb; t record; linhas int;
 begin
   if p_id is null then
@@ -823,6 +828,22 @@ revoke execute on function public.atualizar_meu_cadastro(text, text, text, text,
 grant execute on function public.atualizar_meu_cadastro(text, text, text, text, text, text) to authenticated;
 
 notify pgrst, 'reload schema';
+
+-- ================================================================ versão 19: indicador de óbitos (DO fornecida pelo Programa)
+create or replace function public.definir_obito_do(p_id bigint, p_fornecida boolean, p_justificativa text) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.perm('editar') then raise exception 'Sem permissão para editar.' using errcode = '42501'; end if;
+  if length(coalesce(p_justificativa, '')) > 500 then raise exception 'Justificativa longa demais.'; end if;
+  update public.pacientes
+     set obito_do_programa = p_fornecida,
+         obito_do_justificativa = case when p_fornecida is distinct from false then null else nullif(trim(p_justificativa), '') end
+   where id = p_id and situacao = 'obito';
+  if not found then raise exception 'Paciente não encontrado ou não está com situação óbito.'; end if;
+end $$;
+
+revoke execute on function public.definir_obito_do(bigint, boolean, text) from public, anon;
+grant execute on function public.definir_obito_do(bigint, boolean, text) to authenticated;
 
 -- ================================================================ versão 18: segurança das funções
 -- Quem não fez login (anon) não chama nenhuma função; as funções novas também nascem sem essa permissão.

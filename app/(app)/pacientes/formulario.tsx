@@ -326,6 +326,18 @@ export function FormularioPaciente({ id, inicial, uapss, bairros }: Props) {
             <Campo rotulo="Observações" largo>
               <textarea value={d.situacao_obs} onChange={(e) => set("situacao_obs", e.target.value)} rows={2} className="campo" />
             </Campo>
+            {d.situacao === "obito" && (
+              <>
+                <Campo rotulo="Declaração de óbito (DO) fornecida pelo Programa?" largo>
+                  <Tri valor={d.obito_do_programa} onChange={(v) => set("obito_do_programa", v)} />
+                </Campo>
+                {d.obito_do_programa === "nao" && (
+                  <Campo rotulo="Por que a DO não foi fornecida pelo Programa?" largo dica="Sai no indicador de óbitos enviado à gestão.">
+                    <textarea value={d.obito_do_justificativa} onChange={(e) => set("obito_do_justificativa", e.target.value)} rows={2} maxLength={500} className="campo" />
+                  </Campo>
+                )}
+              </>
+            )}
           </Condicional>
         )}
 
