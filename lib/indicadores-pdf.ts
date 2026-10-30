@@ -34,9 +34,9 @@ const limpar = (t: string) => t.replace(/[‘’]/g, "'").replace(/[^\x09\x0A\x0
 
 type AutoTable = typeof import("jspdf-autotable").default;
 
-async function novoDoc(titulo: string, d: Comum) {
+async function novoDoc(titulo: string, d: Comum, deitado = false) {
   const [{ jsPDF }, tabela] = await Promise.all([import("jspdf"), import("jspdf-autotable")]);
-  const doc: JsPDF = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait", compress: true });
+  const doc: JsPDF = new jsPDF({ unit: "mm", format: "a4", orientation: deitado ? "landscape" : "portrait", compress: true });
   doc.setProperties({ title: `${titulo} — ${d.nomeMes}`, author: `EMAD ${d.emad}`, subject: "Indicadores mensais", creator: "EMAD 27 — Programa Melhor em Casa" });
   return { doc, autoTable: tabela.default };
 }
@@ -48,11 +48,18 @@ type Opcoes = {
   /** Letras e espaços menores, para caber vários quadros na mesma folha. */
   compacto: boolean;
   assinatura: boolean;
+  /** Faixa horizontal da folha onde o quadro é desenhado (para duas colunas na paisagem). */
+  x0?: number;
+  x1?: number;
 };
 
 /** Desenha um quadro na página atual do documento; devolve a altura (y) onde ele terminou. */
 function desenharQuadro(doc: JsPDF, autoTable: AutoTable, q: Quadro, d: Comum, o: Opcoes): number {
-  const X0 = 15, X1 = 195, LARG = X1 - X0, MEIO = 105;
+  // Medidas da folha (retrato ou paisagem); as larguras fixas das colunas crescem na mesma proporção.
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+  const PX0 = W > H ? 12 : 15, PX1 = W - PX0;
+  const X0 = o.x0 ?? PX0, X1 = o.x1 ?? PX1, LARG = X1 - X0, MEIO = (X0 + X1) / 2, FUNDO = H - 15;
+  const escala = LARG / 180;
   const k = o.compacto ? 0.76 : 1;
   const fonte = (tam: number, estilo: "normal" | "bold" = "normal", cor: Cor = TINTA) => {
     doc.setFont("helvetica", estilo);
@@ -62,7 +69,7 @@ function desenharQuadro(doc: JsPDF, autoTable: AutoTable, q: Quadro, d: Comum, o
 
   let y = o.y ?? 12;
   const garantir = (altura: number) => {
-    if (y + altura > 280) {
+    if (y + altura > FUNDO) {
       doc.addPage();
       y = 14;
     }
@@ -71,14 +78,14 @@ function desenharQuadro(doc: JsPDF, autoTable: AutoTable, q: Quadro, d: Comum, o
   // cabeçalho
   if (o.cabecalho) {
     const larguraLogo = o.compacto ? 34 : 44;
-    desenharLogo(doc, X0, 10, larguraLogo);
+    desenharLogo(doc, PX0, 10, larguraLogo);
     fonte(o.compacto ? 14 : 16, "bold");
-    doc.text("INDICADORES", X1, 17, { align: "right" });
+    doc.text("INDICADORES", PX1, 17, { align: "right" });
     fonte(o.compacto ? 9.5 : 11, "normal", [70, 85, 85]);
-    doc.text(limpar(`${d.nomeMes} · EMAD ${d.emad} — Programa Melhor em Casa`), X1, 22.5, { align: "right" });
+    doc.text(limpar(`${d.nomeMes} · EMAD ${d.emad} — Programa Melhor em Casa`), PX1, 22.5, { align: "right" });
     fonte(o.compacto ? 7.5 : 8.5, "normal", APAGADO);
-    const equipe = doc.splitTextToSize(limpar(EQUIPE.map(([f, n]) => `${f}: ${n}`).join(" · ")), 120) as string[];
-    doc.text(equipe, X1, 27.5, { align: "right", lineHeightFactor: 1.35 });
+    const equipe = doc.splitTextToSize(limpar(EQUIPE.map(([f, n]) => `${f}: ${n}`).join(" · ")), W > H ? 200 : 120) as string[];
+    doc.text(equipe, PX1, 27.5, { align: "right", lineHeightFactor: 1.35 });
     y = 10 + larguraLogo * PROPORCAO_LOGO + (o.compacto ? 4 : 8);
   }
 
@@ -103,16 +110,16 @@ function desenharQuadro(doc: JsPDF, autoTable: AutoTable, q: Quadro, d: Comum, o
 
   autoTable(doc, {
     startY: y,
-    margin: { left: X0, right: 210 - X1, top: 14 },
+    margin: { left: X0, right: W - X1, top: 14 },
     head: [[{ content: "EMAD", styles: { halign: "center" } }, ...q.colunas.map((c) => ({ content: c.titulo, styles: { halign: c.centro ? "center" as const : "left" as const } }))]],
     body: corpo,
     theme: "grid",
     styles: { font: "helvetica", fontSize: 9.5 * k, cellPadding: o.compacto ? 1 : 2.4, textColor: TINTA, lineColor: [40, 40, 40], lineWidth: 0.3, valign: "middle" },
     headStyles: { fillColor: q.corCabecalho, textColor: TINTA, fontStyle: "bold", fontSize: 9.5 * k, valign: "middle" },
     columnStyles: Object.fromEntries([
-      [0, { cellWidth: 20 }],
+      [0, { cellWidth: 20 * escala }],
       ...q.colunas.map((c, i) => [i + 1, {
-        cellWidth: c.largura ?? "auto",
+        cellWidth: c.largura ? c.largura * escala : "auto",
         halign: c.centro ? "center" : "left",
         fontStyle: c.negrito ? "bold" : "normal",
         ...(c.pequeno ? { fontSize: 8.5 * k, textColor: [70, 85, 85] } : {}),
@@ -141,7 +148,7 @@ function desenharQuadro(doc: JsPDF, autoTable: AutoTable, q: Quadro, d: Comum, o
     garantir(8 + q.legenda.itens.length * 6);
     autoTable(doc, {
       startY: y,
-      margin: { left: X0, right: 210 - X1 },
+      margin: { left: X0, right: W - X1 },
       body: q.legenda.itens.map((it, i) => (i === 0
         ? [{ content: limpar(q.legenda!.titulo), rowSpan: q.legenda!.itens.length, styles: { fontStyle: "bold" as const, halign: "center" as const, valign: "middle" as const } }, limpar(it)]
         : [limpar(it)])),
@@ -170,9 +177,10 @@ function desenharQuadro(doc: JsPDF, autoTable: AutoTable, q: Quadro, d: Comum, o
     doc.text(`Fortaleza, ${dataPorExtenso(d.hoje)}`, X0, yLinha);
     doc.setDrawColor(75, 85, 85);
     doc.setLineWidth(0.25);
-    doc.line(110, yLinha, X1, yLinha);
+    const inicioLinha = Math.max(X0 + 66, X1 - 85);
+    doc.line(inicioLinha, yLinha, X1, yLinha);
     fonte(8.5);
-    doc.text("Assinatura e carimbo do responsável", 152, yLinha + 4, { align: "center" });
+    doc.text("Assinatura e carimbo do responsável", (inicioLinha + X1) / 2, yLinha + 4, { align: "center" });
     return yLinha + 4;
   }
   garantir(45);
@@ -195,8 +203,9 @@ function rodape(doc: JsPDF, d: Comum, tituloDaPagina: (p: number) => string) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(110, 120, 120);
-    doc.text(limpar(`EMAD ${d.emad} — Programa Melhor em Casa · ${tituloDaPagina(p)} · ${d.nomeMes}`), 105, 287, { align: "center" });
-    if (paginas > 1) doc.text(`${p}/${paginas}`, 195, 287, { align: "right" });
+    const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+    doc.text(limpar(`EMAD ${d.emad} — Programa Melhor em Casa · ${tituloDaPagina(p)} · ${d.nomeMes}`), W / 2, H - 8, { align: "center" });
+    if (paginas > 1) doc.text(`${p}/${paginas}`, W - 12, H - 8, { align: "right" });
   }
 }
 
@@ -207,12 +216,45 @@ async function montarQuadro(q: Quadro, d: Comum): Promise<{ doc: JsPDF; nomeArqu
   return { doc, nomeArquivo: `${q.arquivo}-emad${d.emad}-${d.mes}.pdf` };
 }
 
-/** Todos os quadros num PDF só, um embaixo do outro na mesma folha (só passa para a próxima se não couber). */
+/** Desenha só o cabeçalho (logo, mês, equipe) na largura toda da folha; devolve onde ele termina. */
+function cabecalho(doc: JsPDF, d: Comum): number {
+  const W = doc.internal.pageSize.getWidth();
+  const larguraLogo = 30;
+  desenharLogo(doc, 12, 8, larguraLogo);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(...TINTA);
+  doc.text("INDICADORES", W - 12, 14, { align: "right" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9.5);
+  doc.setTextColor(70, 85, 85);
+  doc.text(limpar(`${d.nomeMes} · EMAD ${d.emad} — Programa Melhor em Casa`), W - 12, 19.5, { align: "right" });
+  doc.setFontSize(7.5);
+  doc.setTextColor(...APAGADO);
+  doc.text(limpar(EQUIPE.map(([f, n]) => `${f}: ${n}`).join(" · ")), W - 12, 24, { align: "right" });
+  return 8 + larguraLogo * PROPORCAO_LOGO + 3;
+}
+
+/**
+ * Todos os quadros num PDF só, na horizontal (A4 paisagem), numa folha:
+ * coluna da esquerda com os 3 primeiros quadros, coluna da direita com os outros e a assinatura.
+ */
 async function montarTodos(quadros: Quadro[], d: Comum): Promise<{ doc: JsPDF; nomeArquivo: string }> {
-  const { doc, autoTable } = await novoDoc("Indicadores", d);
-  let y: number | undefined;
-  quadros.forEach((q, i) => {
-    y = desenharQuadro(doc, autoTable, q, d, { cabecalho: i === 0, y: i === 0 ? undefined : (y ?? 14) + 2.5, compacto: true, assinatura: i === quadros.length - 1 });
+  const { doc, autoTable } = await novoDoc("Indicadores", d, true);
+  const W = doc.internal.pageSize.getWidth();
+  const meio = W / 2, vao = 3;
+  const topo = cabecalho(doc, d);
+  const esquerda = quadros.slice(0, 3), direita = quadros.slice(3);
+  let y = topo;
+  esquerda.forEach((q) => {
+    y = desenharQuadro(doc, autoTable, q, d, { cabecalho: false, y, compacto: true, assinatura: false, x0: 12, x1: meio - vao }) + 2.5;
+  });
+  doc.setPage(1);
+  y = topo;
+  direita.forEach((q, i) => {
+    y = desenharQuadro(doc, autoTable, q, d, {
+      cabecalho: false, y, compacto: true, assinatura: i === direita.length - 1, x0: meio + vao, x1: W - 12,
+    }) + 2.5;
   });
   rodape(doc, d, () => "Indicadores do mês");
   return { doc, nomeArquivo: `indicadores-emad${d.emad}-${d.mes}.pdf` };
