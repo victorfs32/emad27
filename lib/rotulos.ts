@@ -2,10 +2,12 @@ import {
   CONTINENCIA, DIURESE, FISIO, SITUACOES, VIAS_DIETA, formatarData, rotulo, simNao,
 } from "./opcoes";
 import { formatarCns, formatarCpf, formatarTelefone } from "./validacao";
+import { rotuloTipoAlta } from "./indicadores-opcoes";
 
 const NOMES: Record<string, string> = {
   prontuario: "Prontuário", nome: "Nome", nome_social: "Nome social", acs: "ACS", uaps_id: "UAPS", situacao: "Situação", modalidade: "Modalidade",
-  situacao_data: "Data da situação", obito_do_programa: "DO fornecida pelo Programa", obito_do_justificativa: "Justificativa (DO não fornecida)", situacao_motivo: "Motivo da situação", situacao_obs: "Observações da situação",
+  situacao_data: "Data da situação", obito_do_programa: "DO fornecida pelo Programa", obito_do_justificativa: "Justificativa (DO não fornecida)",
+  motivo_permanencia: "Motivo da permanência (AD1)", alta_tipo: "Tipo de alta", situacao_motivo: "Motivo da situação", situacao_obs: "Observações da situação",
   data_nascimento: "Data de nascimento", admissao: "Admissão", cpf: "CPF", cns: "CNS", rg: "RG", nome_mae: "Nome da mãe", nome_pai: "Nome do pai", sexo: "Sexo",
   cep: "CEP", municipio: "Município", bairro: "Bairro", rua: "Rua", numero: "Número", complemento: "Complemento",
   referencia: "Ponto de referência", fisio: "Fisioterapia", fisio_frequencia: "Frequência da fisioterapia",
@@ -27,6 +29,7 @@ export function valorLegivel(campo: string, v: unknown, uapss: Map<number, strin
   const s = String(v);
   switch (campo) {
     case "situacao": return rotulo(SITUACOES, s) ?? s;
+    case "alta_tipo": return rotuloTipoAlta(s) ?? s;
     case "sexo": return s === "F" ? "Feminino" : s === "M" ? "Masculino" : s;
     case "fisio": return rotulo(FISIO, s) ?? s;
     case "diurese": return rotulo(DIURESE, s) ?? s;

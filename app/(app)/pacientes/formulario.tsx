@@ -9,6 +9,7 @@ import {
 } from "@/lib/opcoes";
 import { formatarCep, formatarCns, formatarCpf, formatarTelefone, soDigitos } from "@/lib/validacao";
 import type { DadosForm, Duplicado, TriEstado } from "@/lib/formulario";
+import { TIPOS_ALTA } from "@/lib/indicadores-opcoes";
 import { IconeFechar, IconeMais } from "../icones";
 
 type Props = {
@@ -319,10 +320,24 @@ export function FormularioPaciente({ id, inicial, uapss, bairros }: Props) {
           </select>
         </Campo>
 
+        {d.modalidade === "AD1" && (
+          <Campo rotulo="Motivo da permanência no programa (AD1)" largo dica="Ex.: uso de dispositivo (SVD, GTT, TQT…), judicializado, cama ou oxigênio do Programa, lesão por pressão, paliativo, reabilitação. Sai no indicador de AD1.">
+            {texto("motivo_permanencia", { maxLength: 300 })}
+          </Campo>
+        )}
+
         {d.situacao !== "ativo" && (
           <Condicional>
             <Campo rotulo="Data da alta / mudança de situação">{texto("situacao_data", { type: "date" })}</Campo>
             <Campo rotulo="Motivo">{texto("situacao_motivo")}</Campo>
+            {(d.situacao === "alta" || d.situacao === "transferido") && (
+              <Campo rotulo="Tipo de alta" largo dica="Sai no indicador de altas.">
+                <select value={d.alta_tipo} onChange={(e) => set("alta_tipo", e.target.value)} className="campo">
+                  <option value="">Não informado</option>
+                  {TIPOS_ALTA.map((t) => <option key={t.valor} value={t.valor}>{t.rotulo}</option>)}
+                </select>
+              </Campo>
+            )}
             <Campo rotulo="Observações" largo>
               <textarea value={d.situacao_obs} onChange={(e) => set("situacao_obs", e.target.value)} rows={2} className="campo" />
             </Campo>
