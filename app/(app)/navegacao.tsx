@@ -6,7 +6,7 @@ import { useState } from "react";
 import { sair } from "../actions";
 import {
   IconeEscudo as IconeEquipe, IconeDispositivo, IconeLesao, IconeVisita, IconeProcedimento, IconeArquivo, IconeCalendario, IconeCasa, IconeEscudo, IconeFechar, IconeMais, IconeMapa,
-  IconeMenu, IconePessoas, IconePrancheta, IconePrescricao, IconeSair,
+  IconeCoracao, IconeMenu, IconePessoas, IconePrancheta, IconePrescricao, IconeSair,
 } from "./icones";
 
 type Props = {
@@ -40,6 +40,7 @@ export function Navegacao({ nome, cadastrados, dispositivos, lesoes, visitas, ar
     { href: "/lesoes", rotulo: "Lesões", icone: IconeLesao, n: lesoes as number | null, ativo: rota === "/lesoes" },
     { href: "/visitas", rotulo: "Visitas", icone: IconeVisita, n: visitasMes as number | null, ativo: rota === "/visitas" },
     { href: "/procedimentos", rotulo: "Procedimentos", icone: IconeProcedimento, n: procedimentosMes as number | null, ativo: rota === "/procedimentos" },
+    { href: "/evolucoes", rotulo: "Evolução clínica", icone: IconeCoracao, n: null as number | null, ativo: rota === "/evolucoes" },
     { href: "/prescricoes", rotulo: "Prescrições", icone: IconePrescricao, n: null as number | null, ativo: rota === "/prescricoes" || rota.startsWith("/pacientes/") && rota.includes("/prescricoes") },
     { href: "/documentos", rotulo: "Documentos", icone: IconeArquivo, n: null as number | null, ativo: rota === "/documentos" },
     { href: "/agenda", rotulo: "Agenda do mês", icone: IconeCalendario, n: null as number | null, ativo: rota === "/agenda" },
