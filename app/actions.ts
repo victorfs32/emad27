@@ -11,6 +11,7 @@ import {
 } from "@/lib/pacientes";
 import { criarUsuario, trocarSenhaPropria, type DadosNovoUsuario } from "@/lib/usuarios";
 import { problemaNaIdentificacao, type IdentificacaoProfissional } from "@/lib/profissional";
+import { categoriaPorCargo } from "@/lib/evolucao-regras";
 import { consultarCep, procurarCepPorRua, type EnderecoCep, type ResultadoCep } from "@/lib/cep";
 import type { DadosForm, ResultadoSalvar } from "@/lib/formulario";
 import { TIPOS_EVOLUCAO, TIPO_VISITA, hojeISO } from "@/lib/opcoes";
@@ -516,6 +517,41 @@ export async function salvarBuscaAtiva(data: string, paciente: string, situacao:
 export async function removerBuscaAtiva(id: number): Promise<{ erro?: string }> {
   if (!idOk(id)) return { erro: "Registro inválido." };
   return rpcIndicador("remover_busca_ativa", { p_id: id });
+}
+
+export type DadosEvolucao = {
+  dataHora: string; pa: string; fc: string; fr: string; temperatura: string; spo2: string; glicemia: string; dor: string;
+  evolucao: string; conduta: string;
+};
+
+/** Registra uma evolução clínica. Só médicos e enfermeiros (pelo cargo em Conta); não pode ser alterada depois. */
+export async function registrarEvolucaoClinica(pacienteId: number, d: DadosEvolucao): Promise<{ erro?: string }> {
+  const eu = await exigirUsuario();
+  if (!categoriaPorCargo(eu.cargo)) return { erro: "Somente médicos e enfermeiros registram evolução. Confira seu cargo em Conta." };
+  if (!Number.isSafeInteger(pacienteId)) return { erro: "Escolha o paciente." };
+  const evolucao = String(d.evolucao ?? "").trim();
+  if (evolucao.length < 3) return { erro: "Escreva a evolução." };
+  if (d.dor && !/^(10|[0-9])$/.test(d.dor)) return { erro: "A dor vai de 0 a 10." };
+  // Data e hora digitadas no horário de Fortaleza (sem horário de verão).
+  const dataHora = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(d.dataHora ?? "") ? `${d.dataHora}:00-03:00` : "";
+  if (dataHora && Date.parse(dataHora) > Date.now() + 5 * 60000) return { erro: "A data da evolução não pode ser futura." };
+  const sb = await supabaseServidor();
+  const r = await sb.rpc("registrar_evolucao_clinica", {
+    p_paciente: pacienteId,
+    p: {
+      data_hora: dataHora, pa: d.pa, fc: d.fc, fr: d.fr, temperatura: d.temperatura, spo2: d.spo2, glicemia: d.glicemia, dor: d.dor,
+      evolucao: evolucao.slice(0, 8000), conduta: String(d.conduta ?? "").trim().slice(0, 4000),
+    },
+  });
+  if (r.error) {
+    console.error("[registrarEvolucaoClinica]", r.error.code ?? r.error.message);
+    if (r.error.code === "PGRST202") return { erro: "Falta rodar a migração v20 no Supabase." };
+    if (r.error.code === "P0001" || r.error.code === "42501") return { erro: r.error.message };
+    return { erro: "Não foi possível salvar a evolução. Tente novamente." };
+  }
+  revalidatePath("/evolucoes");
+  revalidatePath(`/pacientes/${pacienteId}`);
+  return {};
 }
 
 export type AjustesAgenda = { meta: number; maxPorDia: number; diasSemana: number[]; folgas: string[]; atender: string[] };

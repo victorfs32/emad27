@@ -72,6 +72,9 @@ export default async function Ficha({ params, searchParams }: PageProps<"/pacien
           </div>
         </div>
         <div className="flex flex-wrap items-start gap-2">
+          <Link href={`/evolucoes?paciente=${ficha.id}`} className="inline-flex min-h-11 items-center rounded-2xl bg-white px-5 text-sm font-bold text-accent shadow-card hover:bg-accent-soft">
+            Evolução clínica
+          </Link>
           {usuario.perms.exportar && <BotaoRelatorio pacienteId={ficha.id} />}
           {usuario.perms.exportar && <BotaoCapa pacienteId={ficha.id} />}
           {editar && (
