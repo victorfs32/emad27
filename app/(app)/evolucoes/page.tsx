@@ -4,7 +4,7 @@ import { exigirUsuario } from "@/lib/auth";
 import { categoriaPorCargo } from "@/lib/evolucao-regras";
 import { listarEvolucoesClinicas, pacienteParaEvolucao } from "@/lib/evolucoes";
 import { listarPacientesBasico } from "@/lib/pacientes";
-import { calcularIdade, formatarData, hojeISO } from "@/lib/opcoes";
+import { agoraLocalISO, calcularIdade, formatarData, hojeISO } from "@/lib/opcoes";
 import { formatarCns } from "@/lib/validacao";
 import { EscolherPaciente } from "./escolher-paciente";
 import { PainelEvolucoes } from "./painel";
@@ -60,6 +60,7 @@ export default async function Evolucoes({ searchParams }: PageProps<"/evolucoes"
           categoria={categoria}
           autor={{ nome: usuario.nome, cargo: usuario.cargo, registro: usuario.registro }}
           hoje={hojeISO()}
+          agora={agoraLocalISO()}
         />
       )}
     </div>

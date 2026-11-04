@@ -8,18 +8,16 @@ import { IconeBaixar } from "../icones";
 
 type Props = {
   pacienteId: number; pacientePdf: PacientePdf; evolucoes: EvolucaoClinica[]; faltaMigracao: boolean;
-  categoria: CategoriaEvolucao | null; autor: { nome: string; cargo: string; registro: string }; hoje: string;
+  categoria: CategoriaEvolucao | null; autor: { nome: string; cargo: string; registro: string }; hoje: string; agora: string;
 };
 
-/** Agora no horário de Fortaleza, no formato do campo datetime-local. */
-const agoraLocal = () => new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 16);
 
 async function baixar(p: PacientePdf, lista: EvolucaoClinica[]) {
   const { baixarEvolucoesPdf } = await import("@/lib/evolucao-pdf");
   await baixarEvolucoesPdf(p, lista);
 }
 
-export function PainelEvolucoes({ pacienteId, pacientePdf, evolucoes, faltaMigracao, categoria, autor }: Props) {
+export function PainelEvolucoes({ pacienteId, pacientePdf, evolucoes, faltaMigracao, categoria, autor, agora }: Props) {
   const [gerando, setGerando] = useState<number | "todas" | null>(null);
   const [erroPdf, setErroPdf] = useState("");
 
@@ -44,7 +42,7 @@ export function PainelEvolucoes({ pacienteId, pacientePdf, evolucoes, faltaMigra
         </p>
       )}
 
-      {categoria && !faltaMigracao && <FormEvolucao pacienteId={pacienteId} categoria={categoria} autor={autor} />}
+      {categoria && !faltaMigracao && <FormEvolucao pacienteId={pacienteId} categoria={categoria} autor={autor} agora={agora} />}
 
       <section className="grid gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -111,8 +109,8 @@ export function PainelEvolucoes({ pacienteId, pacientePdf, evolucoes, faltaMigra
 
 const VAZIO: DadosEvolucao = { dataHora: "", pa: "", fc: "", fr: "", temperatura: "", spo2: "", glicemia: "", dor: "", evolucao: "", conduta: "" };
 
-function FormEvolucao({ pacienteId, categoria, autor }: { pacienteId: number; categoria: CategoriaEvolucao; autor: Props["autor"] }) {
-  const [d, setD] = useState<DadosEvolucao>({ ...VAZIO, dataHora: agoraLocal() });
+function FormEvolucao({ pacienteId, categoria, autor, agora }: { pacienteId: number; categoria: CategoriaEvolucao; autor: Props["autor"]; agora: string }) {
+  const [d, setD] = useState<DadosEvolucao>({ ...VAZIO, dataHora: agora });
   const [aviso, setAviso] = useState<{ ok: boolean; texto: string } | null>(null);
   const [pendente, iniciar] = useTransition();
   const set = (k: keyof DadosEvolucao, v: string) => setD((p) => ({ ...p, [k]: v }));
@@ -126,7 +124,7 @@ function FormEvolucao({ pacienteId, categoria, autor }: { pacienteId: number; ca
       if (r.erro) setAviso({ ok: false, texto: r.erro });
       else {
         setAviso({ ok: true, texto: "Evolução salva no histórico do paciente." });
-        setD({ ...VAZIO, dataHora: agoraLocal() });
+        setD({ ...VAZIO, dataHora: agora });
       }
     });
   }
