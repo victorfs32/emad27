@@ -23,7 +23,7 @@ export default async function Diario({ searchParams }: PageProps<"/diario">) {
         </p>
       </header>
       <PainelDiario
-        key={data}
+        key={`${data}-${diario.atendimentos.map((a) => a.id).join(".")}`}
         data={data}
         hoje={hoje}
         turnoAgora={Number(agoraLocalISO().slice(11, 13)) < 12 ? "manha" : "tarde"}

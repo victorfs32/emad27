@@ -612,6 +612,39 @@ export async function salvarAtendimentoDiario(id: number | null, d: DadosAtendim
   return {};
 }
 
+export type LinhaFolha = DadosAtendimento & { id: number | null };
+
+/**
+ * Salva a folha do dia inteira, como no papel: equipe, anotações e as linhas de atendimento.
+ * Linha nova com paciente é criada; linha já salva é atualizada; linha já salva que ficou sem paciente é removida.
+ */
+export async function salvarFolhaDiario(
+  data: string, equipe: Equipe, anotacoes: string, linhas: LinhaFolha[],
+): Promise<{ erro?: string; erros?: string[] }> {
+  await exigirPermissao("editar");
+  if (!dataValida(data)) return { erro: "Data inválida." };
+  const r = await salvarDiaDiario(data, equipe, anotacoes);
+  if (r.erro) return r;
+  const erros: string[] = [];
+  const porTurno: Record<string, number> = { manha: 0, tarde: 0 };
+  for (const l of (Array.isArray(linhas) ? linhas : []).slice(0, 80)) {
+    const n = ++porTurno[l.turno === "tarde" ? "tarde" : "manha"];
+    const rotulo = `${l.turno === "tarde" ? "Tarde" : "Manhã"}, linha ${n}`;
+    const vazia = !l.pacienteId && !String(l.pacienteNome ?? "").trim();
+    if (vazia) {
+      if (l.id && Number.isSafeInteger(l.id)) {
+        const x = await removerAtendimentoDiario(l.id);
+        if (x.erro) erros.push(`${rotulo}: ${x.erro}`);
+      }
+      continue;
+    }
+    const x = await salvarAtendimentoDiario(l.id && Number.isSafeInteger(l.id) ? l.id : null, { ...l, data });
+    if (x.erro) erros.push(`${rotulo}: ${x.erro}`);
+  }
+  revalidatePath("/", "layout");
+  return erros.length ? { erro: "Algumas linhas não foram salvas.", erros } : {};
+}
+
 /** Dias e atendimentos do mês, para o PDF do mês. */
 export async function dadosDiarioMes(mes: string): Promise<{ erro?: string; dias?: DiaDiario[]; atendimentos?: Atendimento[] }> {
   await exigirUsuario();
