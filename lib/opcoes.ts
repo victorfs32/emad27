@@ -86,6 +86,11 @@ export function formatarDataHora(iso: string) {
 }
 
 /** Data de hoje (yyyy-mm-dd) no fuso de Brasília; o servidor da Vercel roda em UTC. */
+/** Data e hora agora em Fortaleza, no formato do campo datetime-local (aaaa-mm-ddThh:mm). */
+export function agoraLocalISO() {
+  return new Date().toLocaleString("sv-SE", { timeZone: "America/Fortaleza", hour12: false }).replace(" ", "T").slice(0, 16);
+}
+
 export function hojeISO(deslocamentoDias = 0) {
   const agora = new Date(Date.now() + deslocamentoDias * 86400000);
   return agora.toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });

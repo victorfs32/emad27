@@ -12,6 +12,8 @@ import {
 import { criarUsuario, trocarSenhaPropria, type DadosNovoUsuario } from "@/lib/usuarios";
 import { problemaNaIdentificacao, type IdentificacaoProfissional } from "@/lib/profissional";
 import { categoriaPorCargo } from "@/lib/evolucao-regras";
+import { FUNCOES_EQUIPE, PROCEDIMENTOS_DIARIO, PROFISSIONAIS, SINAIS, TURNOS, type Atendimento, type DiaDiario, type Equipe } from "@/lib/diario-opcoes";
+import { obterDiarioDoMes } from "@/lib/diario";
 import { consultarCep, procurarCepPorRua, type EnderecoCep, type ResultadoCep } from "@/lib/cep";
 import type { DadosForm, ResultadoSalvar } from "@/lib/formulario";
 import { TIPOS_EVOLUCAO, TIPO_VISITA, hojeISO } from "@/lib/opcoes";
@@ -551,6 +553,84 @@ export async function registrarEvolucaoClinica(pacienteId: number, d: DadosEvolu
   }
   revalidatePath("/evolucoes");
   revalidatePath(`/pacientes/${pacienteId}`);
+  return {};
+}
+
+// ---------------------------------------------------------------- diário de atendimentos (exige "editar")
+const erroDiario = (nome: string, e: { code?: string; message: string }) => {
+  console.error(`[${nome}]`, e.code ?? e.message);
+  if (e.code === "PGRST202" || e.code === "PGRST205") return { erro: "Falta rodar a migração v21 no Supabase." };
+  if (e.code === "P0001" || e.code === "42501") return { erro: e.message };
+  return { erro: "Não foi possível salvar. Tente novamente." };
+};
+const dataValida = (d: string) => /^\d{4}-\d{2}-\d{2}$/.test(d) && d <= hojeISO();
+
+/** Equipe do dia (manhã e tarde) e intercorrências/anotações. */
+export async function salvarDiaDiario(data: string, equipe: Equipe, anotacoes: string): Promise<{ erro?: string }> {
+  await exigirPermissao("editar");
+  if (!dataValida(data)) return { erro: "Data inválida." };
+  const limpa: Equipe = { manha: {}, tarde: {} };
+  for (const t of TURNOS) for (const f of FUNCOES_EQUIPE) {
+    const v = String(equipe?.[t.valor]?.[f.valor] ?? "").trim().slice(0, 120);
+    if (v) limpa[t.valor][f.valor] = v;
+  }
+  const sb = await supabaseServidor();
+  const r = await sb.rpc("salvar_diario_dia", { p_data: data, p_equipe: limpa, p_anotacoes: String(anotacoes ?? "").slice(0, 6000) });
+  if (r.error) return erroDiario("salvarDiaDiario", r.error);
+  revalidatePath("/diario");
+  return {};
+}
+
+export type DadosAtendimento = {
+  data: string; turno: string; pacienteId: number | null; pacienteNome: string;
+  sinais: Record<string, string>; profissionais: string[]; procedimentos: string[];
+};
+
+/** Novo atendimento (id nulo) ou correção. Paciente cadastrado: registra também a visita domiciliar do dia. */
+export async function salvarAtendimentoDiario(id: number | null, d: DadosAtendimento): Promise<{ erro?: string }> {
+  await exigirPermissao("editar");
+  if (!dataValida(d.data)) return { erro: "Data inválida." };
+  if (d.turno !== "manha" && d.turno !== "tarde") return { erro: "Escolha o turno." };
+  const pacienteId = d.pacienteId && Number.isSafeInteger(d.pacienteId) ? d.pacienteId : null;
+  if (!pacienteId && String(d.pacienteNome ?? "").trim().length < 2) return { erro: "Escolha o paciente ou escreva o nome." };
+  const sinais = Object.fromEntries(SINAIS.map((s) => [s.valor, String(d.sinais?.[s.valor] ?? "").trim().slice(0, s.valor === "pa" ? 20 : 10)]));
+  const sb = await supabaseServidor();
+  const r = await sb.rpc("salvar_atendimento_diario", {
+    p_id: id,
+    p: {
+      data: d.data, turno: d.turno, paciente_id: pacienteId, paciente_nome: String(d.pacienteNome ?? "").trim().slice(0, 120), ...sinais,
+      profissionais: PROFISSIONAIS.map((p) => p.valor).filter((v) => d.profissionais?.includes(v)),
+      procedimentos: PROCEDIMENTOS_DIARIO.map((p) => p.valor).filter((v) => d.procedimentos?.includes(v)),
+    },
+  });
+  if (r.error) return erroDiario("salvarAtendimentoDiario", r.error);
+  if (id === null && pacienteId) {
+    const v = await gravarVisita(pacienteId, d.data, "Visita registrada pelo diário de atendimentos.");
+    if (v.erro) console.info("[diario] visita já registrada no dia");
+  }
+  revalidatePath("/", "layout");
+  return {};
+}
+
+/** Dias e atendimentos do mês, para o PDF do mês. */
+export async function dadosDiarioMes(mes: string): Promise<{ erro?: string; dias?: DiaDiario[]; atendimentos?: Atendimento[] }> {
+  await exigirUsuario();
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)) return { erro: "Mês inválido." };
+  try {
+    return await obterDiarioDoMes(mes);
+  } catch (e) {
+    console.error("[dadosDiarioMes]", e instanceof Error ? e.message : e);
+    return { erro: "Não foi possível carregar o mês." };
+  }
+}
+
+export async function removerAtendimentoDiario(id: number): Promise<{ erro?: string }> {
+  await exigirPermissao("editar");
+  if (!Number.isSafeInteger(id)) return { erro: "Atendimento inválido." };
+  const sb = await supabaseServidor();
+  const r = await sb.rpc("remover_atendimento_diario", { p_id: id });
+  if (r.error) return erroDiario("removerAtendimentoDiario", r.error);
+  revalidatePath("/diario");
   return {};
 }
 
