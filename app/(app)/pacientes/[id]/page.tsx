@@ -11,6 +11,7 @@ import { formatarCep, formatarCns, formatarCpf, formatarTelefone } from "@/lib/v
 import { nomeDoCampo, valorLegivel } from "@/lib/rotulos";
 import { agendarVisita, novaAdmissao, registrarEvolucao } from "../../../actions";
 import { IconeCalendario } from "../../icones";
+import { BotaoExcluirPaciente } from "./botao-excluir";
 import { BotaoCapa } from "./botao-capa";
 import { rotuloTipoAlta } from "@/lib/indicadores-opcoes";
 import { BotaoRelatorio } from "./botao-relatorio";
@@ -82,6 +83,7 @@ export default async function Ficha({ params, searchParams }: PageProps<"/pacien
               Editar cadastro
             </Link>
           )}
+          {usuario.perms.admin && <BotaoExcluirPaciente pacienteId={ficha.id} nome={ficha.nome} voltarPara={arquivado ? "/arquivados" : "/"} />}
         </div>
       </div>
 

@@ -716,3 +716,22 @@ export async function salvarMeuCadastro(nome: string, ident: IdentificacaoProfis
   revalidatePath("/", "layout");
   return {};
 }
+
+/** Exclui o paciente e tudo o que é dele. Só administradores; exige o nome digitado e o motivo. */
+export async function excluirPaciente(pacienteId: number, nomeConfirmado: string, motivo: string): Promise<{ erro?: string }> {
+  await exigirPermissao("admin");
+  if (!Number.isSafeInteger(pacienteId)) return { erro: "Paciente inválido." };
+  const m = motivo.trim();
+  if (m.length < 5) return { erro: "Informe o motivo da exclusão." };
+  if (m.length > 500) return { erro: "Motivo longo demais." };
+  const sb = await supabaseServidor();
+  const r = await sb.rpc("excluir_paciente", { p_id: pacienteId, p_nome_confirmado: nomeConfirmado.slice(0, 200), p_motivo: m });
+  if (r.error) {
+    console.error("[excluirPaciente]", r.error.code ?? r.error.message);
+    if (r.error.code === "PGRST202") return { erro: "Falta rodar a migração v22 no Supabase." };
+    if (r.error.code === "42501" || r.error.code === "P0001") return { erro: r.error.message };
+    return { erro: "Não foi possível excluir o paciente." };
+  }
+  revalidatePath("/", "layout");
+  return {};
+}
